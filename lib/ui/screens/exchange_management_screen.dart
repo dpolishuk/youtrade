@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/auth/exchange_credentials.dart';
 import '../../domain/entities/venue.dart';
-import '../../presentation/exchange/exchange_credentials_notifier.dart';
 import '../../presentation/exchange/exchange_credentials_provider.dart';
 import '../../presentation/exchange/exchange_credentials_state.dart';
 import '../../presentation/theme/theme_extensions.dart';
@@ -121,7 +120,7 @@ class _ExchangeManagementScreenState
   ) {
     return ListView.separated(
       itemCount: Venue.values.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final venue = Venue.values[index];
         final credential = credentials

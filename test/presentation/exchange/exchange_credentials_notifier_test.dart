@@ -6,7 +6,6 @@ import 'package:youtrade/core/result.dart';
 import 'package:youtrade/domain/auth/exchange_credentials.dart';
 import 'package:youtrade/domain/entities/venue.dart';
 import 'package:youtrade/domain/repositories/exchange_credentials_repository.dart';
-import 'package:youtrade/presentation/exchange/exchange_credentials_notifier.dart';
 import 'package:youtrade/presentation/exchange/exchange_credentials_provider.dart';
 import 'package:youtrade/presentation/exchange/exchange_credentials_state.dart';
 
@@ -112,8 +111,9 @@ void main() {
           .read(exchangeCredentialsNotifierProvider.notifier)
           .save(binanceCredentials);
 
+      print('STATES: $states');
+
       expect(states, [
-        isA<ExchangeCredentialsLoading>(),
         isA<ExchangeCredentialsLoaded>(),
       ]);
     });

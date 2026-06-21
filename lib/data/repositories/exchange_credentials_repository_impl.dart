@@ -9,10 +9,9 @@ import '../datasources/local/secure_credentials_store.dart';
 final class ExchangeCredentialsRepositoryImpl
     implements ExchangeCredentialsRepository {
   ExchangeCredentialsRepositoryImpl({
-    required SecureCredentialsStore store,
-    required ExchangeConnectionChecker connectionChecker,
-  }) : _store = store,
-       _connectionChecker = connectionChecker;
+    required this._store,
+    required this._connectionChecker,
+  });
 
   final SecureCredentialsStore _store;
   final ExchangeConnectionChecker _connectionChecker;

@@ -57,7 +57,7 @@ class _FakeSecureStorage extends FlutterSecureStorage {
     return Map.fromEntries(
       _store.entries
           .where((e) => e.value != null)
-          .cast<MapEntry<String, String>>(),
+          .map((e) => MapEntry(e.key, e.value!)),
     );
   }
 }
