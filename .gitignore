@@ -33,6 +33,9 @@ linux/flutter/ephemeral/
 .opencode/cache/
 *.log
 
+# Screenshots / temp images
+ios_screenshot*.png
+
 # Environment / secrets
 .env
 *.keystore

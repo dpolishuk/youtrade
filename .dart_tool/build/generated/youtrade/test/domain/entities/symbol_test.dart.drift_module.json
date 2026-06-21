@@ -1,8 +1,0 @@
-{
-  "elements": {},
-  "imports": [
-    "package:flutter_test/flutter_test.dart",
-    "package:youtrade/domain/entities/symbol.dart",
-    "package:youtrade/domain/entities/venue.dart"
-  ]
-}

@@ -1,1 +1,0 @@
-{"valid_import":true,"imports":[{"uri":"package:flutter_test/flutter_test.dart","transitive":false},{"uri":"package:youtrade/domain/entities/symbol.dart","transitive":false},{"uri":"package:youtrade/domain/entities/ticker.dart","transitive":false},{"uri":"package:youtrade/domain/entities/venue.dart","transitive":false}],"elements":[]}

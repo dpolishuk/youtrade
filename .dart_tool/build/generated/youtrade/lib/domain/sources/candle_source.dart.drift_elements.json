@@ -1,1 +1,0 @@
-{"valid_import":true,"imports":[{"uri":"package:youtrade/core/result.dart","transitive":false},{"uri":"package:youtrade/domain/entities/candle.dart","transitive":false},{"uri":"package:youtrade/domain/entities/symbol.dart","transitive":false},{"uri":"package:youtrade/domain/entities/timeframe.dart","transitive":false}],"elements":[]}

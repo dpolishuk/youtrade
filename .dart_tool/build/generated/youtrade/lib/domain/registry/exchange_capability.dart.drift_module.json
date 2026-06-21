@@ -1,6 +1,0 @@
-{
-  "elements": {},
-  "imports": [
-    "package:youtrade/domain/entities/venue.dart"
-  ]
-}
