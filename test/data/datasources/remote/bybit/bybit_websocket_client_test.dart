@@ -9,6 +9,7 @@ import 'package:youtrade/data/datasources/remote/bybit/bybit_websocket_client.da
 import 'package:youtrade/domain/entities/order_book.dart';
 import 'package:youtrade/domain/entities/symbol.dart';
 import 'package:youtrade/domain/entities/ticker.dart';
+import 'package:youtrade/domain/entities/trade.dart';
 import 'package:youtrade/domain/entities/venue.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -136,11 +137,15 @@ void main() {
       );
 
       final result = await future;
-      expect(result, isA<Success>());
+      expect(result, isA<Success<OrderBook>>());
       result.when(
         success: (orderBook) {
+          expect(orderBook.bids, hasLength(1));
           expect(orderBook.bids.first.price, 99.0);
+          expect(orderBook.bids.first.amount, 1.0);
+          expect(orderBook.asks, hasLength(1));
           expect(orderBook.asks.first.price, 101.0);
+          expect(orderBook.asks.first.amount, 1.0);
         },
         failure: (_) => fail('expected success'),
       );
@@ -169,11 +174,14 @@ void main() {
       );
 
       final result = await future;
-      expect(result, isA<Success>());
+      expect(result, isA<Success<List<Trade>>>());
       result.when(
         success: (trades) {
-          expect(trades.length, 1);
+          expect(trades, hasLength(1));
           expect(trades.first.price, 100.0);
+          expect(trades.first.amount, 1.0);
+          expect(trades.first.side, TradeSide.buy);
+          expect(trades.first.tradeId, '1');
         },
         failure: (_) => fail('expected success'),
       );

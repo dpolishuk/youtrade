@@ -46,9 +46,23 @@ void main() {
       final appColors = theme.extension<AppColorTheme>();
 
       expect(appColors, isNotNull);
-      expect(appColors!.bullish, isA<Color>());
-      expect(appColors.bearish, isA<Color>());
-      expect(appColors.accent, equals(theme.colorScheme.primary));
+      // Assert canonical colors from lib/presentation/theme/app_theme.dart
+      // so the test catches swaps or accidental overrides.
+      expect(
+        appColors!.bullish,
+        const Color(0xFF01A54C),
+        reason: 'bullish must be emerald vivid',
+      );
+      expect(
+        appColors.bearish,
+        const Color(0xFFFF4D4D),
+        reason: 'bearish must be rose',
+      );
+      expect(
+        appColors.accent,
+        const Color(0xFF00BBCC),
+        reason: 'accent must be turquoise vivid for Flux dark',
+      );
     });
 
     test('display type uses Space Grotesk', () {

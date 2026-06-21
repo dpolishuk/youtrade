@@ -10,6 +10,7 @@ import 'package:local_auth_android/local_auth_android.dart' as local_auth_androi
 import 'package:path_provider_android/path_provider_android.dart' as path_provider_android;
 import 'package:local_auth_darwin/local_auth_darwin.dart' as local_auth_darwin;
 import 'package:path_provider_foundation/path_provider_foundation.dart' as path_provider_foundation;
+import 'package:connectivity_plus/connectivity_plus.dart' as connectivity_plus;
 import 'package:path_provider_linux/path_provider_linux.dart' as path_provider_linux;
 import 'package:local_auth_darwin/local_auth_darwin.dart' as local_auth_darwin;
 import 'package:path_provider_foundation/path_provider_foundation.dart' as path_provider_foundation;
@@ -61,6 +62,15 @@ class _PluginRegistrant {
       }
 
     } else if (Platform.isLinux) {
+      try {
+        connectivity_plus.ConnectivityPlusLinuxPlugin.registerWith();
+      } catch (err) {
+        print(
+          '`connectivity_plus` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
       try {
         path_provider_linux.PathProviderLinux.registerWith();
       } catch (err) {
