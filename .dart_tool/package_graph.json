@@ -29,6 +29,7 @@
         "web_socket_channel"
       ],
       "devDependencies": [
+        "async",
         "build_runner",
         "drift_dev",
         "flutter_lints",
@@ -36,7 +37,23 @@
         "freezed",
         "json_serializable",
         "mocktail",
-        "riverpod_generator"
+        "riverpod_generator",
+        "stream_channel"
+      ]
+    },
+    {
+      "name": "async",
+      "version": "2.13.1",
+      "dependencies": [
+        "collection",
+        "meta"
+      ]
+    },
+    {
+      "name": "stream_channel",
+      "version": "2.1.4",
+      "dependencies": [
+        "async"
       ]
     },
     {
@@ -390,6 +407,16 @@
       ]
     },
     {
+      "name": "meta",
+      "version": "1.18.0",
+      "dependencies": []
+    },
+    {
+      "name": "collection",
+      "version": "1.19.1",
+      "dependencies": []
+    },
+    {
       "name": "lints",
       "version": "6.1.0",
       "dependencies": []
@@ -421,11 +448,6 @@
       ]
     },
     {
-      "name": "collection",
-      "version": "1.19.1",
-      "dependencies": []
-    },
-    {
       "name": "source_gen",
       "version": "2.0.0",
       "dependencies": [
@@ -453,11 +475,6 @@
         "path",
         "source_span"
       ]
-    },
-    {
-      "name": "meta",
-      "version": "1.18.0",
-      "dependencies": []
     },
     {
       "name": "crypto",
@@ -672,14 +689,6 @@
       ]
     },
     {
-      "name": "async",
-      "version": "2.13.1",
-      "dependencies": [
-        "collection",
-        "meta"
-      ]
-    },
-    {
       "name": "web",
       "version": "1.1.1",
       "dependencies": []
@@ -835,13 +844,6 @@
         "stream_transform",
         "watcher",
         "web_socket_channel"
-      ]
-    },
-    {
-      "name": "stream_channel",
-      "version": "2.1.4",
-      "dependencies": [
-        "async"
       ]
     },
     {
