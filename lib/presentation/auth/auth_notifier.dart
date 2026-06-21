@@ -17,6 +17,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   bool _pinSet = false;
   bool _isBiometricAvailable = false;
   bool _isAuthenticating = false;
+  bool _isInitializing = false;
+  int _failedPinAttempts = 0;
+  DateTime? _pinLockoutEnd;
+
+  static const int _maxPinAttempts = 5;
+  static const Duration _pinLockoutDuration = Duration(minutes: 1);
 
   bool get isPinSet => _pinSet;
 
@@ -25,26 +31,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
   bool get isAuthenticating => _isAuthenticating;
 
   Future<void> initialize() async {
-    _pinSet = await _pinAuthService.isPinSet();
-
-    if (!_pinSet) {
-      _isBiometricAvailable = false;
-      state = const AuthUnauthenticated(pinSet: false);
-      return;
-    }
-
+    if (_isInitializing) return;
+    _isInitializing = true;
     try {
-      _isBiometricAvailable = await _localAuthService.canCheckBiometrics();
-    } on Object {
-      _isBiometricAvailable = false;
-      state = const AuthUnauthenticated(pinSet: true);
-      return;
-    }
+      _pinSet = await _pinAuthService.isPinSet();
 
-    if (_isBiometricAvailable) {
-      await authenticateWithBiometrics();
-    } else {
-      state = const AuthUnauthenticated(pinSet: true);
+      if (!_pinSet) {
+        _isBiometricAvailable = false;
+        state = const AuthUnauthenticated(pinSet: false);
+        return;
+      }
+
+      try {
+        _isBiometricAvailable = await _localAuthService.canCheckBiometrics();
+      } on Object {
+        _isBiometricAvailable = false;
+        state = const AuthUnauthenticated(pinSet: true);
+        return;
+      }
+
+      if (_isBiometricAvailable) {
+        await authenticateWithBiometrics();
+      } else {
+        state = const AuthUnauthenticated(pinSet: true);
+      }
+    } finally {
+      _isInitializing = false;
     }
   }
 
@@ -56,7 +68,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final result = await _localAuthService.authenticate();
       if (!_isAuthenticating) return;
       result.when(
-        success: (_) => state = const AuthAuthenticated(),
+        success: (_) {
+          _resetPinLockout();
+          state = const AuthAuthenticated();
+        },
         failure: (failure) => state = AuthError(failure),
       );
     } finally {
@@ -66,6 +81,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> authenticateWithPin(String pin) async {
     if (_isAuthenticating) return;
+
+    final lockoutRemaining = _lockoutRemainingSeconds;
+    if (lockoutRemaining > 0) {
+      state = AuthError(PinLockedFailure(lockoutRemaining));
+      return;
+    }
+
     _isAuthenticating = true;
     try {
       _pinSet = await _pinAuthService.isPinSet();
@@ -85,6 +107,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         result.when(
           success: (_) {
             _pinSet = true;
+            _resetPinLockout();
             state = const AuthAuthenticated();
           },
           failure: (failure) => state = AuthError(failure),
@@ -95,8 +118,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final isValid = await _pinAuthService.authenticatePin(pin);
       if (!_isAuthenticating) return;
       if (isValid) {
+        _resetPinLockout();
         state = const AuthAuthenticated();
       } else {
+        _recordFailedPinAttempt();
         state = const AuthError(PinMismatchFailure());
       }
     } finally {
@@ -111,5 +136,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return;
     }
     state = AuthUnauthenticated(pinSet: _pinSet);
+  }
+
+  int get _lockoutRemainingSeconds {
+    final end = _pinLockoutEnd;
+    if (end == null) return 0;
+    final remaining = end.difference(DateTime.now().toUtc()).inSeconds;
+    return remaining > 0 ? remaining : 0;
+  }
+
+  void _recordFailedPinAttempt() {
+    _failedPinAttempts++;
+    if (_failedPinAttempts >= _maxPinAttempts) {
+      _pinLockoutEnd = DateTime.now().toUtc().add(_pinLockoutDuration);
+    }
+  }
+
+  void _resetPinLockout() {
+    _failedPinAttempts = 0;
+    _pinLockoutEnd = null;
   }
 }

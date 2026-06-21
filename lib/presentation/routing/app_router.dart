@@ -4,12 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../domain/entities/venue.dart';
 import '../../ui/auth/auth_gate_screen.dart';
 import '../../ui/screens/compare_screen.dart';
-import '../../ui/screens/exchange_detail_edit_screen.dart';
 import '../../ui/screens/exchange_detail_screen.dart';
-import '../../ui/screens/exchange_management_screen.dart';
 import '../../ui/screens/markets_screen.dart';
 import '../../ui/screens/options_chain_screen.dart';
 import '../../ui/screens/orders_history_screen.dart';
@@ -90,16 +87,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       final id = state.pathParameters['id']!;
                       return ExchangeDetailScreen(exchangeId: id);
                     },
-                    routes: [
-                      GoRoute(
-                        path: 'edit',
-                        builder: (context, state) {
-                          final id = state.pathParameters['id']!;
-                          final venue = _resolveVenue(id);
-                          return ExchangeDetailEditScreen(venue: venue);
-                        },
-                      ),
-                    ],
                   ),
                   GoRoute(
                     path: 'compare',
@@ -140,13 +127,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/account',
                 builder: (context, state) => const SettingsScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'exchanges',
-                    builder: (context, state) =>
-                        const ExchangeManagementScreen(),
-                  ),
-                ],
               ),
             ],
           ),
@@ -155,13 +135,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
-
-Venue _resolveVenue(String id) {
-  return Venue.values.firstWhere(
-    (venue) => venue.id == id,
-    orElse: () => Venue.unknown,
-  );
-}
 
 class _GoRouterRefreshStream extends ChangeNotifier {
   _GoRouterRefreshStream(Stream<dynamic> stream) {

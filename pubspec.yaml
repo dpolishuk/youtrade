@@ -13,7 +13,6 @@ dependencies:
   # State management
   flutter_riverpod: ^2.6.1
   riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
 
   # Networking
   http: ^1.3.0
@@ -39,10 +38,6 @@ dependencies:
   # Routing
   go_router: ^14.8.1
 
-  # Code generation runtime
-  freezed_annotation: ^3.0.0
-  json_annotation: ^4.9.0
-
   # iOS-style icons
   cupertino_icons: ^1.0.8
   connectivity_plus: ^7.1.1
@@ -53,10 +48,7 @@ dev_dependencies:
     sdk: flutter
 
   build_runner: ^2.4.15
-  freezed: ^3.0.0
-  json_serializable: ^6.9.4
   drift_dev: ^2.26.0
-  riverpod_generator: ^2.6.5
   mocktail: ^1.0.4
   flutter_lints: ^6.0.0
   stream_channel: ^2.1.4

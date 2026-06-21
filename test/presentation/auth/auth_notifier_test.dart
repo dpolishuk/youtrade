@@ -727,5 +727,76 @@ void main() {
         expect(container.read(authNotifierProvider.notifier).isPinSet, isFalse);
       },
     );
+
+    test('locks PIN entry after max failed attempts', () async {
+      fakePinAuth.setStoredPin('1234');
+      when(
+        () => mockLocalAuth.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      final states = <AuthState>[];
+      container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+      await container.read(authNotifierProvider.notifier).initialize();
+      states.clear();
+
+      for (var i = 0; i < 5; i++) {
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('0000');
+      }
+
+      await container
+          .read(authNotifierProvider.notifier)
+          .authenticateWithPin('1234');
+
+      final lockoutErrors = states.whereType<AuthError>().where(
+        (e) => e.failure is PinLockedFailure,
+      );
+      expect(lockoutErrors.length, 1);
+      final failure = lockoutErrors.single.failure as PinLockedFailure;
+      expect(failure.remainingSeconds, greaterThan(0));
+      expect(failure.remainingSeconds, lessThanOrEqualTo(60));
+      expect(container.read(authNotifierProvider), isA<AuthError>());
+    });
+
+    test('successful PIN entry resets failed attempt lockout', () async {
+      fakePinAuth.setStoredPin('1234');
+      when(
+        () => mockLocalAuth.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      final states = <AuthState>[];
+      container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+      await container.read(authNotifierProvider.notifier).initialize();
+      states.clear();
+
+      for (var i = 0; i < 4; i++) {
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('0000');
+      }
+      await container
+          .read(authNotifierProvider.notifier)
+          .authenticateWithPin('1234');
+
+      expect(states.whereType<AuthAuthenticated>().length, 1);
+
+      container.read(authNotifierProvider.notifier).signOut();
+      states.clear();
+
+      await container
+          .read(authNotifierProvider.notifier)
+          .authenticateWithPin('0000');
+
+      expect(states, [isA<AuthError>()]);
+      final error = states.single as AuthError;
+      expect(error.failure, isA<PinMismatchFailure>());
+    });
   });
 }
