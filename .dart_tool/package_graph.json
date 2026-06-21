@@ -8,6 +8,7 @@
       "version": "1.0.0+1",
       "dependencies": [
         "candlesticks",
+        "crypto",
         "cupertino_icons",
         "drift",
         "fl_chart",
@@ -290,6 +291,13 @@
       ]
     },
     {
+      "name": "crypto",
+      "version": "3.0.7",
+      "dependencies": [
+        "typed_data"
+      ]
+    },
+    {
       "name": "path_provider",
       "version": "2.1.6",
       "dependencies": [
@@ -474,13 +482,6 @@
         "meta",
         "path",
         "source_span"
-      ]
-    },
-    {
-      "name": "crypto",
-      "version": "3.0.7",
-      "dependencies": [
-        "typed_data"
       ]
     },
     {
@@ -961,6 +962,13 @@
       ]
     },
     {
+      "name": "typed_data",
+      "version": "1.4.0",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
       "name": "path_provider_windows",
       "version": "2.3.0",
       "dependencies": [
@@ -1096,13 +1104,6 @@
         "source_span",
         "uuid",
         "yaml"
-      ]
-    },
-    {
-      "name": "typed_data",
-      "version": "1.4.0",
-      "dependencies": [
-        "collection"
       ]
     },
     {

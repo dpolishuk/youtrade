@@ -30,6 +30,7 @@ dependencies:
   path_provider: ^2.1.5
 
   # Security / platform
+  crypto: ^3.0.6
   local_auth: ^2.3.0
   local_auth_android: ^1.0.46
   local_auth_darwin: ^1.4.3
