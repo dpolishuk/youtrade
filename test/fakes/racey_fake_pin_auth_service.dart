@@ -26,6 +26,8 @@ class RaceyFakePinAuthService implements PinAuthService {
     return const Success<void>(null);
   }
 
+  int get setPinCallCount => _setPinCalls;
+
   void setStoredPin(String pin) {
     _pin = pin;
   }

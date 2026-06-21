@@ -48,6 +48,8 @@ class SecurePinAuthService implements PinAuthService {
     }
   }
 
+  Future<Result<void>>? _setPinLock;
+
   @override
   Future<Result<void>> setPin(String pin) async {
     if (pin.length < _minPinLength) {
@@ -56,6 +58,20 @@ class SecurePinAuthService implements PinAuthService {
       );
     }
 
+    if (_setPinLock != null) {
+      return const Err<void>(UnknownFailure('PIN setup already in progress.'));
+    }
+
+    final operation = _setPinInternal(pin);
+    _setPinLock = operation;
+    try {
+      return await operation;
+    } finally {
+      _setPinLock = null;
+    }
+  }
+
+  Future<Result<void>> _setPinInternal(String pin) async {
     try {
       var salt = await _storage.read(key: _pinSaltKey);
       if (salt == null || salt.isEmpty) {

@@ -359,8 +359,15 @@ void main() {
         ),
       );
 
-      final error = await client.watchOrderBook(symbol).first;
-      expect(error, isA<Err<OrderBook>>());
+      final result = await client.watchOrderBook(symbol).first;
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'Coinbase WS order book error');
+        },
+      );
     });
 
     test('watchTrades emits UnknownFailure on connection failure', () async {
@@ -370,8 +377,15 @@ void main() {
         ),
       );
 
-      final error = await client.watchTrades(symbol).first;
-      expect(error, isA<Err<List<Trade>>>());
+      final result = await client.watchTrades(symbol).first;
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'Coinbase WS trade error');
+        },
+      );
     });
 
     test('watchOrderBook parses l2update message', () async {

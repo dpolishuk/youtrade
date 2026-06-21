@@ -22,6 +22,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   bool get isBiometricAvailable => _isBiometricAvailable;
 
+  bool get isAuthenticating => _isAuthenticating;
+
   Future<void> initialize() async {
     _pinSet = await _pinAuthService.isPinSet();
 

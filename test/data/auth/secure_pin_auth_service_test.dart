@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/core/failures.dart';
@@ -85,6 +88,9 @@ class _ThrowingReadStorage extends _FakeSecureStorage {
     throw exception;
   }
 }
+
+String _expectedHash(String pin, String salt) =>
+    sha256.convert(utf8.encode('$salt$pin')).toString();
 
 void main() {
   group('SecurePinAuthService', () {
@@ -187,7 +193,7 @@ void main() {
         ]);
 
         final successCount = results.whereType<Success<void>>().length;
-        expect(successCount, greaterThan(0));
+        expect(successCount, 1);
         final salt = await storage.read(key: 'pin_salt');
         expect(salt, isNotNull);
         expect(salt, isNotEmpty);
@@ -195,12 +201,20 @@ void main() {
         expect(hash, isNotNull);
         expect(hash, isNotEmpty);
 
-        // Exactly one of the candidate PINs must match the stored hash.
         final candidates = ['1111', '2222', '3333'];
-        final matches = await Future.wait(
-          candidates.map((pin) => service.authenticatePin(pin)),
+        final matchingCandidates = candidates
+            .where((pin) => _expectedHash(pin, salt!) == hash)
+            .toList();
+        expect(matchingCandidates.length, 1);
+        expect(
+          await service.authenticatePin(matchingCandidates.single),
+          isTrue,
         );
-        expect(matches.where((m) => m).length, 1);
+        for (final other in candidates.where(
+          (p) => p != matchingCandidates.single,
+        )) {
+          expect(await service.authenticatePin(other), isFalse);
+        }
       });
 
       test('returns UnknownFailure when storage write fails', () async {

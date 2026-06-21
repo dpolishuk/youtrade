@@ -540,6 +540,11 @@ void main() {
         final unauthenticated =
             container.read(authNotifierProvider) as AuthUnauthenticated;
         expect(unauthenticated.pinSet, isTrue);
+        expect(states.whereType<AuthError>().length, 0);
+        expect(
+          container.read(authNotifierProvider.notifier).isAuthenticating,
+          isFalse,
+        );
       },
     );
 
@@ -601,6 +606,8 @@ void main() {
           ],
         );
         addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
 
         final futures = <Future<void>>[
           container
@@ -618,6 +625,9 @@ void main() {
 
         expect(container.read(authNotifierProvider), isA<AuthAuthenticated>());
         expect(container.read(authNotifierProvider.notifier).isPinSet, isTrue);
+        expect(states.whereType<AuthAuthenticated>().length, 1);
+        expect(states.whereType<AuthError>().length, 0);
+        expect(raceyPinAuth.setPinCallCount, 1);
       },
     );
   });

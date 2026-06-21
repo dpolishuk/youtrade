@@ -281,6 +281,16 @@ void main() {
 
       final result = await future;
       expect(result, isA<Success<Ticker>>());
+      result.when(
+        success: (ticker) {
+          expect(ticker.lastPrice, 100.0);
+          expect(ticker.bid, 99.5);
+          expect(ticker.ask, 100.5);
+          expect(ticker.change24h, 1.0);
+          expect(ticker.volume, 1000.0);
+        },
+        failure: (_) => fail('expected success'),
+      );
     });
 
     test('watchOrderBook emits UnknownFailure on stream error', () async {
@@ -369,8 +379,16 @@ void main() {
         },
       );
 
-      final error = await client.watchOrderBook(symbol).first;
-      expect(error, isA<Err<OrderBook>>());
+      final result = await client.watchOrderBook(symbol).first;
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'OKX WS order book error');
+          expect((failure as UnknownFailure).error, isA<Exception>());
+        },
+      );
     });
 
     test('watchTrades emits UnknownFailure on connection failure', () async {
@@ -384,8 +402,16 @@ void main() {
         },
       );
 
-      final error = await client.watchTrades(symbol).first;
-      expect(error, isA<Err<List<Trade>>>());
+      final result = await client.watchTrades(symbol).first;
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'OKX WS trades error');
+          expect((failure as UnknownFailure).error, isA<Exception>());
+        },
+      );
     });
 
     test('watchOrderBook parses delta message', () async {
