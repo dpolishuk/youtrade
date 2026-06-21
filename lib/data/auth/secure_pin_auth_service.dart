@@ -18,6 +18,7 @@ class SecurePinAuthService implements PinAuthService {
   static const String _pinHashKey = 'pin_hash';
   static const String _pinSaltKey = 'pin_salt';
   static const int _minPinLength = 4;
+  static final RegExp _pinRegex = RegExp(r'^\d+$');
 
   @override
   Future<bool> isPinSet() async {
@@ -55,6 +56,12 @@ class SecurePinAuthService implements PinAuthService {
     if (pin.length < _minPinLength) {
       return const Err<void>(
         PinValidationFailure('PIN must be at least 4 digits.'),
+      );
+    }
+
+    if (!_pinRegex.hasMatch(pin)) {
+      return const Err<void>(
+        PinValidationFailure('PIN must contain only digits.'),
       );
     }
 

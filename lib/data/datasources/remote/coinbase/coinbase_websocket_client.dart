@@ -38,9 +38,10 @@ final class CoinbaseWebSocketClient implements MarketStreamSource {
 
   @override
   Stream<Result<Ticker>> watchTicker(TradingSymbol symbol) {
+    final productId = _productId(symbol);
     return _watch(
       _subscribeMessage('ticker', symbol),
-      (json) => json['type'] == 'ticker',
+      (json) => json['type'] == 'ticker' && json['product_id'] == productId,
       (json) => Success(_parseTicker(symbol, json)),
       (e) => Err(ParseFailure('Coinbase WS ticker parse failed: $e')),
       (e) => Err(UnknownFailure('Coinbase WS ticker error', error: e)),
@@ -191,11 +192,16 @@ final class CoinbaseWebSocketClient implements MarketStreamSource {
   }
 
   Trade _parseTrade(Map<String, dynamic> json) {
-    final sideString = json['side'] as String;
+    final sideString = (json['side'] as String).toLowerCase();
+    final side = switch (sideString) {
+      'buy' => TradeSide.buy,
+      'sell' => TradeSide.sell,
+      _ => throw FormatException('Unknown trade side: $sideString'),
+    };
     return Trade(
       price: double.parse(json['price'] as String),
       amount: double.parse(json['size'] as String),
-      side: sideString.toLowerCase() == 'buy' ? TradeSide.buy : TradeSide.sell,
+      side: side,
       timestamp: DateTime.parse(json['time'] as String).toUtc(),
       tradeId: json['trade_id']?.toString(),
     );

@@ -217,10 +217,13 @@ final class OKXRestClient
   }
 
   OrderBook _parseOrderBook(Map<String, dynamic> json) {
-    final bids = (json['bids'] as List<dynamic>? ?? [])
+    if (!json.containsKey('bids') || !json.containsKey('asks')) {
+      throw const FormatException('missing bids or asks');
+    }
+    final bids = (json['bids'] as List<dynamic>)
         .map((e) => _parseLevel(e as List<dynamic>))
         .toList();
-    final asks = (json['asks'] as List<dynamic>? ?? [])
+    final asks = (json['asks'] as List<dynamic>)
         .map((e) => _parseLevel(e as List<dynamic>))
         .toList();
     return OrderBook(bids: bids, asks: asks, timestamp: DateTime.now().toUtc());
@@ -234,10 +237,15 @@ final class OKXRestClient
   }
 
   Trade _parseTrade(Map<String, dynamic> json) {
+    final price = double.parse(json['px'] as String);
+    final amount = double.parse(json['sz'] as String);
+    if (price < 0 || amount < 0) {
+      throw const FormatException('negative trade value');
+    }
     final sideString = json['side'] as String;
     return Trade(
-      price: double.parse(json['px'] as String),
-      amount: double.parse(json['sz'] as String),
+      price: price,
+      amount: amount,
       side: sideString.toLowerCase() == 'buy' ? TradeSide.buy : TradeSide.sell,
       timestamp: _parseTimestamp(json['ts'] as String?),
       tradeId: json['tradeId']?.toString(),

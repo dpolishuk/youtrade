@@ -413,5 +413,134 @@ void main() {
         failure: (_) => fail('expected success'),
       );
     });
+
+    test('watchTicker ignores message for wrong product_id', () async {
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+
+      channel.add(
+        '{"type":"ticker","sequence":1,"product_id":"ETH-USD","price":"200.0","open_24h":"199.0","volume_24h":"1000.0","low_24h":"190.0","high_24h":"210.0","best_bid":"199.5","best_ask":"200.5","time":"2024-06-21T12:00:00.000Z","trade_id":1,"last_size":"1.0"}',
+      );
+      channel.add(
+        '{"type":"ticker","sequence":2,"product_id":"BTC-USD","price":"100.0","open_24h":"99.0","volume_24h":"1000.0","low_24h":"90.0","high_24h":"110.0","best_bid":"99.5","best_ask":"100.5","time":"2024-06-21T12:00:00.000Z","trade_id":2,"last_size":"1.0"}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<Ticker>>());
+      result.when(
+        success: (ticker) => expect(ticker.lastPrice, 100.0),
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchTrades returns ParseFailure on unknown side', () async {
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTrades(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add(
+        '{"type":"match","trade_id":1,"sequence":1,"maker_order_id":"m1","taker_order_id":"t1","time":"2024-06-21T12:00:00.000Z","product_id":"BTC-USD","size":"1.0","price":"100.0","side":"unknown"}',
+      );
+
+      final result = await future;
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith('Coinbase WS trade parse failed:'),
+          );
+        },
+      );
+    });
+
+    test('watchOrderBook handles empty bids and asks in snapshot', () async {
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchOrderBook(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add(
+        '{"type":"snapshot","product_id":"BTC-USD","bids":[],"asks":[]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<OrderBook>>());
+      result.when(
+        success: (orderBook) {
+          expect(orderBook.bids, isEmpty);
+          expect(orderBook.asks, isEmpty);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchOrderBook handles empty changes in l2update', () async {
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchOrderBook(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add('{"type":"l2update","product_id":"BTC-USD","changes":[]}');
+
+      final result = await future;
+      expect(result, isA<Success<OrderBook>>());
+      result.when(
+        success: (orderBook) {
+          expect(orderBook.bids, isEmpty);
+          expect(orderBook.asks, isEmpty);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchTicker emits error then recovery', () async {
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final values = client.watchTicker(symbol).take(2).toList();
+      await Future.delayed(Duration.zero);
+
+      channel.add('not-json');
+      channel.add(
+        '{"type":"ticker","sequence":1,"product_id":"BTC-USD","price":"100.0","open_24h":"99.0","volume_24h":"1000.0","low_24h":"90.0","high_24h":"110.0","best_bid":"99.5","best_ask":"100.5","time":"2024-06-21T12:00:00.000Z","trade_id":1,"last_size":"1.0"}',
+      );
+
+      final results = await values;
+      expect(results.length, 2);
+      expect(results[0], isA<Err<Ticker>>());
+      expect(results[1], isA<Success<Ticker>>());
+    });
   });
 }

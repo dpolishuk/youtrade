@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/core/result.dart';
@@ -439,5 +441,141 @@ void main() {
         failure: (_) => fail('expected success'),
       );
     });
+
+    test('watchTicker ignores message for wrong instId', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+
+      channel.add(
+        '{"arg":{"channel":"tickers","instId":"ETH-USDT"},"data":[{"instId":"ETH-USDT","last":"200.0","bidPx":"199.5","askPx":"200.5","open24h":"199.0","vol24h":"1000.0","ts":"1718952000000"}]}',
+      );
+      channel.add(
+        '{"arg":{"channel":"tickers","instId":"BTC-USDT"},"data":[{"instId":"BTC-USDT","last":"100.0","bidPx":"99.5","askPx":"100.5","open24h":"99.0","vol24h":"1000.0","ts":"1718952000000"}]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<Ticker>>());
+      result.when(
+        success: (ticker) => expect(ticker.lastPrice, 100.0),
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchOrderBook handles empty bids/asks in update', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchOrderBook(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add(
+        '{"arg":{"channel":"books","instId":"BTC-USDT"},"action":"update","data":[{"bids":[],"asks":[],"ts":"1718952000000"}]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<OrderBook>>());
+      result.when(
+        success: (orderBook) {
+          expect(orderBook.bids, isEmpty);
+          expect(orderBook.asks, isEmpty);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchTrades handles empty trades list', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTrades(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add('{"arg":{"channel":"trades","instId":"BTC-USDT"},"data":[]}');
+
+      final result = await future;
+      expect(result, isA<Success<List<Trade>>>());
+      result.when(
+        success: (trades) => expect(trades, isEmpty),
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchTicker emits error then recovery', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).take(2).toList();
+      await Future.delayed(Duration.zero);
+      channel.add('not-json');
+      channel.add(
+        '{"arg":{"channel":"tickers","instId":"BTC-USDT"},"data":[{"instId":"BTC-USDT","last":"100.0","bidPx":"99.5","askPx":"100.5","open24h":"99.0","vol24h":"1000.0","ts":"1718952000000"}]}',
+      );
+
+      final events = await future;
+      expect(events.length, 2);
+      expect(events.first, isA<Err<Ticker>>());
+      expect(events.last, isA<Success<Ticker>>());
+      events.last.when(
+        success: (ticker) => expect(ticker.lastPrice, 100.0),
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test(
+      'Multiple subscriptions do not interleave outgoing messages',
+      () async {
+        final outgoing = <dynamic>[];
+        final shared = FakeWebSocketChannel();
+        shared.outgoingStream.listen(outgoing.add);
+        final client = OKXWebSocketClient(channelFactory: (_) => shared);
+
+        client.watchTicker(symbol).listen(null);
+        client.watchOrderBook(symbol).listen(null);
+        client.watchTrades(symbol).listen(null);
+        await Future.delayed(Duration.zero);
+
+        expect(outgoing.length, 3);
+        for (final message in outgoing) {
+          final json = jsonDecode(message as String) as Map<String, dynamic>;
+          expect(json['op'], 'subscribe');
+          final args = json['args'] as List<dynamic>;
+          expect(args.length, 1);
+          expect((args.first as Map<String, dynamic>)['instId'], 'BTC-USDT');
+        }
+
+        final channels = outgoing
+            .map(
+              (m) =>
+                  (((jsonDecode(m as String) as Map<String, dynamic>)['args']
+                                  as List<dynamic>)
+                              .first
+                          as Map<String, dynamic>)['channel']
+                      as String,
+            )
+            .toList();
+        expect(channels, containsAll(['tickers', 'books', 'trades']));
+      },
+    );
   });
 }

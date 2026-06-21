@@ -308,5 +308,60 @@ void main() {
       expect(find.text('YouTrade is locked'), findsOneWidget);
       expect(find.text('Welcome to YouTrade'), findsNothing);
     });
+
+    testWidgets(
+      'entering correct PIN then wrong PIN shows error and keeps locked',
+      (tester) async {
+        fakePinAuth.setStoredPin('1234');
+        when(
+          () => mockService.canCheckBiometrics(),
+        ).thenAnswer((_) async => false);
+
+        await tester.pumpWidget(buildApp());
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byType(TextField), '1234');
+        await tester.tap(find.text('Unlock with PIN'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Welcome to YouTrade'), findsOneWidget);
+
+        final container = ProviderScope.containerOf(
+          tester.element(find.text('Welcome to YouTrade')),
+        );
+        container.read(authNotifierProvider.notifier).signOut();
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byType(TextField), '0000');
+        await tester.tap(find.text('Unlock with PIN'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Incorrect PIN. Please try again.'), findsOneWidget);
+        expect(find.text('YouTrade is locked'), findsOneWidget);
+        expect(find.text('Welcome to YouTrade'), findsNothing);
+      },
+    );
+
+    testWidgets('pasting non-digit PIN after truncation is rejected', (
+      tester,
+    ) async {
+      fakePinAuth.setStoredPin('1234');
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'abcdefgh');
+      await tester.tap(find.text('Unlock with PIN'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('PIN must be exactly 4 digits'), findsOneWidget);
+      expect(find.text('YouTrade is locked'), findsOneWidget);
+      expect(find.text('Welcome to YouTrade'), findsNothing);
+    });
   });
 }

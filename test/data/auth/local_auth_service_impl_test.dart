@@ -10,6 +10,8 @@ import 'package:youtrade/domain/auth/local_auth_service.dart';
 
 class _MockLocalAuthentication extends Mock implements LocalAuthentication {}
 
+class _MockPlatformException extends Mock implements PlatformException {}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(
@@ -68,6 +70,17 @@ void main() {
         when(
           () => mockLocalAuth.canCheckBiometrics,
         ).thenThrow(Exception('biometrics unavailable'));
+
+        expect(await service.canCheckBiometrics(), isFalse);
+      });
+
+      test('returns false when isDeviceSupported throws', () async {
+        when(
+          () => mockLocalAuth.canCheckBiometrics,
+        ).thenAnswer((_) async => true);
+        when(
+          () => mockLocalAuth.isDeviceSupported(),
+        ).thenThrow(Exception('device not supported'));
 
         expect(await service.canCheckBiometrics(), isFalse);
       });
@@ -201,6 +214,28 @@ void main() {
         final failure = result.fold((f) => f, (_) => fail('expected failure'));
         expect(failure, isA<AuthCancelledFailure>());
       });
+
+      test(
+        'maps PlatformException with null code to AuthCancelledFailure',
+        () async {
+          when(
+            () => mockLocalAuth.authenticate(
+              localizedReason: any(named: 'localizedReason'),
+              authMessages: any(named: 'authMessages'),
+              options: any(named: 'options'),
+            ),
+          ).thenThrow(_MockPlatformException());
+
+          final result = await service.authenticate();
+
+          expect(result, isA<Err<bool>>());
+          final failure = result.fold(
+            (f) => f,
+            (_) => fail('expected failure'),
+          );
+          expect(failure, isA<AuthCancelledFailure>());
+        },
+      );
 
       test('returns AuthFailedFailure on unexpected exception', () async {
         when(

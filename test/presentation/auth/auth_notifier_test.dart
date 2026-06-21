@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -628,6 +630,101 @@ void main() {
         expect(states.whereType<AuthAuthenticated>().length, 1);
         expect(states.whereType<AuthError>().length, 0);
         expect(raceyPinAuth.setPinCallCount, 1);
+      },
+    );
+
+    test('initialize called twice does not emit duplicate states', () async {
+      when(
+        () => mockLocalAuth.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      final states = <AuthState>[];
+      container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+      await container.read(authNotifierProvider.notifier).initialize();
+      await container.read(authNotifierProvider.notifier).initialize();
+
+      expect(states, [isA<AuthUnauthenticated>()]);
+      final unauthenticated = states.single as AuthUnauthenticated;
+      expect(unauthenticated.pinSet, isFalse);
+    });
+
+    test(
+      'authenticateWithBiometrics concurrent calls emit single state change',
+      () async {
+        fakePinAuth.setStoredPin('1234');
+        final completers = <Completer<void>>[
+          Completer<void>(),
+          Completer<void>(),
+        ];
+        var callIndex = 0;
+        when(() => mockLocalAuth.authenticate()).thenAnswer((_) async {
+          final completer = completers[callIndex];
+          callIndex++;
+          await completer.future;
+          return const Success<bool>(true);
+        });
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        final futures = <Future<void>>[
+          container
+              .read(authNotifierProvider.notifier)
+              .authenticateWithBiometrics(),
+          container
+              .read(authNotifierProvider.notifier)
+              .authenticateWithBiometrics(),
+        ];
+        for (final completer in completers) {
+          completer.complete();
+        }
+        await Future.wait(futures);
+
+        expect(container.read(authNotifierProvider), isA<AuthAuthenticated>());
+        expect(states.whereType<AuthAuthenticated>().length, 1);
+      },
+    );
+
+    test('signOut before initialize completes does not throw', () async {
+      when(
+        () => mockLocalAuth.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = makeContainer();
+      addTearDown(container.dispose);
+
+      container.read(authNotifierProvider.notifier).signOut();
+
+      expect(container.read(authNotifierProvider), isA<AuthUnauthenticated>());
+      final unauthenticated =
+          container.read(authNotifierProvider) as AuthUnauthenticated;
+      expect(unauthenticated.pinSet, isFalse);
+    });
+
+    test(
+      'authenticateWithPin with setPin failure emits AuthError and leaves pinSet unchanged',
+      () async {
+        fakePinAuth = FakePinAuthService(
+          failureOnSet: const UnknownFailure('Storage error'),
+        );
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('5678');
+
+        expect(states, [isA<AuthError>()]);
+        final error = states.single as AuthError;
+        expect(error.failure, isA<UnknownFailure>());
+        expect(container.read(authNotifierProvider.notifier).isPinSet, isFalse);
       },
     );
   });

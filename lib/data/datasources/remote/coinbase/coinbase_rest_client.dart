@@ -121,6 +121,11 @@ final class CoinbaseRestClient
         return Err(NetworkFailure('Coinbase candles ${response.statusCode}'));
       }
       final json = jsonDecode(response.body) as List<dynamic>;
+      if (json.isEmpty) {
+        return Err(
+          const ParseFailure('Coinbase candles parse failed: empty response'),
+        );
+      }
       return Success(
         json.map((e) => _parseCandle(e as List<dynamic>)).toList(),
       );
@@ -246,9 +251,16 @@ final class CoinbaseRestClient
 
   Trade _parseTrade(Map<String, dynamic> json) {
     final sideString = json['side'] as String;
+    final price = double.parse(json['price'] as String);
+    final amount = double.parse(json['size'] as String);
+    if (price < 0 || amount < 0) {
+      throw FormatException(
+        'Expected non-negative price and size, got price=$price size=$amount',
+      );
+    }
     return Trade(
-      price: double.parse(json['price'] as String),
-      amount: double.parse(json['size'] as String),
+      price: price,
+      amount: amount,
       side: sideString.toLowerCase() == 'buy' ? TradeSide.buy : TradeSide.sell,
       timestamp: DateTime.parse(json['time'] as String).toUtc(),
       tradeId: json['trade_id']?.toString(),

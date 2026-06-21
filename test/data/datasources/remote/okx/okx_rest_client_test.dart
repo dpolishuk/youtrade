@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -494,6 +496,202 @@ void main() {
           expect(failure.message, startsWith('OKX ticker parse failed:'));
           expect(failure.message, contains('Bad state'));
         },
+      );
+    });
+
+    test(
+      'fetchTicker returns ParseFailure when JSON body is an array at root',
+      () async {
+        final client = OKXRestClient(
+          httpClient: MockClient(
+            (_) async => http.Response('[{"code":"0"}]', 200),
+          ),
+        );
+
+        final result = await client.fetchTicker(symbol);
+        expect(result, isA<Err<Ticker>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<ParseFailure>());
+            expect(failure.message, startsWith('OKX ticker parse failed:'));
+          },
+        );
+      },
+    );
+
+    test('fetchTicker returns NetworkFailure on 500 error', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient((_) async => http.Response('server error', 500)),
+      );
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'OKX ticker 500');
+        },
+      );
+    });
+
+    test('fetchCandles handles empty data list', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response('{"code":"0","data":[]}', 200),
+        ),
+      );
+
+      final result = await client.fetchCandles(symbol, Timeframe.h1);
+      expect(result, isA<Success<List<Candle>>>());
+      result.when(
+        success: (candles) => expect(candles, isEmpty),
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test(
+      'fetchOrderBook returns ParseFailure when bids/asks missing',
+      () async {
+        final client = OKXRestClient(
+          httpClient: MockClient(
+            (_) async => http.Response(
+              '{"code":"0","data":[{"ts":"1718952000000"}]}',
+              200,
+            ),
+          ),
+        );
+
+        final result = await client.fetchOrderBook(symbol);
+        expect(result, isA<Err<OrderBook>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<ParseFailure>());
+            expect(failure.message, startsWith('OKX order book parse failed:'));
+          },
+        );
+      },
+    );
+
+    test('fetchTrades returns ParseFailure on negative price', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"code":"0","data":[{"instId":"BTC-USDT","tradeId":"1","px":"-100.0","sz":"1.0","side":"buy","ts":"1718952000000"}]}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTrades(symbol);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) => expect(failure, isA<ParseFailure>()),
+      );
+    });
+
+    test('fetchTrades returns ParseFailure on negative size', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"code":"0","data":[{"instId":"BTC-USDT","tradeId":"1","px":"100.0","sz":"-1.0","side":"buy","ts":"1718952000000"}]}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTrades(symbol);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) => expect(failure, isA<ParseFailure>()),
+      );
+    });
+
+    test('fetchTicker returns NetworkFailure on timeout', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, contains('TimeoutException'));
+          expect(failure.message, contains('timeout'));
+        },
+      );
+    });
+
+    test('fetchCandles returns NetworkFailure on timeout', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchCandles(symbol, Timeframe.h1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, contains('TimeoutException'));
+          expect(failure.message, contains('timeout'));
+        },
+      );
+    });
+
+    test('fetchOrderBook returns NetworkFailure on timeout', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchOrderBook(symbol);
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, contains('TimeoutException'));
+          expect(failure.message, contains('timeout'));
+        },
+      );
+    });
+
+    test('fetchTrades returns NetworkFailure on timeout', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchTrades(symbol);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, contains('TimeoutException'));
+          expect(failure.message, contains('timeout'));
+        },
+      );
+    });
+
+    test('fetchTicker change24hPercent with negative open24h', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"code":"0","msg":"","data":[{"instId":"BTC-USDT","last":"100.0","bidPx":"99.5","askPx":"100.5","open24h":"-50.0","vol24h":"1000.0","ts":"1718952000000"}]}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Success<Ticker>>());
+      result.when(
+        success: (ticker) {
+          expect(ticker.change24h, 150.0);
+          expect(ticker.change24hPercent, closeTo(-3.0, 0.000001));
+        },
+        failure: (_) => fail('expected success'),
       );
     });
   });

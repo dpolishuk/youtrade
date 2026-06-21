@@ -229,6 +229,22 @@ void main() {
         final failure = (result as Err<void>).failure as UnknownFailure;
         expect(failure.message, 'Failed to store PIN.');
       });
+
+      test('accepts PIN with leading zeros', () async {
+        final result = await service.setPin('0012');
+
+        expect(result, isA<Success<void>>());
+        expect(await service.authenticatePin('0012'), isTrue);
+        expect(await service.authenticatePin('12'), isFalse);
+      });
+
+      test('rejects PIN with non-digit characters', () async {
+        final result = await service.setPin('12a4');
+
+        expect(result, isA<Err<void>>());
+        final failure = (result as Err<void>).failure as PinValidationFailure;
+        expect(failure.message, 'PIN must contain only digits.');
+      });
     });
 
     group('authenticatePin', () {
@@ -316,6 +332,13 @@ void main() {
           expect(await service.authenticatePin('1234'), isFalse);
         },
       );
+
+      test('returns false when stored hash is corrupted', () async {
+        await storage.write(key: 'pin_hash', value: 'not-a-valid-hash');
+        await storage.write(key: 'pin_salt', value: 'some-salt');
+
+        expect(await service.authenticatePin('1234'), isFalse);
+      });
     });
   });
 }

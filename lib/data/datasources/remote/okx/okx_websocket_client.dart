@@ -39,6 +39,7 @@ final class OKXWebSocketClient implements MarketStreamSource {
   Stream<Result<Ticker>> watchTicker(TradingSymbol symbol) {
     return _watch(
       _subscribeMessage('tickers', symbol),
+      _instId(symbol),
       _hasDataList,
       (json) {
         final data =
@@ -54,6 +55,7 @@ final class OKXWebSocketClient implements MarketStreamSource {
   Stream<Result<OrderBook>> watchOrderBook(TradingSymbol symbol) {
     return _watch(
       _subscribeMessage('books', symbol),
+      _instId(symbol),
       _hasDataList,
       (json) {
         final data =
@@ -69,6 +71,7 @@ final class OKXWebSocketClient implements MarketStreamSource {
   Stream<Result<List<Trade>>> watchTrades(TradingSymbol symbol) {
     return _watch(
       _subscribeMessage('trades', symbol),
+      _instId(symbol),
       _hasDataList,
       (json) => Success(
         (json['data'] as List<dynamic>)
@@ -84,6 +87,7 @@ final class OKXWebSocketClient implements MarketStreamSource {
 
   Stream<T> _watch<T>(
     String subscribeMessage,
+    String expectedInstId,
     bool Function(Map<String, dynamic> json) isRelevant,
     T Function(Map<String, dynamic> json) parse,
     T Function(Object) onParseError,
@@ -108,6 +112,11 @@ final class OKXWebSocketClient implements MarketStreamSource {
               try {
                 final json =
                     jsonDecode(message as String) as Map<String, dynamic>;
+                final arg = json['arg'];
+                if (arg is Map<String, dynamic>) {
+                  final instId = arg['instId'];
+                  if (instId is String && instId != expectedInstId) return;
+                }
                 if (!isRelevant(json)) return;
                 controller.add(parse(json));
               } on FormatException catch (e) {

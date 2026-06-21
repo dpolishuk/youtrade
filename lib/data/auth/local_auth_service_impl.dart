@@ -72,7 +72,13 @@ class LocalAuthServiceImpl implements LocalAuthService {
   }
 
   AuthFailure _mapPlatformException(PlatformException exception) {
-    return switch (exception.code) {
+    late final String? code;
+    try {
+      code = exception.code;
+    } on TypeError catch (_) {
+      code = null;
+    }
+    return switch (code) {
       auth_error.notAvailable ||
       auth_error.notEnrolled ||
       auth_error.passcodeNotSet => const BiometricNotAvailableFailure(),

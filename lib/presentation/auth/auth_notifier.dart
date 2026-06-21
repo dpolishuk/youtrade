@@ -49,12 +49,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> authenticateWithBiometrics() async {
-    _pinSet = await _pinAuthService.isPinSet();
-    final result = await _localAuthService.authenticate();
-    result.when(
-      success: (_) => state = const AuthAuthenticated(),
-      failure: (failure) => state = AuthError(failure),
-    );
+    if (_isAuthenticating) return;
+    _isAuthenticating = true;
+    try {
+      _pinSet = await _pinAuthService.isPinSet();
+      final result = await _localAuthService.authenticate();
+      if (!_isAuthenticating) return;
+      result.when(
+        success: (_) => state = const AuthAuthenticated(),
+        failure: (failure) => state = AuthError(failure),
+      );
+    } finally {
+      _isAuthenticating = false;
+    }
   }
 
   Future<void> authenticateWithPin(String pin) async {
