@@ -40,6 +40,12 @@ final class BinanceRestClient
       return Success(_parseTicker(symbol, json));
     } on FormatException catch (e) {
       return Err(ParseFailure('Binance ticker parse failed: $e'));
+    } on TypeError catch (e) {
+      return Err(ParseFailure('Binance ticker parse failed: $e'));
+    } on StateError catch (e) {
+      return Err(ParseFailure('Binance ticker parse failed: $e'));
+    } on RangeError catch (e) {
+      return Err(ParseFailure('Binance ticker parse failed: $e'));
     } on Exception catch (e) {
       return Err(NetworkFailure('Binance ticker request failed: $e'));
     }
@@ -68,6 +74,12 @@ final class BinanceRestClient
       );
     } on FormatException catch (e) {
       return Err(ParseFailure('Binance candles parse failed: $e'));
+    } on TypeError catch (e) {
+      return Err(ParseFailure('Binance candles parse failed: $e'));
+    } on StateError catch (e) {
+      return Err(ParseFailure('Binance candles parse failed: $e'));
+    } on RangeError catch (e) {
+      return Err(ParseFailure('Binance candles parse failed: $e'));
     } on Exception catch (e) {
       return Err(NetworkFailure('Binance candles request failed: $e'));
     }
@@ -91,6 +103,12 @@ final class BinanceRestClient
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return Success(_parseOrderBook(json));
     } on FormatException catch (e) {
+      return Err(ParseFailure('Binance order book parse failed: $e'));
+    } on TypeError catch (e) {
+      return Err(ParseFailure('Binance order book parse failed: $e'));
+    } on StateError catch (e) {
+      return Err(ParseFailure('Binance order book parse failed: $e'));
+    } on RangeError catch (e) {
       return Err(ParseFailure('Binance order book parse failed: $e'));
     } on Exception catch (e) {
       return Err(NetworkFailure('Binance order book request failed: $e'));
@@ -117,6 +135,12 @@ final class BinanceRestClient
         json.map((e) => _parseTrade(e as Map<String, dynamic>)).toList(),
       );
     } on FormatException catch (e) {
+      return Err(ParseFailure('Binance trades parse failed: $e'));
+    } on TypeError catch (e) {
+      return Err(ParseFailure('Binance trades parse failed: $e'));
+    } on StateError catch (e) {
+      return Err(ParseFailure('Binance trades parse failed: $e'));
+    } on RangeError catch (e) {
       return Err(ParseFailure('Binance trades parse failed: $e'));
     } on Exception catch (e) {
       return Err(NetworkFailure('Binance trades request failed: $e'));

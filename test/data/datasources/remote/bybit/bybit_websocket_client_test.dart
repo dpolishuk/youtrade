@@ -3,20 +3,29 @@ import 'dart:async';
 import 'package:async/async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stream_channel/stream_channel.dart';
+import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/core/result.dart';
 import 'package:youtrade/data/datasources/remote/bybit/bybit_websocket_client.dart';
+import 'package:youtrade/domain/entities/order_book.dart';
 import 'package:youtrade/domain/entities/symbol.dart';
+import 'package:youtrade/domain/entities/ticker.dart';
 import 'package:youtrade/domain/entities/venue.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class _FakeWebSocketChannel extends StreamChannelMixin<dynamic>
     implements WebSocketChannel {
-  _FakeWebSocketChannel() : _outgoing = StreamController<dynamic>.broadcast();
+  _FakeWebSocketChannel() : _outgoing = StreamController<dynamic>.broadcast() {
+    _sink = _FakeWebSocketSink(_outgoing.sink);
+  }
 
   final StreamController<dynamic> _incoming = StreamController<dynamic>();
   final StreamController<dynamic> _outgoing;
+  late final _FakeWebSocketSink _sink;
 
   void add(dynamic value) => _incoming.add(value);
+
+  void addError(Object error, [StackTrace? stackTrace]) =>
+      _incoming.addError(error, stackTrace);
 
   Stream<dynamic> get outgoingStream => _outgoing.stream;
 
@@ -24,7 +33,7 @@ class _FakeWebSocketChannel extends StreamChannelMixin<dynamic>
   Stream<dynamic> get stream => _incoming.stream;
 
   @override
-  WebSocketSink get sink => _FakeWebSocketSink(_outgoing.sink);
+  _FakeWebSocketSink get sink => _sink;
 
   @override
   Future<void> get ready => Future.value();
@@ -43,8 +52,13 @@ class _FakeWebSocketSink extends DelegatingStreamSink<dynamic>
     implements WebSocketSink {
   _FakeWebSocketSink(super.sink);
 
+  bool closed = false;
+
   @override
-  Future close([int? closeCode, String? closeReason]) => super.close();
+  Future close([int? closeCode, String? closeReason]) {
+    closed = true;
+    return super.close();
+  }
 }
 
 void main() {
@@ -149,6 +163,194 @@ void main() {
         success: (trades) {
           expect(trades.length, 1);
           expect(trades.first.price, 100.0);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchTicker closes sink when subscription is cancelled', () async {
+      late _FakeWebSocketChannel channel;
+      final client = BybitWebSocketClient(
+        channelFactory: (url) {
+          channel = _FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final subscription = client.watchTicker(symbol).listen(null);
+      await Future.delayed(Duration.zero);
+
+      expect(channel.sink.closed, isFalse);
+
+      await subscription.cancel();
+
+      expect(channel.sink.closed, isTrue);
+    });
+
+    test('watchOrderBook closes sink when subscription is cancelled', () async {
+      late _FakeWebSocketChannel channel;
+      final client = BybitWebSocketClient(
+        channelFactory: (url) {
+          channel = _FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final subscription = client.watchOrderBook(symbol).listen(null);
+      await Future.delayed(Duration.zero);
+
+      expect(channel.sink.closed, isFalse);
+
+      await subscription.cancel();
+
+      expect(channel.sink.closed, isTrue);
+    });
+
+    test('watchTrades closes sink when subscription is cancelled', () async {
+      late _FakeWebSocketChannel channel;
+      final client = BybitWebSocketClient(
+        channelFactory: (url) {
+          channel = _FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final subscription = client.watchTrades(symbol).listen(null);
+      await Future.delayed(Duration.zero);
+
+      expect(channel.sink.closed, isFalse);
+
+      await subscription.cancel();
+
+      expect(channel.sink.closed, isTrue);
+    });
+
+    test('watchTicker emits ParseFailure on malformed message', () async {
+      late _FakeWebSocketChannel channel;
+      final client = BybitWebSocketClient(
+        channelFactory: (url) {
+          channel = _FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add('not-json');
+
+      final result = await future;
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith('Bybit WS ticker parse failed: FormatException'),
+          );
+        },
+      );
+    });
+
+    test('watchTicker emits ParseFailure on empty message', () async {
+      late _FakeWebSocketChannel channel;
+      final client = BybitWebSocketClient(
+        channelFactory: (url) {
+          channel = _FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add('');
+
+      final result = await future;
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith('Bybit WS ticker parse failed: FormatException'),
+          );
+        },
+      );
+    });
+
+    test('watchTicker emits ParseFailure on missing data key', () async {
+      late _FakeWebSocketChannel channel;
+      final client = BybitWebSocketClient(
+        channelFactory: (url) {
+          channel = _FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add('{"topic":"tickers.BTCUSDT","ts":1718952000000}');
+
+      final result = await future;
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Bybit WS ticker parse failed:'));
+          expect(failure.message, contains("type 'Null'"));
+        },
+      );
+    });
+
+    test('watchTicker emits UnknownFailure on stream error', () async {
+      late _FakeWebSocketChannel channel;
+      final client = BybitWebSocketClient(
+        channelFactory: (url) {
+          channel = _FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final error = Exception('ws error');
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.addError(error);
+
+      final result = await future;
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'Bybit WS ticker error');
+          expect((failure as UnknownFailure).error, error);
+        },
+      );
+    });
+
+    test('watchOrderBook parses delta message', () async {
+      late _FakeWebSocketChannel channel;
+      final client = BybitWebSocketClient(
+        channelFactory: (url) {
+          channel = _FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchOrderBook(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add(
+        '{"topic":"orderbook.1.BTCUSDT","ts":1718952000000,"type":"delta","data":{"s":"BTCUSDT","b":[["99.0","1.0"]],"a":[["101.0","1.0"]],"u":2,"seq":2}}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<OrderBook>>());
+      result.when(
+        success: (orderBook) {
+          expect(orderBook.bids.first.price, 99.0);
+          expect(orderBook.asks.first.price, 101.0);
         },
         failure: (_) => fail('expected success'),
       );

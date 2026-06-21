@@ -27,6 +27,13 @@ final class BybitRestClient
   Uri _uri(String path, Map<String, String> query) =>
       Uri.parse('$_baseUrl$path').replace(queryParameters: query);
 
+  String _apiErrorMessage(Map<String, dynamic> json, String context) {
+    final retCode = json['retCode'] as int?;
+    if (retCode == null || retCode == 0) return '';
+    final retMsg = json['retMsg'] as String? ?? '';
+    return 'Bybit $context API error: $retCode $retMsg';
+  }
+
   @override
   Future<Result<Ticker>> fetchTicker(TradingSymbol symbol) async {
     try {
@@ -40,11 +47,21 @@ final class BybitRestClient
         return Err(NetworkFailure('Bybit ticker ${response.statusCode}'));
       }
       final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final apiError = _apiErrorMessage(json, 'ticker');
+      if (apiError.isNotEmpty) {
+        return Err(NetworkFailure(apiError));
+      }
       final result = json['result'] as Map<String, dynamic>;
       final list = result['list'] as List<dynamic>;
       final tickerJson = list.first as Map<String, dynamic>;
       return Success(_parseTicker(symbol, tickerJson));
     } on FormatException catch (e) {
+      return Err(ParseFailure('Bybit ticker parse failed: $e'));
+    } on TypeError catch (e) {
+      return Err(ParseFailure('Bybit ticker parse failed: $e'));
+    } on StateError catch (e) {
+      return Err(ParseFailure('Bybit ticker parse failed: $e'));
+    } on RangeError catch (e) {
       return Err(ParseFailure('Bybit ticker parse failed: $e'));
     } on Exception catch (e) {
       return Err(NetworkFailure('Bybit ticker request failed: $e'));
@@ -70,12 +87,22 @@ final class BybitRestClient
         return Err(NetworkFailure('Bybit candles ${response.statusCode}'));
       }
       final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final apiError = _apiErrorMessage(json, 'candles');
+      if (apiError.isNotEmpty) {
+        return Err(NetworkFailure(apiError));
+      }
       final result = json['result'] as Map<String, dynamic>;
       final list = result['list'] as List<dynamic>;
       return Success(
         list.map((e) => _parseCandle(e as List<dynamic>)).toList(),
       );
     } on FormatException catch (e) {
+      return Err(ParseFailure('Bybit candles parse failed: $e'));
+    } on TypeError catch (e) {
+      return Err(ParseFailure('Bybit candles parse failed: $e'));
+    } on StateError catch (e) {
+      return Err(ParseFailure('Bybit candles parse failed: $e'));
+    } on RangeError catch (e) {
       return Err(ParseFailure('Bybit candles parse failed: $e'));
     } on Exception catch (e) {
       return Err(NetworkFailure('Bybit candles request failed: $e'));
@@ -99,9 +126,19 @@ final class BybitRestClient
         return Err(NetworkFailure('Bybit order book ${response.statusCode}'));
       }
       final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final apiError = _apiErrorMessage(json, 'order book');
+      if (apiError.isNotEmpty) {
+        return Err(NetworkFailure(apiError));
+      }
       final result = json['result'] as Map<String, dynamic>;
       return Success(_parseOrderBook(result));
     } on FormatException catch (e) {
+      return Err(ParseFailure('Bybit order book parse failed: $e'));
+    } on TypeError catch (e) {
+      return Err(ParseFailure('Bybit order book parse failed: $e'));
+    } on StateError catch (e) {
+      return Err(ParseFailure('Bybit order book parse failed: $e'));
+    } on RangeError catch (e) {
       return Err(ParseFailure('Bybit order book parse failed: $e'));
     } on Exception catch (e) {
       return Err(NetworkFailure('Bybit order book request failed: $e'));
@@ -125,12 +162,22 @@ final class BybitRestClient
         return Err(NetworkFailure('Bybit trades ${response.statusCode}'));
       }
       final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final apiError = _apiErrorMessage(json, 'trades');
+      if (apiError.isNotEmpty) {
+        return Err(NetworkFailure(apiError));
+      }
       final result = json['result'] as Map<String, dynamic>;
       final list = result['list'] as List<dynamic>;
       return Success(
         list.map((e) => _parseTrade(e as Map<String, dynamic>)).toList(),
       );
     } on FormatException catch (e) {
+      return Err(ParseFailure('Bybit trades parse failed: $e'));
+    } on TypeError catch (e) {
+      return Err(ParseFailure('Bybit trades parse failed: $e'));
+    } on StateError catch (e) {
+      return Err(ParseFailure('Bybit trades parse failed: $e'));
+    } on RangeError catch (e) {
       return Err(ParseFailure('Bybit trades parse failed: $e'));
     } on Exception catch (e) {
       return Err(NetworkFailure('Bybit trades request failed: $e'));
@@ -167,10 +214,10 @@ final class BybitRestClient
   }
 
   OrderBook _parseOrderBook(Map<String, dynamic> json) {
-    final bids = (json['b'] as List<dynamic>? ?? [])
+    final bids = (json['b'] as List<dynamic>)
         .map((e) => _parseLevel(e as List<dynamic>))
         .toList();
-    final asks = (json['a'] as List<dynamic>? ?? [])
+    final asks = (json['a'] as List<dynamic>)
         .map((e) => _parseLevel(e as List<dynamic>))
         .toList();
     return OrderBook(bids: bids, asks: asks, timestamp: DateTime.now().toUtc());

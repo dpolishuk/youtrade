@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -10,20 +11,22 @@ import '../../../../domain/entities/ticker.dart';
 import '../../../../domain/entities/trade.dart';
 import '../../../../domain/sources/market_stream_source.dart';
 
-typedef StreamFactory = Stream<dynamic> Function(String streamName);
+typedef WebSocketChannelFactory = WebSocketChannel Function(String streamName);
 
 final class BinanceWebSocketClient implements MarketStreamSource {
-  BinanceWebSocketClient({StreamFactory? streamFactory, String? baseUrl})
-    : _streamFactory = streamFactory ?? _defaultFactory(baseUrl);
+  BinanceWebSocketClient({
+    WebSocketChannelFactory? channelFactory,
+    String? baseUrl,
+  }) : _channelFactory = channelFactory ?? _defaultFactory(baseUrl);
 
-  final StreamFactory _streamFactory;
+  final WebSocketChannelFactory _channelFactory;
 
-  static StreamFactory _defaultFactory(String? baseUrl) {
+  static WebSocketChannelFactory _defaultFactory(String? baseUrl) {
     return (streamName) {
       final uri = Uri.parse(
         '${baseUrl ?? 'wss://stream.binance.com:9443/ws'}/$streamName',
       );
-      return WebSocketChannel.connect(uri).stream;
+      return WebSocketChannel.connect(uri);
     };
   }
 
@@ -31,47 +34,77 @@ final class BinanceWebSocketClient implements MarketStreamSource {
       '${symbol.rawSymbol.toLowerCase()}$suffix';
 
   @override
-  Stream<Result<Ticker>> watchTicker(TradingSymbol symbol) async* {
-    await for (final message in _streamFactory(
+  Stream<Result<Ticker>> watchTicker(TradingSymbol symbol) {
+    return _watch(
       _streamName(symbol, '@ticker'),
-    )) {
-      try {
-        final json = jsonDecode(message as String) as Map<String, dynamic>;
-        yield Success(_parseTicker(symbol, json));
-      } on FormatException catch (e) {
-        yield Err(ParseFailure('Binance WS ticker parse failed: $e'));
-      } on Exception catch (e) {
-        yield Err(UnknownFailure('Binance WS ticker error', error: e));
-      }
-    }
+      (json) => Success(_parseTicker(symbol, json)),
+      (e) => Err(ParseFailure('Binance WS ticker parse failed: $e')),
+      (e) => Err(UnknownFailure('Binance WS ticker error', error: e)),
+    );
   }
 
   @override
-  Stream<Result<OrderBook>> watchOrderBook(TradingSymbol symbol) async* {
-    await for (final message in _streamFactory(_streamName(symbol, '@depth'))) {
-      try {
-        final json = jsonDecode(message as String) as Map<String, dynamic>;
-        yield Success(_parseOrderBook(json));
-      } on FormatException catch (e) {
-        yield Err(ParseFailure('Binance WS order book parse failed: $e'));
-      } on Exception catch (e) {
-        yield Err(UnknownFailure('Binance WS order book error', error: e));
-      }
-    }
+  Stream<Result<OrderBook>> watchOrderBook(TradingSymbol symbol) {
+    return _watch(
+      _streamName(symbol, '@depth'),
+      (json) => Success(_parseOrderBook(json)),
+      (e) => Err(ParseFailure('Binance WS order book parse failed: $e')),
+      (e) => Err(UnknownFailure('Binance WS order book error', error: e)),
+    );
   }
 
   @override
-  Stream<Result<List<Trade>>> watchTrades(TradingSymbol symbol) async* {
-    await for (final message in _streamFactory(_streamName(symbol, '@trade'))) {
-      try {
-        final json = jsonDecode(message as String) as Map<String, dynamic>;
-        yield Success([_parseTrade(json)]);
-      } on FormatException catch (e) {
-        yield Err(ParseFailure('Binance WS trade parse failed: $e'));
-      } on Exception catch (e) {
-        yield Err(UnknownFailure('Binance WS trade error', error: e));
-      }
-    }
+  Stream<Result<List<Trade>>> watchTrades(TradingSymbol symbol) {
+    return _watch(
+      _streamName(symbol, '@trade'),
+      (json) => Success([_parseTrade(json)]),
+      (e) => Err(ParseFailure('Binance WS trade parse failed: $e')),
+      (e) => Err(UnknownFailure('Binance WS trade error', error: e)),
+    );
+  }
+
+  Stream<T> _watch<T>(
+    String streamName,
+    T Function(Map<String, dynamic> json) parse,
+    T Function(Object) onParseError,
+    T Function(Object) onError,
+  ) {
+    final channel = _channelFactory(streamName);
+    StreamSubscription<dynamic>? subscription;
+
+    final controller = StreamController<T>(
+      onCancel: () async {
+        await subscription?.cancel();
+        await channel.sink.close();
+      },
+    );
+
+    subscription = channel.stream.listen(
+      (message) {
+        try {
+          final json = jsonDecode(message as String) as Map<String, dynamic>;
+          controller.add(parse(json));
+        } on FormatException catch (e) {
+          controller.add(onParseError(e));
+        } on TypeError catch (e) {
+          controller.add(onParseError(e));
+        } on StateError catch (e) {
+          controller.add(onParseError(e));
+        } on RangeError catch (e) {
+          controller.add(onParseError(e));
+        } on ArgumentError catch (e) {
+          controller.add(onParseError(e));
+        } on Exception catch (e) {
+          controller.add(onError(e));
+        } on Error catch (e) {
+          controller.add(onError(e));
+        }
+      },
+      onError: (Object error) => controller.add(onError(error)),
+      onDone: controller.close,
+    );
+
+    return controller.stream;
   }
 
   Ticker _parseTicker(TradingSymbol symbol, Map<String, dynamic> json) {

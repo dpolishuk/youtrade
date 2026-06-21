@@ -5,6 +5,7 @@ import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/core/result.dart';
 import 'package:youtrade/data/datasources/remote/bybit/bybit_rest_client.dart';
 import 'package:youtrade/domain/entities/candle.dart';
+import 'package:youtrade/domain/entities/order_book.dart';
 import 'package:youtrade/domain/entities/symbol.dart';
 import 'package:youtrade/domain/entities/ticker.dart';
 import 'package:youtrade/domain/entities/timeframe.dart';
@@ -170,6 +171,246 @@ void main() {
       result.when(
         success: (_) => fail('expected failure'),
         failure: (failure) => expect(failure, isA<ParseFailure>()),
+      );
+    });
+
+    test('fetchTicker returns NetworkFailure on retCode != 0', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"retCode":10016,"retMsg":"Invalid symbol","result":{}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'Bybit ticker API error: 10016 Invalid symbol',
+          );
+        },
+      );
+    });
+
+    test('fetchCandles returns NetworkFailure on retCode != 0', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"retCode":10016,"retMsg":"Invalid interval","result":{}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchCandles(symbol, Timeframe.h1, limit: 1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'Bybit candles API error: 10016 Invalid interval',
+          );
+        },
+      );
+    });
+
+    test('fetchOrderBook returns NetworkFailure on retCode != 0', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"retCode":10016,"retMsg":"Invalid depth","result":{}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchOrderBook(symbol, depth: 5);
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'Bybit order book API error: 10016 Invalid depth',
+          );
+        },
+      );
+    });
+
+    test('fetchTrades returns NetworkFailure on retCode != 0', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"retCode":10016,"retMsg":"Invalid category","result":{}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTrades(symbol, limit: 1);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'Bybit trades API error: 10016 Invalid category',
+          );
+        },
+      );
+    });
+
+    test('fetchTicker returns ParseFailure on malformed JSON', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((_) async => http.Response('not-json', 200)),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith('Bybit ticker parse failed: FormatException'),
+          );
+        },
+      );
+    });
+
+    test('fetchTicker returns ParseFailure on missing required fields', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[{}]}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Bybit ticker parse failed:'));
+          expect(failure.message, contains("type 'Null'"));
+        },
+      );
+    });
+
+    test('fetchTicker returns NetworkFailure on request exception', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((_) async => throw Exception('timeout')),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'Bybit ticker request failed: Exception: timeout',
+          );
+        },
+      );
+    });
+
+    test('fetchTicker returns ParseFailure on empty body', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((_) async => http.Response('', 200)),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith('Bybit ticker parse failed: FormatException'),
+          );
+        },
+      );
+    });
+
+    test('fetchCandles returns ParseFailure on malformed list element', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"spot","symbol":"BTCUSDT","list":[["not-an-int"]]}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchCandles(symbol, Timeframe.h1, limit: 1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Bybit candles parse failed:'));
+          expect(failure.message, contains('RangeError'));
+        },
+      );
+    });
+
+    test('fetchOrderBook returns ParseFailure on missing bids key', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"s":"BTCUSDT","a":[["101.0","1.0"]]}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchOrderBook(symbol, depth: 5);
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Bybit order book parse failed:'));
+        },
+      );
+    });
+
+    test('fetchTrades returns ParseFailure on missing fields', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[{"execId":"1"}]}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTrades(symbol, limit: 1);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Bybit trades parse failed:'));
+          expect(failure.message, contains("type 'Null'"));
+        },
       );
     });
   });

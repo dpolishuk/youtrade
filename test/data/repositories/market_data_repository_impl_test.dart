@@ -41,6 +41,59 @@ class _FakeRegistry implements ExchangeCapabilityRegistry {
       all.firstWhere((c) => c.venue == venue);
 }
 
+class _LimitedRegistry implements ExchangeCapabilityRegistry {
+  @override
+  List<ExchangeCapability> get all => [
+    const ExchangeCapability(
+      venue: Venue.binance,
+      supportedFeatures: {MarketDataFeature.restTicker},
+    ),
+  ];
+
+  @override
+  ExchangeCapability? forVenue(Venue venue) =>
+      all.firstWhere((c) => c.venue == venue);
+}
+
+class _EmptyRegistry implements ExchangeCapabilityRegistry {
+  @override
+  List<ExchangeCapability> get all => [];
+
+  @override
+  ExchangeCapability? forVenue(Venue venue) => null;
+}
+
+class _ThrowingTickerSource implements TickerSource {
+  @override
+  Future<Result<Ticker>> fetchTicker(TradingSymbol symbol) async =>
+      throw Exception('boom');
+}
+
+class _ThrowingCandleSource implements CandleSource {
+  @override
+  Future<Result<List<Candle>>> fetchCandles(
+    TradingSymbol symbol,
+    Timeframe timeframe, {
+    int? limit,
+  }) async => throw Exception('boom');
+}
+
+class _ThrowingOrderBookSource2 implements OrderBookSource {
+  @override
+  Future<Result<OrderBook>> fetchOrderBook(
+    TradingSymbol symbol, {
+    int? depth,
+  }) async => throw Exception('boom');
+}
+
+class _ThrowingTradeSource2 implements TradeSource {
+  @override
+  Future<Result<List<Trade>>> fetchTrades(
+    TradingSymbol symbol, {
+    int? limit,
+  }) async => throw Exception('boom');
+}
+
 class _FailingTickerSource implements TickerSource {
   @override
   Future<Result<Ticker>> fetchTicker(TradingSymbol symbol) async =>
@@ -1066,6 +1119,218 @@ void main() {
       expect(values.length, 2);
       expect((values[0] as Success<List<Trade>>).value, freshTrades);
       expect((values[1] as Success<List<Trade>>).value, networkTrades);
+    });
+  });
+
+  group('MarketDataRepositoryImpl unsupported features', () {
+    final symbol = TradingSymbol(
+      base: 'BTC',
+      quote: 'USDT',
+      venue: Venue.binance,
+      rawSymbol: 'BTCUSDT',
+    );
+
+    test('getTicker returns exact UnsupportedFeatureFailure', () async {
+      final repository = MarketDataRepositoryImpl(registry: _EmptyRegistry());
+
+      final result = await repository.getTicker(symbol);
+
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnsupportedFeatureFailure>());
+          expect(failure.message, 'REST ticker is not supported by Binance');
+        },
+      );
+    });
+
+    test('getCandles returns exact UnsupportedFeatureFailure', () async {
+      final repository = MarketDataRepositoryImpl(registry: _LimitedRegistry());
+
+      final result = await repository.getCandles(symbol, Timeframe.h1);
+
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnsupportedFeatureFailure>());
+          expect(failure.message, 'REST candles is not supported by Binance');
+        },
+      );
+    });
+
+    test('getOrderBook returns exact UnsupportedFeatureFailure', () async {
+      final repository = MarketDataRepositoryImpl(registry: _LimitedRegistry());
+
+      final result = await repository.getOrderBook(symbol);
+
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnsupportedFeatureFailure>());
+          expect(
+            failure.message,
+            'REST order book is not supported by Binance',
+          );
+        },
+      );
+    });
+
+    test('getTrades returns exact UnsupportedFeatureFailure', () async {
+      final repository = MarketDataRepositoryImpl(registry: _LimitedRegistry());
+
+      final result = await repository.getTrades(symbol);
+
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnsupportedFeatureFailure>());
+          expect(failure.message, 'REST trades is not supported by Binance');
+        },
+      );
+    });
+
+    test('watchTicker yields exact UnsupportedFeatureFailure', () async {
+      final repository = MarketDataRepositoryImpl(registry: _LimitedRegistry());
+
+      final value = await repository.watchTicker(symbol).first;
+
+      expect(value, isA<Err<Ticker>>());
+      value.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnsupportedFeatureFailure>());
+          expect(failure.message, 'WS ticker is not supported by Binance');
+        },
+      );
+    });
+  });
+
+  group('MarketDataRepositoryImpl source exception path', () {
+    final symbol = TradingSymbol(
+      base: 'BTC',
+      quote: 'USDT',
+      venue: Venue.binance,
+      rawSymbol: 'BTCUSDT',
+    );
+
+    test('getTicker returns UnknownFailure when source throws', () async {
+      final repository = MarketDataRepositoryImpl(
+        registry: _FakeRegistry(),
+        venueSources: {
+          Venue.binance: VenueSources(
+            ticker: _ThrowingTickerSource(),
+            candles: _FailingCandleSource(),
+            orderBook: _FailingOrderBookSource(),
+            trades: _FailingTradeSource(),
+            stream: _FailingStreamSource(),
+          ),
+        },
+      );
+
+      final result = await repository.getTicker(symbol);
+
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(
+            failure.message,
+            'Binance REST ticker source failed: Exception: boom',
+          );
+        },
+      );
+    });
+
+    test('getCandles returns UnknownFailure when source throws', () async {
+      final repository = MarketDataRepositoryImpl(
+        registry: _FakeRegistry(),
+        venueSources: {
+          Venue.binance: VenueSources(
+            ticker: _FailingTickerSource(),
+            candles: _ThrowingCandleSource(),
+            orderBook: _FailingOrderBookSource(),
+            trades: _FailingTradeSource(),
+            stream: _FailingStreamSource(),
+          ),
+        },
+      );
+
+      final result = await repository.getCandles(symbol, Timeframe.h1);
+
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(
+            failure.message,
+            'Binance REST candles source failed: Exception: boom',
+          );
+        },
+      );
+    });
+
+    test('getOrderBook returns UnknownFailure when source throws', () async {
+      final repository = MarketDataRepositoryImpl(
+        registry: _FakeRegistry(),
+        venueSources: {
+          Venue.binance: VenueSources(
+            ticker: _FailingTickerSource(),
+            candles: _FailingCandleSource(),
+            orderBook: _ThrowingOrderBookSource2(),
+            trades: _FailingTradeSource(),
+            stream: _FailingStreamSource(),
+          ),
+        },
+      );
+
+      final result = await repository.getOrderBook(symbol);
+
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(
+            failure.message,
+            'Binance REST order book source failed: Exception: boom',
+          );
+        },
+      );
+    });
+
+    test('getTrades returns UnknownFailure when source throws', () async {
+      final repository = MarketDataRepositoryImpl(
+        registry: _FakeRegistry(),
+        venueSources: {
+          Venue.binance: VenueSources(
+            ticker: _FailingTickerSource(),
+            candles: _FailingCandleSource(),
+            orderBook: _FailingOrderBookSource(),
+            trades: _ThrowingTradeSource2(),
+            stream: _FailingStreamSource(),
+          ),
+        },
+      );
+
+      final result = await repository.getTrades(symbol);
+
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(
+            failure.message,
+            'Binance REST trades source failed: Exception: boom',
+          );
+        },
+      );
     });
   });
 }

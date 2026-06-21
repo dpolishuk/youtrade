@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -35,59 +36,94 @@ final class BybitWebSocketClient implements MarketStreamSource {
   }
 
   @override
-  Stream<Result<Ticker>> watchTicker(TradingSymbol symbol) async* {
-    final channel = _channelFactory('');
-    await channel.ready;
-    channel.sink.add(_subscribeMessage('tickers', symbol));
-    await for (final message in channel.stream) {
-      try {
-        final json = jsonDecode(message as String) as Map<String, dynamic>;
-        final data = json['data'] as Map<String, dynamic>;
-        yield Success(_parseTicker(symbol, data));
-      } on FormatException catch (e) {
-        yield Err(ParseFailure('Bybit WS ticker parse failed: $e'));
-      } on Exception catch (e) {
-        yield Err(UnknownFailure('Bybit WS ticker error', error: e));
-      }
-    }
+  Stream<Result<Ticker>> watchTicker(TradingSymbol symbol) {
+    return _watch(
+      _subscribeMessage('tickers', symbol),
+      (json) =>
+          Success(_parseTicker(symbol, json['data'] as Map<String, dynamic>)),
+      (e) => Err(ParseFailure('Bybit WS ticker parse failed: $e')),
+      (e) => Err(UnknownFailure('Bybit WS ticker error', error: e)),
+    );
   }
 
   @override
-  Stream<Result<OrderBook>> watchOrderBook(TradingSymbol symbol) async* {
-    final channel = _channelFactory('');
-    await channel.ready;
-    channel.sink.add(_subscribeMessage('orderbook', symbol));
-    await for (final message in channel.stream) {
-      try {
-        final json = jsonDecode(message as String) as Map<String, dynamic>;
-        final data = json['data'] as Map<String, dynamic>;
-        yield Success(_parseOrderBook(data));
-      } on FormatException catch (e) {
-        yield Err(ParseFailure('Bybit WS order book parse failed: $e'));
-      } on Exception catch (e) {
-        yield Err(UnknownFailure('Bybit WS order book error', error: e));
-      }
-    }
+  Stream<Result<OrderBook>> watchOrderBook(TradingSymbol symbol) {
+    return _watch(
+      _subscribeMessage('orderbook', symbol),
+      (json) => Success(_parseOrderBook(json['data'] as Map<String, dynamic>)),
+      (e) => Err(ParseFailure('Bybit WS order book parse failed: $e')),
+      (e) => Err(UnknownFailure('Bybit WS order book error', error: e)),
+    );
   }
 
   @override
-  Stream<Result<List<Trade>>> watchTrades(TradingSymbol symbol) async* {
+  Stream<Result<List<Trade>>> watchTrades(TradingSymbol symbol) {
+    return _watch(
+      _subscribeMessage('publicTrade', symbol),
+      (json) => Success(
+        (json['data'] as List<dynamic>)
+            .map((e) => _parseTrade(e as Map<String, dynamic>))
+            .toList(),
+      ),
+      (e) => Err(ParseFailure('Bybit WS trade parse failed: $e')),
+      (e) => Err(UnknownFailure('Bybit WS trade error', error: e)),
+    );
+  }
+
+  Stream<T> _watch<T>(
+    String subscribeMessage,
+    T Function(Map<String, dynamic> json) parse,
+    T Function(Object) onParseError,
+    T Function(Object) onError,
+  ) {
     final channel = _channelFactory('');
-    await channel.ready;
-    channel.sink.add(_subscribeMessage('publicTrade', symbol));
-    await for (final message in channel.stream) {
-      try {
-        final json = jsonDecode(message as String) as Map<String, dynamic>;
-        final data = json['data'] as List<dynamic>;
-        yield Success(
-          data.map((e) => _parseTrade(e as Map<String, dynamic>)).toList(),
-        );
-      } on FormatException catch (e) {
-        yield Err(ParseFailure('Bybit WS trade parse failed: $e'));
-      } on Exception catch (e) {
-        yield Err(UnknownFailure('Bybit WS trade error', error: e));
-      }
-    }
+    StreamSubscription<dynamic>? subscription;
+
+    final controller = StreamController<T>(
+      onCancel: () async {
+        await subscription?.cancel();
+        await channel.sink.close();
+      },
+    );
+
+    channel.ready
+        .then((_) {
+          if (controller.isClosed) return;
+          channel.sink.add(subscribeMessage);
+          subscription = channel.stream.listen(
+            (message) {
+              try {
+                final json =
+                    jsonDecode(message as String) as Map<String, dynamic>;
+                controller.add(parse(json));
+              } on FormatException catch (e) {
+                controller.add(onParseError(e));
+              } on TypeError catch (e) {
+                controller.add(onParseError(e));
+              } on StateError catch (e) {
+                controller.add(onParseError(e));
+              } on RangeError catch (e) {
+                controller.add(onParseError(e));
+              } on ArgumentError catch (e) {
+                controller.add(onParseError(e));
+              } on Exception catch (e) {
+                controller.add(onError(e));
+              } on Error catch (e) {
+                controller.add(onError(e));
+              }
+            },
+            onError: (Object error) => controller.add(onError(error)),
+            onDone: controller.close,
+          );
+        })
+        .catchError((Object error, StackTrace stackTrace) {
+          if (!controller.isClosed) {
+            controller.add(onError(error));
+            controller.close();
+          }
+        });
+
+    return controller.stream;
   }
 
   Ticker _parseTicker(TradingSymbol symbol, Map<String, dynamic> json) {

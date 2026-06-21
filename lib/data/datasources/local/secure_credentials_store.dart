@@ -36,8 +36,18 @@ final class SecureCredentialsStoreImpl implements SecureCredentialsStore {
     final json = await _storage.read(key: _key(venue));
     if (json == null || json.isEmpty) return null;
 
-    final map = jsonDecode(json) as Map<String, dynamic>;
-    return ExchangeCredentials.fromJson(map);
+    try {
+      final map = jsonDecode(json) as Map<String, dynamic>;
+      return ExchangeCredentials.fromJson(map);
+    } on FormatException {
+      return null;
+    } on TypeError {
+      return null;
+    } on StateError {
+      return null;
+    } on ArgumentError {
+      return null;
+    }
   }
 
   @override

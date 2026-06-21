@@ -4,6 +4,8 @@ import 'package:http/testing.dart';
 import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/core/result.dart';
 import 'package:youtrade/data/datasources/remote/binance/binance_rest_client.dart';
+import 'package:youtrade/domain/entities/candle.dart';
+import 'package:youtrade/domain/entities/order_book.dart';
 import 'package:youtrade/domain/entities/symbol.dart';
 import 'package:youtrade/domain/entities/ticker.dart';
 import 'package:youtrade/domain/entities/timeframe.dart';
@@ -159,6 +161,141 @@ void main() {
       result.when(
         success: (_) => fail('expected failure'),
         failure: (failure) => expect(failure, isA<ParseFailure>()),
+      );
+    });
+
+    test('fetchTicker returns ParseFailure on malformed JSON', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient((_) async => http.Response('not-json', 200)),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith('Binance ticker parse failed: FormatException'),
+          );
+        },
+      );
+    });
+
+    test(
+      'fetchTicker returns ParseFailure on missing required fields',
+      () async {
+        final client = BinanceRestClient(
+          httpClient: MockClient((_) async => http.Response('{}', 200)),
+        );
+
+        final result = await client.fetchTicker(symbol);
+        expect(result, isA<Err<Ticker>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<ParseFailure>());
+            expect(failure.message, startsWith('Binance ticker parse failed:'));
+            expect(failure.message, contains("type 'Null'"));
+          },
+        );
+      },
+    );
+
+    test('fetchTicker returns NetworkFailure on request exception', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient((_) async => throw Exception('timeout')),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'Binance ticker request failed: Exception: timeout',
+          );
+        },
+      );
+    });
+
+    test('fetchTicker returns ParseFailure on empty body', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient((_) async => http.Response('', 200)),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith('Binance ticker parse failed: FormatException'),
+          );
+        },
+      );
+    });
+
+    test('fetchCandles returns ParseFailure on empty list element', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response('[["not-an-int"]]', 200),
+        ),
+      );
+
+      final result = await client.fetchCandles(symbol, Timeframe.h1, limit: 1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Binance candles parse failed:'));
+          expect(failure.message, contains('RangeError'));
+        },
+      );
+    });
+
+    test('fetchOrderBook returns ParseFailure on missing bids key', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response('{"asks":[["101.0","1.0"]]}', 200),
+        ),
+      );
+
+      final result = await client.fetchOrderBook(symbol, depth: 1);
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith('Binance order book parse failed:'),
+          );
+          expect(failure.message, contains("type 'Null'"));
+        },
+      );
+    });
+
+    test('fetchTrades returns ParseFailure on missing fields', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient((_) async => http.Response('[{"id":1}]', 200)),
+      );
+
+      final result = await client.fetchTrades(symbol, limit: 1);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Binance trades parse failed:'));
+          expect(failure.message, contains("type 'Null'"));
+        },
       );
     });
   });
