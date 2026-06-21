@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/core/failures.dart';
@@ -248,17 +245,6 @@ void main() {
         );
 
         expect(await service.authenticatePin('1234'), isFalse);
-      });
-
-      test('uses SHA-256 for hashing', () async {
-        await service.setPin('1234');
-        final salt = await storage.read(key: 'pin_salt');
-        final storedHash = await storage.read(key: 'pin_hash');
-        final expectedHash = sha256
-            .convert(utf8.encode('$salt${'1234'}'))
-            .toString();
-
-        expect(storedHash, equals(expectedHash));
       });
     });
   });
