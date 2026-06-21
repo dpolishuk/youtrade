@@ -6,25 +6,56 @@ import '../../domain/entities/symbol.dart';
 import '../../domain/entities/ticker.dart';
 import '../../domain/entities/timeframe.dart';
 import '../../domain/entities/trade.dart';
+import '../../domain/entities/venue.dart';
 import '../../domain/registry/exchange_capability.dart';
 import '../../domain/repositories/market_data_repository.dart';
+import '../../domain/sources/candle_source.dart';
+import '../../domain/sources/market_stream_source.dart';
+import '../../domain/sources/order_book_source.dart';
+import '../../domain/sources/ticker_source.dart';
+import '../../domain/sources/trade_source.dart';
 import '../datasources/mock/mock_market_data_store.dart';
+
+final class VenueSources {
+  const VenueSources({
+    required this.ticker,
+    required this.candles,
+    required this.orderBook,
+    required this.trades,
+    required this.stream,
+  });
+
+  final TickerSource ticker;
+  final CandleSource candles;
+  final OrderBookSource orderBook;
+  final TradeSource trades;
+  final MarketStreamSource stream;
+}
 
 final class MarketDataRepositoryImpl implements MarketDataRepository {
   MarketDataRepositoryImpl({
     required this._registry,
     MockMarketDataStore? mockStore,
-  }) : _mockStore = mockStore ?? MockMarketDataStore();
+    Map<Venue, VenueSources>? venueSources,
+  }) : _mockStore = mockStore ?? MockMarketDataStore(),
+       _venueSources = venueSources ?? const {};
 
   final ExchangeCapabilityRegistry _registry;
   final MockMarketDataStore _mockStore;
+  final Map<Venue, VenueSources> _venueSources;
 
   @override
   Future<Result<Ticker>> getTicker(TradingSymbol symbol) async {
     final capability = _registry.forVenue(symbol.venue);
     if (capability == null ||
         !capability.supports(MarketDataFeature.restTicker)) {
-      return Err(UnsupportedFeatureFailure('offline', 'REST ticker'));
+      return Err(
+        UnsupportedFeatureFailure(symbol.venue.displayName, 'REST ticker'),
+      );
+    }
+    final sources = _venueSources[symbol.venue];
+    if (sources != null) {
+      return sources.ticker.fetchTicker(symbol);
     }
     try {
       return Success(await _mockStore.getTicker(symbol));
@@ -42,7 +73,13 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
     final capability = _registry.forVenue(symbol.venue);
     if (capability == null ||
         !capability.supports(MarketDataFeature.restCandles)) {
-      return Err(UnsupportedFeatureFailure('offline', 'REST candles'));
+      return Err(
+        UnsupportedFeatureFailure(symbol.venue.displayName, 'REST candles'),
+      );
+    }
+    final sources = _venueSources[symbol.venue];
+    if (sources != null) {
+      return sources.candles.fetchCandles(symbol, timeframe, limit: limit);
     }
     try {
       return Success(
@@ -61,7 +98,13 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
     final capability = _registry.forVenue(symbol.venue);
     if (capability == null ||
         !capability.supports(MarketDataFeature.restOrderBook)) {
-      return Err(UnsupportedFeatureFailure('offline', 'REST order book'));
+      return Err(
+        UnsupportedFeatureFailure(symbol.venue.displayName, 'REST order book'),
+      );
+    }
+    final sources = _venueSources[symbol.venue];
+    if (sources != null) {
+      return sources.orderBook.fetchOrderBook(symbol, depth: depth);
     }
     try {
       return Success(await _mockStore.getOrderBook(symbol, depth: depth));
@@ -78,7 +121,13 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
     final capability = _registry.forVenue(symbol.venue);
     if (capability == null ||
         !capability.supports(MarketDataFeature.restTrades)) {
-      return Err(UnsupportedFeatureFailure('offline', 'REST trades'));
+      return Err(
+        UnsupportedFeatureFailure(symbol.venue.displayName, 'REST trades'),
+      );
+    }
+    final sources = _venueSources[symbol.venue];
+    if (sources != null) {
+      return sources.trades.fetchTrades(symbol, limit: limit);
     }
     try {
       return Success(await _mockStore.getTrades(symbol, limit: limit));
@@ -92,7 +141,14 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
     final capability = _registry.forVenue(symbol.venue);
     if (capability == null ||
         !capability.supports(MarketDataFeature.wsTicker)) {
-      yield Err(UnsupportedFeatureFailure('offline', 'WS ticker'));
+      yield Err(
+        UnsupportedFeatureFailure(symbol.venue.displayName, 'WS ticker'),
+      );
+      return;
+    }
+    final sources = _venueSources[symbol.venue];
+    if (sources != null) {
+      yield* sources.stream.watchTicker(symbol);
       return;
     }
     await for (final ticker in _mockStore.watchTicker(symbol)) {
@@ -105,7 +161,14 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
     final capability = _registry.forVenue(symbol.venue);
     if (capability == null ||
         !capability.supports(MarketDataFeature.wsOrderBook)) {
-      yield Err(UnsupportedFeatureFailure('offline', 'WS order book'));
+      yield Err(
+        UnsupportedFeatureFailure(symbol.venue.displayName, 'WS order book'),
+      );
+      return;
+    }
+    final sources = _venueSources[symbol.venue];
+    if (sources != null) {
+      yield* sources.stream.watchOrderBook(symbol);
       return;
     }
     await for (final orderBook in _mockStore.watchOrderBook(symbol)) {
@@ -118,7 +181,14 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
     final capability = _registry.forVenue(symbol.venue);
     if (capability == null ||
         !capability.supports(MarketDataFeature.wsTrades)) {
-      yield Err(UnsupportedFeatureFailure('offline', 'WS trades'));
+      yield Err(
+        UnsupportedFeatureFailure(symbol.venue.displayName, 'WS trades'),
+      );
+      return;
+    }
+    final sources = _venueSources[symbol.venue];
+    if (sources != null) {
+      yield* sources.stream.watchTrades(symbol);
       return;
     }
     await for (final trades in _mockStore.watchTrades(symbol)) {
