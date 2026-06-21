@@ -3,23 +3,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:youtrade/domain/auth/local_auth_service.dart';
+
 import 'package:youtrade/presentation/auth/auth_guard_provider.dart';
+import 'package:youtrade/presentation/auth/auth_state.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/screens/settings_screen.dart';
+
+import '../../fakes/fake_pin_auth_service.dart';
 
 class MockLocalAuthService extends Mock implements LocalAuthService {}
 
 void main() {
   late MockLocalAuthService mockService;
+  late FakePinAuthService fakePinAuth;
 
   setUp(() {
     mockService = MockLocalAuthService();
+    fakePinAuth = FakePinAuthService(initialPin: '1234');
   });
 
   Widget buildScreen() {
     return ProviderScope(
-      overrides: [localAuthServiceProvider.overrideWithValue(mockService)],
+      overrides: [
+        localAuthServiceProvider.overrideWithValue(mockService),
+        pinAuthServiceProvider.overrideWithValue(fakePinAuth),
+      ],
       child: MaterialApp(
         theme: AppTheme.dark(AppVisualDirection.flux),
         home: const SettingsScreen(),
@@ -122,7 +131,9 @@ void main() {
       expect(find.text('Sign out'), findsOneWidget);
     });
 
-    testWidgets('tapping sign out does not throw', (tester) async {
+    testWidgets('tapping sign out transitions to unauthenticated', (
+      tester,
+    ) async {
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => false);
@@ -130,13 +141,21 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Sign out'));
-      await tester.pumpAndSettle();
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(SettingsScreen)),
+      );
+      expect(container.read(authNotifierProvider), const AuthUnknown());
 
-      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Sign out'));
+      await tester.pump();
+
+      // Catches bug where sign out leaves the user authenticated.
+      final authState = container.read(authNotifierProvider);
+      expect(authState, isA<AuthUnauthenticated>());
+      expect((authState as AuthUnauthenticated).pinSet, false);
     });
 
-    testWidgets('biometric tile triggers availability check', (tester) async {
+    testWidgets('tapping Biometric/PIN navigates to auth gate', (tester) async {
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => false);
@@ -145,9 +164,12 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Biometric / PIN'));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
-      verify(() => mockService.canCheckBiometrics()).called(1);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(SettingsScreen)),
+      );
+      expect(container.read(authNotifierProvider), isA<AuthUnauthenticated>());
     });
   });
 }

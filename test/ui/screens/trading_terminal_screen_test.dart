@@ -109,6 +109,20 @@ final class _FakeRepository implements MarketDataRepository {
       Stream.value(Success(_trades()));
 }
 
+final class _TimeframeRecordingRepository extends _FakeRepository {
+  Timeframe? lastCandleTimeframe;
+
+  @override
+  Future<Result<List<Candle>>> getCandles(
+    TradingSymbol symbol,
+    Timeframe timeframe, {
+    int? limit,
+  }) async {
+    lastCandleTimeframe = timeframe;
+    return super.getCandles(symbol, timeframe, limit: limit);
+  }
+}
+
 void main() {
   Widget buildApp() {
     return ProviderScope(
@@ -137,7 +151,62 @@ void main() {
       expect(find.text('Info'), findsOneWidget);
       expect(find.text('Signals'), findsOneWidget);
       expect(find.textContaining('BTC'), findsWidgets);
+
+      // Catches bug where ticker or recent trade data is not rendered.
+      expect(find.text('100,000.00'), findsWidgets);
+      expect(find.text('+1,200.00 · +1.23%'), findsOneWidget);
+      expect(find.text('BUY'), findsOneWidget);
+      expect(find.text('SELL'), findsOneWidget);
+      expect(find.text('99,950.00'), findsOneWidget);
+      expect(find.text('0.5000'), findsOneWidget);
+      expect(find.text('0.2500'), findsOneWidget);
     });
+
+    testWidgets('uses symbol parameter when provided', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            marketDataRepositoryProvider.overrideWithValue(_FakeRepository()),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.dark(AppVisualDirection.flux),
+            home: const TradingTerminalScreen(symbol: 'ETH'),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.textContaining('ETH'), findsWidgets);
+    });
+
+    testWidgets(
+      'selecting a different timeframe fetches candles for that timeframe',
+      (tester) async {
+        final repository = _TimeframeRecordingRepository();
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              marketDataRepositoryProvider.overrideWithValue(repository),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.dark(AppVisualDirection.flux),
+              home: const TradingTerminalScreen(),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(repository.lastCandleTimeframe, Timeframe.h1);
+
+        await tester.tap(find.text('4h'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(repository.lastCandleTimeframe, Timeframe.h4);
+      },
+    );
 
     testWidgets('switches to Book tab and shows order book', (tester) async {
       await tester.pumpWidget(buildApp());
@@ -148,8 +217,15 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
+      // Catches bug where order book levels from the repository are not rendered.
       expect(find.text('Price'), findsOneWidget);
-      expect(find.textContaining('spread'), findsOneWidget);
+      expect(find.text('spread 200.00 · +0.20%'), findsOneWidget);
+      expect(find.text('99,900.00'), findsOneWidget);
+      expect(find.text('99,800.00'), findsOneWidget);
+      expect(find.text('100,100.00'), findsOneWidget);
+      expect(find.text('100,200.00'), findsOneWidget);
+      expect(find.text('1.5000'), findsOneWidget);
+      expect(find.text('1.2000'), findsOneWidget);
     });
   });
 }

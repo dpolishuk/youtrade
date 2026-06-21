@@ -37,11 +37,19 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
+      // Catches bug where the chart series does not update when the range changes.
+      final chartBefore = tester.widget<CompareChart>(
+        find.byType(CompareChart),
+      );
+      expect(chartBefore.series.first.normalized.length, 30);
+
       await tester.tap(find.text('3M'));
       await tester.pumpAndSettle();
 
-      expect(find.text('3M'), findsOneWidget);
-      expect(find.byType(CompareChart), findsOneWidget);
+      final chartAfter = tester.widget<CompareChart>(find.byType(CompareChart));
+      expect(chartAfter.series.first.normalized.length, 90);
+      expect(find.text('90-period stats'), findsOneWidget);
+      expect(find.text('30-period stats'), findsNothing);
     });
   });
 }

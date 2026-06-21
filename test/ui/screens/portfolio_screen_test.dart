@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:youtrade/presentation/theme/theme_provider.dart';
 import 'package:youtrade/ui/screens/portfolio_screen.dart';
 import 'package:youtrade/ui/widgets/portfolio/allocation_bar.dart';
 import 'package:youtrade/ui/widgets/portfolio/exchange_card.dart';
@@ -9,7 +10,14 @@ import 'package:youtrade/ui/widgets/portfolio/position_tile.dart';
 void main() {
   group('PortfolioScreen', () {
     Widget buildScreen() {
-      return ProviderScope(child: MaterialApp(home: const PortfolioScreen()));
+      return ProviderScope(
+        child: Consumer(
+          builder: (context, ref, child) {
+            final theme = ref.watch(appThemeProvider);
+            return MaterialApp(theme: theme, home: const PortfolioScreen());
+          },
+        ),
+      );
     }
 
     testWidgets('renders total equity and 24h delta without overflow', (
@@ -70,10 +78,15 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
+      final context = tester.element(find.byType(PortfolioScreen));
+      expect(Theme.of(context).brightness, Brightness.dark);
+
       await tester.tap(find.byIcon(Icons.dark_mode));
       await tester.pumpAndSettle();
 
-      expect(find.byType(PortfolioScreen), findsOneWidget);
+      // Catches bug where the theme toggle does not switch brightness.
+      final contextAfter = tester.element(find.byType(PortfolioScreen));
+      expect(Theme.of(contextAfter).brightness, Brightness.light);
     });
   });
 }

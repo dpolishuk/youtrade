@@ -111,7 +111,10 @@ void main() {
           .read(exchangeCredentialsNotifierProvider.notifier)
           .save(binanceCredentials);
 
-      expect(states, [isA<ExchangeCredentialsLoaded>()]);
+      // Catches bug where save succeeds but the credentials list is not reloaded.
+      expect(states.length, 1);
+      final loaded = states.single as ExchangeCredentialsLoaded;
+      expect(loaded.credentials, [binanceCredentials]);
     });
 
     test('save emits error when repository fails', () async {
@@ -154,7 +157,10 @@ void main() {
           .read(exchangeCredentialsNotifierProvider.notifier)
           .delete(Venue.binance);
 
-      expect(states, [isA<ExchangeCredentialsLoaded>()]);
+      // Catches bug where delete succeeds but the removed credential still appears.
+      expect(states.length, 1);
+      final loaded = states.single as ExchangeCredentialsLoaded;
+      expect(loaded.credentials, isEmpty);
     });
 
     test('testConnection emits testing then success', () async {
