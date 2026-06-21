@@ -213,13 +213,10 @@ class _LevelRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       child: Stack(
         children: [
-          Positioned(
-            right: 0,
-            top: 0,
-            bottom: 0,
+          Align(
+            alignment: Alignment.centerRight,
             child: FractionallySizedBox(
               widthFactor: depth,
-              alignment: Alignment.centerRight,
               child: Container(color: barColor),
             ),
           ),
