@@ -69,6 +69,28 @@ void main() {
       );
     });
 
+    test('fetchTicker prefers quote volume over stats volume', () async {
+      final client = CoinbaseRestClient(
+        httpClient: twoCallClient(
+          statsResponse: http.Response(
+            '{"open":"99.0","high":"110.0","low":"90.0","volume":"1000.0","last":"100.0","volume_30day":"50000.0"}',
+            200,
+          ),
+          tickerResponse: http.Response(
+            '{"trade_id":1,"price":"100.0","size":"1.0","bid":"99.5","ask":"100.5","volume":"750.0","time":"2024-06-21T12:00:00.000Z"}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Success<Ticker>>());
+      result.when(
+        success: (ticker) => expect(ticker.volume, 750.0),
+        failure: (_) => fail('expected success'),
+      );
+    });
+
     test('fetchTicker returns Failure when stats returns non-200', () async {
       final client = CoinbaseRestClient(
         httpClient: twoCallClient(
