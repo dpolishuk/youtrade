@@ -7,6 +7,8 @@ import 'package:youtrade/domain/auth/exchange_credentials.dart';
 import 'package:youtrade/domain/entities/venue.dart';
 import 'package:youtrade/domain/repositories/exchange_credentials_repository.dart';
 import 'package:youtrade/presentation/exchange/exchange_credentials_provider.dart';
+import 'package:youtrade/presentation/theme/app_theme.dart';
+import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/screens/exchange_detail_edit_screen.dart';
 import 'package:youtrade/ui/screens/exchange_management_screen.dart';
 
@@ -25,7 +27,10 @@ void main() {
       overrides: [
         exchangeCredentialsRepositoryProvider.overrideWithValue(mockRepository),
       ],
-      child: const MaterialApp(home: ExchangeManagementScreen()),
+      child: MaterialApp(
+        theme: AppTheme.dark(AppVisualDirection.flux),
+        home: const ExchangeManagementScreen(),
+      ),
     );
   }
 

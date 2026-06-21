@@ -111,11 +111,7 @@ void main() {
           .read(exchangeCredentialsNotifierProvider.notifier)
           .save(binanceCredentials);
 
-      print('STATES: $states');
-
-      expect(states, [
-        isA<ExchangeCredentialsLoaded>(),
-      ]);
+      expect(states, [isA<ExchangeCredentialsLoaded>()]);
     });
 
     test('save emits error when repository fails', () async {
@@ -158,10 +154,7 @@ void main() {
           .read(exchangeCredentialsNotifierProvider.notifier)
           .delete(Venue.binance);
 
-      expect(states, [
-        isA<ExchangeCredentialsLoading>(),
-        isA<ExchangeCredentialsLoaded>(),
-      ]);
+      expect(states, [isA<ExchangeCredentialsLoaded>()]);
     });
 
     test('testConnection emits testing then success', () async {

@@ -30,17 +30,17 @@ class ExchangeCredentialsNotifier
 
   Future<void> save(ExchangeCredentials credentials) async {
     final result = await _repository.save(credentials);
-    result.when(
+    await result.when(
       success: (_) => loadAll(),
-      failure: (failure) => state = ExchangeCredentialsError(failure),
+      failure: (failure) async => state = ExchangeCredentialsError(failure),
     );
   }
 
   Future<void> delete(Venue venue) async {
     final result = await _repository.delete(venue);
-    result.when(
+    await result.when(
       success: (_) => loadAll(),
-      failure: (failure) => state = ExchangeCredentialsError(failure),
+      failure: (failure) async => state = ExchangeCredentialsError(failure),
     );
   }
 

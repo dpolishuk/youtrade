@@ -37,8 +37,8 @@ class SignalGauge extends StatelessWidget {
     final buyCount = score ~/ 10;
     final sellCount = 10 - buyCount;
 
-    final oscillators = _buildOscillators(price);
-    final movingAverages = _buildMovingAverages(price);
+    final oscillators = _buildOscillators(price, appColors);
+    final movingAverages = _buildMovingAverages(price, appColors);
     final pivots = _buildPivots(price);
 
     return Column(
@@ -113,8 +113,7 @@ class SignalGauge extends StatelessWidget {
     return 'Strong Sell';
   }
 
-  List<_SignalRow> _buildOscillators(double price) {
-    final appColors = Theme.of(context).extension<AppColorTheme>()!;
+  List<_SignalRow> _buildOscillators(double price, AppColorTheme appColors) {
     return [
       _SignalRow(
         'RSI (14)',
@@ -149,8 +148,7 @@ class SignalGauge extends StatelessWidget {
     ];
   }
 
-  List<_SignalRow> _buildMovingAverages(double price) {
-    final appColors = Theme.of(context).extension<AppColorTheme>()!;
+  List<_SignalRow> _buildMovingAverages(double price, AppColorTheme appColors) {
     return [
       _SignalRow(
         'MA10',
@@ -256,9 +254,17 @@ class _GaugeArcPainter extends CustomPainter {
       );
     }
 
-    drawArc(pi, pi * 0.32, appColors.bearish.withOpacity(0.7));
-    drawArc(pi + pi * 0.34, pi * 0.32, appColors.subtleText.withOpacity(0.7));
-    drawArc(pi + pi * 0.68, pi * 0.32, appColors.bullish.withOpacity(0.7));
+    drawArc(pi, pi * 0.32, appColors.bearish.withValues(alpha: 0.7));
+    drawArc(
+      pi + pi * 0.34,
+      pi * 0.32,
+      appColors.subtleText.withValues(alpha: 0.7),
+    );
+    drawArc(
+      pi + pi * 0.68,
+      pi * 0.32,
+      appColors.bullish.withValues(alpha: 0.7),
+    );
 
     final angle = pi + (score / 100) * pi;
     final needleLength = radius - strokeWidth;

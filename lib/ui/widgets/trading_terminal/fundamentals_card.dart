@@ -23,7 +23,8 @@ class FundamentalsCard extends StatelessWidget {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>()!;
 
-    final price = ticker?.lastPrice ?? (candles.isNotEmpty ? candles.first.close : 0.0);
+    final price =
+        ticker?.lastPrice ?? (candles.isNotEmpty ? candles.first.close : 0.0);
     final marketCap = price * 19500000;
     final volume24h = ticker?.volume ?? 0.0;
     final open = candles.isNotEmpty ? candles.first.open : 0.0;
@@ -51,8 +52,14 @@ class FundamentalsCard extends StatelessWidget {
       _Stat(label: 'Close', value: formatPrice(close, maxDecimals: 2)),
       _Stat(label: 'Volume', value: formatCompact(volume24h)),
       _Stat(label: 'Avg Vol', value: formatCompact(volume24h * 0.95)),
-      _Stat(label: 'Circ. Supply', value: '${formatCompact(19500000)} ${symbol.base}'),
-      _Stat(label: 'Max Supply', value: '${formatCompact(21000000)} ${symbol.base}'),
+      _Stat(
+        label: 'Circ. Supply',
+        value: '${formatCompact(19500000)} ${symbol.base}',
+      ),
+      _Stat(
+        label: 'Max Supply',
+        value: '${formatCompact(21000000)} ${symbol.base}',
+      ),
     ];
 
     return Column(
@@ -93,7 +100,10 @@ class FundamentalsCard extends StatelessWidget {
                     top: i < 2 ? 0 : 1,
                   ),
                   color: theme.colorScheme.surface,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

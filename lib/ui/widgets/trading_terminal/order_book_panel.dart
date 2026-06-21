@@ -74,7 +74,6 @@ class _BookContent extends StatelessWidget {
         tickerAsync.valueOrNull?.lastPrice ??
         (book.bestBid ?? 0) + (book.spread ?? 0) / 2;
     final bestBid = book.bestBid;
-    final bestAsk = book.bestAsk;
     final spread = book.spread ?? 0.0;
     final spreadPct = (bestBid != null && bestBid > 0)
         ? spread / bestBid * 100
@@ -114,7 +113,7 @@ class _BookContent extends StatelessWidget {
         _LevelList(
           levels: visibleAsks,
           color: appColors.bearish,
-          barColor: appColors.bearish.withOpacity(0.18),
+          barColor: appColors.bearish.withValues(alpha: 0.18),
           maxAmount: maxAmount,
           theme: theme,
         ),
@@ -150,7 +149,7 @@ class _BookContent extends StatelessWidget {
         _LevelList(
           levels: visibleBids,
           color: appColors.bullish,
-          barColor: appColors.bullish.withOpacity(0.18),
+          barColor: appColors.bullish.withValues(alpha: 0.18),
           maxAmount: maxAmount,
           theme: theme,
         ),
