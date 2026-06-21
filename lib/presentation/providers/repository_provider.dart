@@ -68,21 +68,58 @@ final exchangeCapabilityRegistryProvider = Provider<ExchangeCapabilityRegistry>(
   (ref) => const _StaticExchangeCapabilityRegistry(),
 );
 
-final marketDataRepositoryProvider = Provider<MarketDataRepository>((ref) {
-  final connectivityAsync = ref.watch(connectivityProvider);
-  final isOnline = connectivityAsync.valueOrNull ?? true;
+final _binanceRestClientProvider = Provider<BinanceRestClient>((ref) {
+  final client = BinanceRestClient();
+  ref.onDispose(client.close);
+  return client;
+});
 
+final _bybitRestClientProvider = Provider<BybitRestClient>((ref) {
+  final client = BybitRestClient();
+  ref.onDispose(client.close);
+  return client;
+});
+
+final _okxRestClientProvider = Provider<OKXRestClient>((ref) {
+  final client = OKXRestClient();
+  ref.onDispose(client.close);
+  return client;
+});
+
+final _coinbaseRestClientProvider = Provider<CoinbaseRestClient>((ref) {
+  final client = CoinbaseRestClient();
+  ref.onDispose(client.close);
+  return client;
+});
+
+final _binanceWebSocketClientProvider = Provider<BinanceWebSocketClient>(
+  (ref) => BinanceWebSocketClient(),
+);
+
+final _bybitWebSocketClientProvider = Provider<BybitWebSocketClient>(
+  (ref) => BybitWebSocketClient(),
+);
+
+final _okxWebSocketClientProvider = Provider<OKXWebSocketClient>(
+  (ref) => OKXWebSocketClient(),
+);
+
+final _coinbaseWebSocketClientProvider = Provider<CoinbaseWebSocketClient>(
+  (ref) => CoinbaseWebSocketClient(),
+);
+
+final marketDataRepositoryProvider = Provider<MarketDataRepository>((ref) {
   final database = ref.watch(appDatabaseProvider);
   final cache = MarketCacheDataSource(database: database);
 
-  final binanceRest = BinanceRestClient();
-  final bybitRest = BybitRestClient();
-  final okxRest = OKXRestClient();
-  final coinbaseRest = CoinbaseRestClient();
+  final binanceRest = ref.watch(_binanceRestClientProvider);
+  final bybitRest = ref.watch(_bybitRestClientProvider);
+  final okxRest = ref.watch(_okxRestClientProvider);
+  final coinbaseRest = ref.watch(_coinbaseRestClientProvider);
 
-  return MarketDataRepositoryImpl(
+  final repository = MarketDataRepositoryImpl(
     registry: const _StaticExchangeCapabilityRegistry(),
-    isOnline: isOnline,
+    isOnline: ref.read(connectivityProvider).valueOrNull ?? true,
     cache: cache,
     venueSources: {
       Venue.binance: VenueSources(
@@ -90,29 +127,35 @@ final marketDataRepositoryProvider = Provider<MarketDataRepository>((ref) {
         candles: binanceRest,
         orderBook: binanceRest,
         trades: binanceRest,
-        stream: BinanceWebSocketClient(),
+        stream: ref.watch(_binanceWebSocketClientProvider),
       ),
       Venue.bybit: VenueSources(
         ticker: bybitRest,
         candles: bybitRest,
         orderBook: bybitRest,
         trades: bybitRest,
-        stream: BybitWebSocketClient(),
+        stream: ref.watch(_bybitWebSocketClientProvider),
       ),
       Venue.okx: VenueSources(
         ticker: okxRest,
         candles: okxRest,
         orderBook: okxRest,
         trades: okxRest,
-        stream: OKXWebSocketClient(),
+        stream: ref.watch(_okxWebSocketClientProvider),
       ),
       Venue.coinbase: VenueSources(
         ticker: coinbaseRest,
         candles: coinbaseRest,
         orderBook: coinbaseRest,
         trades: coinbaseRest,
-        stream: CoinbaseWebSocketClient(),
+        stream: ref.watch(_coinbaseWebSocketClientProvider),
       ),
     },
   );
+
+  ref.listen(connectivityProvider, (_, next) {
+    repository.isOnline = next.valueOrNull ?? true;
+  });
+
+  return repository;
 });

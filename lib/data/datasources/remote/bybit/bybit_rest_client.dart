@@ -24,6 +24,8 @@ final class BybitRestClient
   final http.Client _httpClient;
   final String _baseUrl;
 
+  void close() => _httpClient.close();
+
   Uri _uri(String path, Map<String, String> query) =>
       Uri.parse('$_baseUrl$path').replace(queryParameters: query);
 
