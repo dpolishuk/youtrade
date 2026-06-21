@@ -1,0 +1,25 @@
+import 'package:flutter/material.dart';
+
+import '../../../domain/entities/venue.dart';
+
+Color venueColor(Venue venue) {
+  return switch (venue) {
+    Venue.binance => const Color(0xFFF0B90B),
+    Venue.bybit => const Color(0xFFF7A600),
+    Venue.okx => const Color(0xFF2F6BFF),
+    Venue.coinbase => const Color(0xFF0052FF),
+  };
+}
+
+Color venueTint(Venue venue) {
+  return venueColor(venue).withValues(alpha: 0.14);
+}
+
+String venueInitial(Venue venue) {
+  return switch (venue) {
+    Venue.binance => 'B',
+    Venue.bybit => 'Y',
+    Venue.okx => 'O',
+    Venue.coinbase => 'C',
+  };
+}
