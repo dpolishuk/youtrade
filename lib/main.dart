@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'presentation/theme/theme_provider.dart';
+import 'ui/auth/auth_gate_screen.dart';
 
 void main() {
   runApp(const ProviderScope(child: YouTradeApp()));
@@ -19,7 +20,12 @@ class YouTradeApp extends ConsumerWidget {
       theme: theme,
       darkTheme: theme,
       themeMode: ThemeMode.dark,
-      home: const Scaffold(body: Center(child: Text('YouTrade'))),
+      home: AuthGateScreen(
+        child: Scaffold(
+          appBar: AppBar(title: const Text('YouTrade')),
+          body: const Center(child: Text('Welcome to YouTrade')),
+        ),
+      ),
     );
   }
 }
