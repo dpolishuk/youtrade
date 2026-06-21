@@ -220,6 +220,72 @@ void main() {
       expect(find.text('YouTrade is locked'), findsNothing);
     });
 
+    testWidgets('treats whitespace-only pasted input as invalid', (
+      tester,
+    ) async {
+      fakePinAuth.setStoredPin('1234');
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '   ');
+      await tester.tap(find.text('Unlock with PIN'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('PIN must be exactly 4 digits'), findsOneWidget);
+      expect(find.text('YouTrade is locked'), findsOneWidget);
+      expect(find.text('Welcome to YouTrade'), findsNothing);
+    });
+
+    testWidgets('treats multi-line pasted input as invalid', (tester) async {
+      fakePinAuth.setStoredPin('1234');
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '12\n3');
+      await tester.tap(find.text('Unlock with PIN'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('PIN must be exactly 4 digits'), findsOneWidget);
+      expect(find.text('YouTrade is locked'), findsOneWidget);
+      expect(find.text('Welcome to YouTrade'), findsNothing);
+    });
+
+    testWidgets('allows PIN entry after biometric failure', (tester) async {
+      fakePinAuth.setStoredPin('1234');
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => true);
+      when(
+        () => mockService.authenticate(),
+      ).thenAnswer((_) async => const Err<bool>(AuthFailedFailure()));
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Authentication failed. Please try again.'),
+        findsOneWidget,
+      );
+
+      await tester.enterText(find.byType(TextField), '1234');
+      await tester.tap(find.text('Unlock with PIN'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Welcome to YouTrade'), findsOneWidget);
+      expect(find.text('YouTrade is locked'), findsNothing);
+    });
+
     testWidgets('shows error when biometric authentication fails', (
       tester,
     ) async {

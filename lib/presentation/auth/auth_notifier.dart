@@ -62,14 +62,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _pinSet = await _pinAuthService.isPinSet();
 
       if (!_pinRegex.hasMatch(pin)) {
-        state = const AuthError(
-          PinValidationFailure('PIN must be exactly 4 digits'),
-        );
+        if (_isAuthenticating) {
+          state = const AuthError(
+            PinValidationFailure('PIN must be exactly 4 digits'),
+          );
+        }
         return;
       }
 
       if (!_pinSet) {
         final result = await _pinAuthService.setPin(pin);
+        if (!_isAuthenticating) return;
         result.when(
           success: (_) {
             _pinSet = true;
@@ -81,6 +84,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       final isValid = await _pinAuthService.authenticatePin(pin);
+      if (!_isAuthenticating) return;
       if (isValid) {
         state = const AuthAuthenticated();
       } else {
@@ -92,6 +96,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   void signOut() {
+    _isAuthenticating = false;
+    if (state is AuthUnauthenticated &&
+        (state as AuthUnauthenticated).pinSet == _pinSet) {
+      return;
+    }
     state = AuthUnauthenticated(pinSet: _pinSet);
   }
 }

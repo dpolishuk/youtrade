@@ -445,6 +445,131 @@ void main() {
     );
 
     test(
+      'initialize does not attempt biometrics when no PIN is set even if biometrics are available',
+      () async {
+        when(
+          () => mockLocalAuth.canCheckBiometrics(),
+        ).thenAnswer((_) async => true);
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container.read(authNotifierProvider.notifier).initialize();
+
+        expect(states, [isA<AuthUnauthenticated>()]);
+        final unauthenticated = states.single as AuthUnauthenticated;
+        expect(unauthenticated.pinSet, isFalse);
+        verifyNever(() => mockLocalAuth.authenticate());
+      },
+    );
+
+    test(
+      'authenticateWithBiometrics attempts local auth and succeeds when PIN was removed',
+      () async {
+        fakePinAuth.setStoredPin('1234');
+        when(
+          () => mockLocalAuth.authenticate(),
+        ).thenAnswer((_) async => const Success<bool>(true));
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        fakePinAuth.clearStoredPin();
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithBiometrics();
+
+        expect(states, [isA<AuthAuthenticated>()]);
+        expect(container.read(authNotifierProvider.notifier).isPinSet, isFalse);
+      },
+    );
+
+    test(
+      'authenticateWithBiometrics attempts local auth and fails when PIN was removed',
+      () async {
+        fakePinAuth.setStoredPin('1234');
+        when(
+          () => mockLocalAuth.authenticate(),
+        ).thenAnswer((_) async => const Err<bool>(AuthFailedFailure()));
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        fakePinAuth.clearStoredPin();
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithBiometrics();
+
+        expect(states, [isA<AuthError>()]);
+        final error = states.single as AuthError;
+        expect(error.failure, isA<AuthFailedFailure>());
+      },
+    );
+
+    test(
+      'signOut during active authenticateWithPin ends unauthenticated',
+      () async {
+        fakePinAuth.setStoredPin('1234');
+        when(
+          () => mockLocalAuth.canCheckBiometrics(),
+        ).thenAnswer((_) async => false);
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container.read(authNotifierProvider.notifier).initialize();
+        states.clear();
+
+        final authFuture = container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('1234');
+        container.read(authNotifierProvider.notifier).signOut();
+        await authFuture;
+
+        expect(
+          container.read(authNotifierProvider),
+          isA<AuthUnauthenticated>(),
+        );
+        final unauthenticated =
+            container.read(authNotifierProvider) as AuthUnauthenticated;
+        expect(unauthenticated.pinSet, isTrue);
+      },
+    );
+
+    test(
+      'multiple rapid signOut calls do not throw or emit extra states',
+      () async {
+        fakePinAuth.setStoredPin('1234');
+        when(
+          () => mockLocalAuth.authenticate(),
+        ).thenAnswer((_) async => const Success<bool>(true));
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithBiometrics();
+        container.read(authNotifierProvider.notifier).signOut();
+        container.read(authNotifierProvider.notifier).signOut();
+        container.read(authNotifierProvider.notifier).signOut();
+
+        expect(states, [isA<AuthAuthenticated>(), isA<AuthUnauthenticated>()]);
+        final unauthenticated = states.last as AuthUnauthenticated;
+        expect(unauthenticated.pinSet, isTrue);
+      },
+    );
+
+    test(
       'authenticateWithBiometrics attempts local auth and authenticates when no PIN is set',
       () async {
         when(

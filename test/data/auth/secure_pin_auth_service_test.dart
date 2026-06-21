@@ -163,6 +163,46 @@ void main() {
         expect(secondSalt, equals(firstSalt));
       });
 
+      test(
+        'accepts PINs longer than 4 digits and stores salted hash',
+        () async {
+          final result = await service.setPin('123456');
+
+          expect(result, isA<Success<void>>());
+          final hash = await storage.read(key: 'pin_hash');
+          final salt = await storage.read(key: 'pin_salt');
+          expect(hash, isNotNull);
+          expect(hash, isNotEmpty);
+          expect(salt, isNotNull);
+          expect(salt, isNotEmpty);
+          expect(hash, isNot(equals('123456')));
+        },
+      );
+
+      test('concurrent setPin calls produce deterministic final PIN', () async {
+        final results = await Future.wait([
+          service.setPin('1111'),
+          service.setPin('2222'),
+          service.setPin('3333'),
+        ]);
+
+        final successCount = results.whereType<Success<void>>().length;
+        expect(successCount, greaterThan(0));
+        final salt = await storage.read(key: 'pin_salt');
+        expect(salt, isNotNull);
+        expect(salt, isNotEmpty);
+        final hash = await storage.read(key: 'pin_hash');
+        expect(hash, isNotNull);
+        expect(hash, isNotEmpty);
+
+        // Exactly one of the candidate PINs must match the stored hash.
+        final candidates = ['1111', '2222', '3333'];
+        final matches = await Future.wait(
+          candidates.map((pin) => service.authenticatePin(pin)),
+        );
+        expect(matches.where((m) => m).length, 1);
+      });
+
       test('returns UnknownFailure when storage write fails', () async {
         final exception = Exception('secure storage write failed');
         service = SecurePinAuthService(
@@ -238,14 +278,30 @@ void main() {
         },
       );
 
-      test('returns false when storage read throws', () async {
+      test('returns false for PIN with non-digit characters', () async {
         await service.setPin('1234');
-        service = SecurePinAuthService(
-          storage: _ThrowingReadStorage(Exception('read failed')),
-        );
+
+        expect(await service.authenticatePin('12a4'), isFalse);
+      });
+
+      test('returns false when stored hash exists but salt is empty', () async {
+        await service.setPin('1234');
+        await storage.write(key: 'pin_salt', value: '');
 
         expect(await service.authenticatePin('1234'), isFalse);
       });
+
+      test(
+        'returns false when storage read throws during authenticate',
+        () async {
+          await service.setPin('1234');
+          service = SecurePinAuthService(
+            storage: _ThrowingReadStorage(Exception('read failed')),
+          );
+
+          expect(await service.authenticatePin('1234'), isFalse);
+        },
+      );
     });
   });
 }

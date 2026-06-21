@@ -34,4 +34,8 @@ class FakePinAuthService implements PinAuthService {
   void setStoredPin(String pin) {
     _pin = pin;
   }
+
+  void clearStoredPin() {
+    _pin = null;
+  }
 }
