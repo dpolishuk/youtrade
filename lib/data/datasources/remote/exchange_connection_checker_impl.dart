@@ -20,7 +20,7 @@ final class ExchangeConnectionCheckerImpl implements ExchangeConnectionChecker {
     return switch (credentials.venue) {
       Venue.binance => _checkBinance(credentials),
       Venue.bybit => _checkBybit(credentials),
-      Venue.okx || Venue.coinbase => Err<bool>(
+      Venue.okx || Venue.coinbase || Venue.unknown => Err<bool>(
         UnsupportedFeatureFailure(
           'Credential test',
           '${credentials.venue.displayName} connection test',

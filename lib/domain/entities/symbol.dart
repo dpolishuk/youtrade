@@ -7,12 +7,42 @@ final class TradingSymbol {
     required Venue venue,
     String? rawSymbol,
   }) {
-    assert(base.isNotEmpty, 'base must be non-empty');
-    assert(!base.contains(' '), 'base must not contain whitespace');
-    assert(quote.isNotEmpty, 'quote must be non-empty');
-    assert(!quote.contains(' '), 'quote must not contain whitespace');
     final normalizedBase = base.trim().toUpperCase();
     final normalizedQuote = quote.trim().toUpperCase();
+    if (normalizedBase.isEmpty) {
+      throw ArgumentError.value(base, 'base', 'base must be non-empty');
+    }
+    if (normalizedBase.contains('\x00')) {
+      throw ArgumentError.value(
+        base,
+        'base',
+        'base must not contain null bytes',
+      );
+    }
+    if (normalizedBase.contains(RegExp(r'\s'))) {
+      throw ArgumentError.value(
+        base,
+        'base',
+        'base must not contain whitespace',
+      );
+    }
+    if (normalizedQuote.isEmpty) {
+      throw ArgumentError.value(quote, 'quote', 'quote must be non-empty');
+    }
+    if (normalizedQuote.contains('\x00')) {
+      throw ArgumentError.value(
+        quote,
+        'quote',
+        'quote must not contain null bytes',
+      );
+    }
+    if (normalizedQuote.contains(RegExp(r'\s'))) {
+      throw ArgumentError.value(
+        quote,
+        'quote',
+        'quote must not contain whitespace',
+      );
+    }
     return TradingSymbol._(
       base: normalizedBase,
       quote: normalizedQuote,

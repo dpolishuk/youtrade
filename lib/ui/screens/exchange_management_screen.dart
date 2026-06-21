@@ -245,6 +245,7 @@ class _VenueAvatar extends StatelessWidget {
       Venue.bybit => const Color(0xFFF7A600).withValues(alpha: 0.14),
       Venue.okx => const Color(0xFF2F6BFF).withValues(alpha: 0.14),
       Venue.coinbase => const Color(0xFF0052FF).withValues(alpha: 0.14),
+      Venue.unknown => const Color(0xFF9E9E9E).withValues(alpha: 0.14),
     };
   }
 
@@ -254,6 +255,7 @@ class _VenueAvatar extends StatelessWidget {
       Venue.bybit => const Color(0xFFF7A600),
       Venue.okx => const Color(0xFF2F6BFF),
       Venue.coinbase => const Color(0xFF0052FF),
+      Venue.unknown => const Color(0xFF9E9E9E),
     };
   }
 
@@ -263,6 +265,7 @@ class _VenueAvatar extends StatelessWidget {
       Venue.bybit => 'Y',
       Venue.okx => 'O',
       Venue.coinbase => 'C',
+      Venue.unknown => '?',
     };
   }
 

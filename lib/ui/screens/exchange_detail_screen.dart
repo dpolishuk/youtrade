@@ -12,9 +12,11 @@ import '../widgets/exchange_detail/venue_header.dart';
 import '../widgets/exchange_detail/venue_style.dart';
 
 class ExchangeDetailScreen extends StatelessWidget {
-  const ExchangeDetailScreen({super.key});
+  const ExchangeDetailScreen({this.exchangeId = 'binance', super.key});
 
-  static const _selectedVenue = Venue.binance;
+  final String exchangeId;
+
+  Venue get _selectedVenue => _resolveVenue(exchangeId);
   static const _allocationPercent = 45.2;
   static const _kinds = 'Spot · Perp · Options';
   static const _balance = '\$312,480.00';
@@ -22,34 +24,34 @@ class ExchangeDetailScreen extends StatelessWidget {
   static const _pnlPercent = '+2.12%';
   static const _keyStatus = 'Read-only keys active';
 
-  static final _assets = [
+  List<AssetBalance> get _assets => [
     AssetBalance(
       symbol: 'BTC',
       glyph: '₿',
       value: '\$158,400',
       share: 0.507,
-      shareColor: venueColor(Venue.binance),
+      shareColor: venueColor(_selectedVenue),
     ),
     AssetBalance(
       symbol: 'ETH',
       glyph: 'Ξ',
       value: '\$37,120',
       share: 0.119,
-      shareColor: venueColor(Venue.binance),
+      shareColor: venueColor(_selectedVenue),
     ),
     AssetBalance(
       symbol: 'USDT',
       glyph: '\$',
       value: '\$88,420',
       share: 0.283,
-      shareColor: venueColor(Venue.binance),
+      shareColor: venueColor(_selectedVenue),
     ),
     AssetBalance(
       symbol: 'SOL',
       glyph: '◎',
       value: '\$28,540',
       share: 0.091,
-      shareColor: venueColor(Venue.binance),
+      shareColor: venueColor(_selectedVenue),
     ),
   ];
 
@@ -222,4 +224,11 @@ class ExchangeDetailScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+Venue _resolveVenue(String id) {
+  return Venue.values.firstWhere(
+    (venue) => venue.id == id,
+    orElse: () => Venue.unknown,
+  );
 }

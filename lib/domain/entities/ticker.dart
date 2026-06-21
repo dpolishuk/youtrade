@@ -1,7 +1,42 @@
 import 'symbol.dart';
 
 final class Ticker {
-  const Ticker({
+  factory Ticker({
+    required TradingSymbol symbol,
+    required double lastPrice,
+    required double bid,
+    required double ask,
+    required double change24h,
+    required double change24hPercent,
+    required double volume,
+    required DateTime timestamp,
+  }) {
+    void requireFinite(double value, String name) {
+      if (value.isNaN || value.isInfinite) {
+        throw ArgumentError.value(value, name, '$name must be finite');
+      }
+    }
+
+    requireFinite(lastPrice, 'lastPrice');
+    requireFinite(bid, 'bid');
+    requireFinite(ask, 'ask');
+    requireFinite(change24h, 'change24h');
+    requireFinite(change24hPercent, 'change24hPercent');
+    requireFinite(volume, 'volume');
+
+    return Ticker._(
+      symbol: symbol,
+      lastPrice: lastPrice,
+      bid: bid,
+      ask: ask,
+      change24h: change24h,
+      change24hPercent: change24hPercent,
+      volume: volume,
+      timestamp: timestamp,
+    );
+  }
+
+  const Ticker._({
     required this.symbol,
     required this.lastPrice,
     required this.bid,

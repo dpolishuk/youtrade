@@ -8,6 +8,7 @@ Color venueColor(Venue venue) {
     Venue.bybit => const Color(0xFFF7A600),
     Venue.okx => const Color(0xFF2F6BFF),
     Venue.coinbase => const Color(0xFF0052FF),
+    Venue.unknown => const Color(0xFF9E9E9E),
   };
 }
 
@@ -21,5 +22,6 @@ String venueInitial(Venue venue) {
     Venue.bybit => 'Y',
     Venue.okx => 'O',
     Venue.coinbase => 'C',
+    Venue.unknown => '?',
   };
 }
