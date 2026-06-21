@@ -1,0 +1,2527 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'app_database.dart';
+
+// ignore_for_file: type=lint
+class $CachedTickersTable extends CachedTickers
+    with TableInfo<$CachedTickersTable, CachedTicker> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CachedTickersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _symbolIdMeta = const VerificationMeta(
+    'symbolId',
+  );
+  @override
+  late final GeneratedColumn<String> symbolId = GeneratedColumn<String>(
+    'symbol_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastPriceMeta = const VerificationMeta(
+    'lastPrice',
+  );
+  @override
+  late final GeneratedColumn<double> lastPrice = GeneratedColumn<double>(
+    'last_price',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bidMeta = const VerificationMeta('bid');
+  @override
+  late final GeneratedColumn<double> bid = GeneratedColumn<double>(
+    'bid',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _askMeta = const VerificationMeta('ask');
+  @override
+  late final GeneratedColumn<double> ask = GeneratedColumn<double>(
+    'ask',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _change24hMeta = const VerificationMeta(
+    'change24h',
+  );
+  @override
+  late final GeneratedColumn<double> change24h = GeneratedColumn<double>(
+    'change24h',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _change24hPercentMeta = const VerificationMeta(
+    'change24hPercent',
+  );
+  @override
+  late final GeneratedColumn<double> change24hPercent = GeneratedColumn<double>(
+    'change24h_percent',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _volumeMeta = const VerificationMeta('volume');
+  @override
+  late final GeneratedColumn<double> volume = GeneratedColumn<double>(
+    'volume',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timestampMeta = const VerificationMeta(
+    'timestamp',
+  );
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+    'timestamp',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    symbolId,
+    lastPrice,
+    bid,
+    ask,
+    change24h,
+    change24hPercent,
+    volume,
+    timestamp,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cached_tickers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CachedTicker> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('symbol_id')) {
+      context.handle(
+        _symbolIdMeta,
+        symbolId.isAcceptableOrUnknown(data['symbol_id']!, _symbolIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_symbolIdMeta);
+    }
+    if (data.containsKey('last_price')) {
+      context.handle(
+        _lastPriceMeta,
+        lastPrice.isAcceptableOrUnknown(data['last_price']!, _lastPriceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lastPriceMeta);
+    }
+    if (data.containsKey('bid')) {
+      context.handle(
+        _bidMeta,
+        bid.isAcceptableOrUnknown(data['bid']!, _bidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bidMeta);
+    }
+    if (data.containsKey('ask')) {
+      context.handle(
+        _askMeta,
+        ask.isAcceptableOrUnknown(data['ask']!, _askMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_askMeta);
+    }
+    if (data.containsKey('change24h')) {
+      context.handle(
+        _change24hMeta,
+        change24h.isAcceptableOrUnknown(data['change24h']!, _change24hMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_change24hMeta);
+    }
+    if (data.containsKey('change24h_percent')) {
+      context.handle(
+        _change24hPercentMeta,
+        change24hPercent.isAcceptableOrUnknown(
+          data['change24h_percent']!,
+          _change24hPercentMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_change24hPercentMeta);
+    }
+    if (data.containsKey('volume')) {
+      context.handle(
+        _volumeMeta,
+        volume.isAcceptableOrUnknown(data['volume']!, _volumeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_volumeMeta);
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(
+        _timestampMeta,
+        timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timestampMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {symbolId};
+  @override
+  CachedTicker map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CachedTicker(
+      symbolId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}symbol_id'],
+      )!,
+      lastPrice: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}last_price'],
+      )!,
+      bid: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bid'],
+      )!,
+      ask: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ask'],
+      )!,
+      change24h: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}change24h'],
+      )!,
+      change24hPercent: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}change24h_percent'],
+      )!,
+      volume: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}volume'],
+      )!,
+      timestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}timestamp'],
+      )!,
+    );
+  }
+
+  @override
+  $CachedTickersTable createAlias(String alias) {
+    return $CachedTickersTable(attachedDatabase, alias);
+  }
+}
+
+class CachedTicker extends DataClass implements Insertable<CachedTicker> {
+  final String symbolId;
+  final double lastPrice;
+  final double bid;
+  final double ask;
+  final double change24h;
+  final double change24hPercent;
+  final double volume;
+  final DateTime timestamp;
+  const CachedTicker({
+    required this.symbolId,
+    required this.lastPrice,
+    required this.bid,
+    required this.ask,
+    required this.change24h,
+    required this.change24hPercent,
+    required this.volume,
+    required this.timestamp,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['symbol_id'] = Variable<String>(symbolId);
+    map['last_price'] = Variable<double>(lastPrice);
+    map['bid'] = Variable<double>(bid);
+    map['ask'] = Variable<double>(ask);
+    map['change24h'] = Variable<double>(change24h);
+    map['change24h_percent'] = Variable<double>(change24hPercent);
+    map['volume'] = Variable<double>(volume);
+    map['timestamp'] = Variable<DateTime>(timestamp);
+    return map;
+  }
+
+  CachedTickersCompanion toCompanion(bool nullToAbsent) {
+    return CachedTickersCompanion(
+      symbolId: Value(symbolId),
+      lastPrice: Value(lastPrice),
+      bid: Value(bid),
+      ask: Value(ask),
+      change24h: Value(change24h),
+      change24hPercent: Value(change24hPercent),
+      volume: Value(volume),
+      timestamp: Value(timestamp),
+    );
+  }
+
+  factory CachedTicker.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CachedTicker(
+      symbolId: serializer.fromJson<String>(json['symbolId']),
+      lastPrice: serializer.fromJson<double>(json['lastPrice']),
+      bid: serializer.fromJson<double>(json['bid']),
+      ask: serializer.fromJson<double>(json['ask']),
+      change24h: serializer.fromJson<double>(json['change24h']),
+      change24hPercent: serializer.fromJson<double>(json['change24hPercent']),
+      volume: serializer.fromJson<double>(json['volume']),
+      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'symbolId': serializer.toJson<String>(symbolId),
+      'lastPrice': serializer.toJson<double>(lastPrice),
+      'bid': serializer.toJson<double>(bid),
+      'ask': serializer.toJson<double>(ask),
+      'change24h': serializer.toJson<double>(change24h),
+      'change24hPercent': serializer.toJson<double>(change24hPercent),
+      'volume': serializer.toJson<double>(volume),
+      'timestamp': serializer.toJson<DateTime>(timestamp),
+    };
+  }
+
+  CachedTicker copyWith({
+    String? symbolId,
+    double? lastPrice,
+    double? bid,
+    double? ask,
+    double? change24h,
+    double? change24hPercent,
+    double? volume,
+    DateTime? timestamp,
+  }) => CachedTicker(
+    symbolId: symbolId ?? this.symbolId,
+    lastPrice: lastPrice ?? this.lastPrice,
+    bid: bid ?? this.bid,
+    ask: ask ?? this.ask,
+    change24h: change24h ?? this.change24h,
+    change24hPercent: change24hPercent ?? this.change24hPercent,
+    volume: volume ?? this.volume,
+    timestamp: timestamp ?? this.timestamp,
+  );
+  CachedTicker copyWithCompanion(CachedTickersCompanion data) {
+    return CachedTicker(
+      symbolId: data.symbolId.present ? data.symbolId.value : this.symbolId,
+      lastPrice: data.lastPrice.present ? data.lastPrice.value : this.lastPrice,
+      bid: data.bid.present ? data.bid.value : this.bid,
+      ask: data.ask.present ? data.ask.value : this.ask,
+      change24h: data.change24h.present ? data.change24h.value : this.change24h,
+      change24hPercent: data.change24hPercent.present
+          ? data.change24hPercent.value
+          : this.change24hPercent,
+      volume: data.volume.present ? data.volume.value : this.volume,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedTicker(')
+          ..write('symbolId: $symbolId, ')
+          ..write('lastPrice: $lastPrice, ')
+          ..write('bid: $bid, ')
+          ..write('ask: $ask, ')
+          ..write('change24h: $change24h, ')
+          ..write('change24hPercent: $change24hPercent, ')
+          ..write('volume: $volume, ')
+          ..write('timestamp: $timestamp')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    symbolId,
+    lastPrice,
+    bid,
+    ask,
+    change24h,
+    change24hPercent,
+    volume,
+    timestamp,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CachedTicker &&
+          other.symbolId == this.symbolId &&
+          other.lastPrice == this.lastPrice &&
+          other.bid == this.bid &&
+          other.ask == this.ask &&
+          other.change24h == this.change24h &&
+          other.change24hPercent == this.change24hPercent &&
+          other.volume == this.volume &&
+          other.timestamp == this.timestamp);
+}
+
+class CachedTickersCompanion extends UpdateCompanion<CachedTicker> {
+  final Value<String> symbolId;
+  final Value<double> lastPrice;
+  final Value<double> bid;
+  final Value<double> ask;
+  final Value<double> change24h;
+  final Value<double> change24hPercent;
+  final Value<double> volume;
+  final Value<DateTime> timestamp;
+  final Value<int> rowid;
+  const CachedTickersCompanion({
+    this.symbolId = const Value.absent(),
+    this.lastPrice = const Value.absent(),
+    this.bid = const Value.absent(),
+    this.ask = const Value.absent(),
+    this.change24h = const Value.absent(),
+    this.change24hPercent = const Value.absent(),
+    this.volume = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CachedTickersCompanion.insert({
+    required String symbolId,
+    required double lastPrice,
+    required double bid,
+    required double ask,
+    required double change24h,
+    required double change24hPercent,
+    required double volume,
+    required DateTime timestamp,
+    this.rowid = const Value.absent(),
+  }) : symbolId = Value(symbolId),
+       lastPrice = Value(lastPrice),
+       bid = Value(bid),
+       ask = Value(ask),
+       change24h = Value(change24h),
+       change24hPercent = Value(change24hPercent),
+       volume = Value(volume),
+       timestamp = Value(timestamp);
+  static Insertable<CachedTicker> custom({
+    Expression<String>? symbolId,
+    Expression<double>? lastPrice,
+    Expression<double>? bid,
+    Expression<double>? ask,
+    Expression<double>? change24h,
+    Expression<double>? change24hPercent,
+    Expression<double>? volume,
+    Expression<DateTime>? timestamp,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (symbolId != null) 'symbol_id': symbolId,
+      if (lastPrice != null) 'last_price': lastPrice,
+      if (bid != null) 'bid': bid,
+      if (ask != null) 'ask': ask,
+      if (change24h != null) 'change24h': change24h,
+      if (change24hPercent != null) 'change24h_percent': change24hPercent,
+      if (volume != null) 'volume': volume,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CachedTickersCompanion copyWith({
+    Value<String>? symbolId,
+    Value<double>? lastPrice,
+    Value<double>? bid,
+    Value<double>? ask,
+    Value<double>? change24h,
+    Value<double>? change24hPercent,
+    Value<double>? volume,
+    Value<DateTime>? timestamp,
+    Value<int>? rowid,
+  }) {
+    return CachedTickersCompanion(
+      symbolId: symbolId ?? this.symbolId,
+      lastPrice: lastPrice ?? this.lastPrice,
+      bid: bid ?? this.bid,
+      ask: ask ?? this.ask,
+      change24h: change24h ?? this.change24h,
+      change24hPercent: change24hPercent ?? this.change24hPercent,
+      volume: volume ?? this.volume,
+      timestamp: timestamp ?? this.timestamp,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (symbolId.present) {
+      map['symbol_id'] = Variable<String>(symbolId.value);
+    }
+    if (lastPrice.present) {
+      map['last_price'] = Variable<double>(lastPrice.value);
+    }
+    if (bid.present) {
+      map['bid'] = Variable<double>(bid.value);
+    }
+    if (ask.present) {
+      map['ask'] = Variable<double>(ask.value);
+    }
+    if (change24h.present) {
+      map['change24h'] = Variable<double>(change24h.value);
+    }
+    if (change24hPercent.present) {
+      map['change24h_percent'] = Variable<double>(change24hPercent.value);
+    }
+    if (volume.present) {
+      map['volume'] = Variable<double>(volume.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedTickersCompanion(')
+          ..write('symbolId: $symbolId, ')
+          ..write('lastPrice: $lastPrice, ')
+          ..write('bid: $bid, ')
+          ..write('ask: $ask, ')
+          ..write('change24h: $change24h, ')
+          ..write('change24hPercent: $change24hPercent, ')
+          ..write('volume: $volume, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CachedCandlesTable extends CachedCandles
+    with TableInfo<$CachedCandlesTable, CachedCandle> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CachedCandlesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _symbolIdMeta = const VerificationMeta(
+    'symbolId',
+  );
+  @override
+  late final GeneratedColumn<String> symbolId = GeneratedColumn<String>(
+    'symbol_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timeframeCodeMeta = const VerificationMeta(
+    'timeframeCode',
+  );
+  @override
+  late final GeneratedColumn<String> timeframeCode = GeneratedColumn<String>(
+    'timeframe_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _openMeta = const VerificationMeta('open');
+  @override
+  late final GeneratedColumn<double> open = GeneratedColumn<double>(
+    'open',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _highMeta = const VerificationMeta('high');
+  @override
+  late final GeneratedColumn<double> high = GeneratedColumn<double>(
+    'high',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lowMeta = const VerificationMeta('low');
+  @override
+  late final GeneratedColumn<double> low = GeneratedColumn<double>(
+    'low',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _closeMeta = const VerificationMeta('close');
+  @override
+  late final GeneratedColumn<double> close = GeneratedColumn<double>(
+    'close',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _volumeMeta = const VerificationMeta('volume');
+  @override
+  late final GeneratedColumn<double> volume = GeneratedColumn<double>(
+    'volume',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timestampMeta = const VerificationMeta(
+    'timestamp',
+  );
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+    'timestamp',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    symbolId,
+    timeframeCode,
+    open,
+    high,
+    low,
+    close,
+    volume,
+    timestamp,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cached_candles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CachedCandle> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('symbol_id')) {
+      context.handle(
+        _symbolIdMeta,
+        symbolId.isAcceptableOrUnknown(data['symbol_id']!, _symbolIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_symbolIdMeta);
+    }
+    if (data.containsKey('timeframe_code')) {
+      context.handle(
+        _timeframeCodeMeta,
+        timeframeCode.isAcceptableOrUnknown(
+          data['timeframe_code']!,
+          _timeframeCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_timeframeCodeMeta);
+    }
+    if (data.containsKey('open')) {
+      context.handle(
+        _openMeta,
+        open.isAcceptableOrUnknown(data['open']!, _openMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_openMeta);
+    }
+    if (data.containsKey('high')) {
+      context.handle(
+        _highMeta,
+        high.isAcceptableOrUnknown(data['high']!, _highMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_highMeta);
+    }
+    if (data.containsKey('low')) {
+      context.handle(
+        _lowMeta,
+        low.isAcceptableOrUnknown(data['low']!, _lowMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lowMeta);
+    }
+    if (data.containsKey('close')) {
+      context.handle(
+        _closeMeta,
+        close.isAcceptableOrUnknown(data['close']!, _closeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_closeMeta);
+    }
+    if (data.containsKey('volume')) {
+      context.handle(
+        _volumeMeta,
+        volume.isAcceptableOrUnknown(data['volume']!, _volumeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_volumeMeta);
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(
+        _timestampMeta,
+        timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timestampMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {symbolId, timeframeCode, timestamp};
+  @override
+  CachedCandle map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CachedCandle(
+      symbolId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}symbol_id'],
+      )!,
+      timeframeCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}timeframe_code'],
+      )!,
+      open: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}open'],
+      )!,
+      high: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}high'],
+      )!,
+      low: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}low'],
+      )!,
+      close: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}close'],
+      )!,
+      volume: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}volume'],
+      )!,
+      timestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}timestamp'],
+      )!,
+    );
+  }
+
+  @override
+  $CachedCandlesTable createAlias(String alias) {
+    return $CachedCandlesTable(attachedDatabase, alias);
+  }
+}
+
+class CachedCandle extends DataClass implements Insertable<CachedCandle> {
+  final String symbolId;
+  final String timeframeCode;
+  final double open;
+  final double high;
+  final double low;
+  final double close;
+  final double volume;
+  final DateTime timestamp;
+  const CachedCandle({
+    required this.symbolId,
+    required this.timeframeCode,
+    required this.open,
+    required this.high,
+    required this.low,
+    required this.close,
+    required this.volume,
+    required this.timestamp,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['symbol_id'] = Variable<String>(symbolId);
+    map['timeframe_code'] = Variable<String>(timeframeCode);
+    map['open'] = Variable<double>(open);
+    map['high'] = Variable<double>(high);
+    map['low'] = Variable<double>(low);
+    map['close'] = Variable<double>(close);
+    map['volume'] = Variable<double>(volume);
+    map['timestamp'] = Variable<DateTime>(timestamp);
+    return map;
+  }
+
+  CachedCandlesCompanion toCompanion(bool nullToAbsent) {
+    return CachedCandlesCompanion(
+      symbolId: Value(symbolId),
+      timeframeCode: Value(timeframeCode),
+      open: Value(open),
+      high: Value(high),
+      low: Value(low),
+      close: Value(close),
+      volume: Value(volume),
+      timestamp: Value(timestamp),
+    );
+  }
+
+  factory CachedCandle.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CachedCandle(
+      symbolId: serializer.fromJson<String>(json['symbolId']),
+      timeframeCode: serializer.fromJson<String>(json['timeframeCode']),
+      open: serializer.fromJson<double>(json['open']),
+      high: serializer.fromJson<double>(json['high']),
+      low: serializer.fromJson<double>(json['low']),
+      close: serializer.fromJson<double>(json['close']),
+      volume: serializer.fromJson<double>(json['volume']),
+      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'symbolId': serializer.toJson<String>(symbolId),
+      'timeframeCode': serializer.toJson<String>(timeframeCode),
+      'open': serializer.toJson<double>(open),
+      'high': serializer.toJson<double>(high),
+      'low': serializer.toJson<double>(low),
+      'close': serializer.toJson<double>(close),
+      'volume': serializer.toJson<double>(volume),
+      'timestamp': serializer.toJson<DateTime>(timestamp),
+    };
+  }
+
+  CachedCandle copyWith({
+    String? symbolId,
+    String? timeframeCode,
+    double? open,
+    double? high,
+    double? low,
+    double? close,
+    double? volume,
+    DateTime? timestamp,
+  }) => CachedCandle(
+    symbolId: symbolId ?? this.symbolId,
+    timeframeCode: timeframeCode ?? this.timeframeCode,
+    open: open ?? this.open,
+    high: high ?? this.high,
+    low: low ?? this.low,
+    close: close ?? this.close,
+    volume: volume ?? this.volume,
+    timestamp: timestamp ?? this.timestamp,
+  );
+  CachedCandle copyWithCompanion(CachedCandlesCompanion data) {
+    return CachedCandle(
+      symbolId: data.symbolId.present ? data.symbolId.value : this.symbolId,
+      timeframeCode: data.timeframeCode.present
+          ? data.timeframeCode.value
+          : this.timeframeCode,
+      open: data.open.present ? data.open.value : this.open,
+      high: data.high.present ? data.high.value : this.high,
+      low: data.low.present ? data.low.value : this.low,
+      close: data.close.present ? data.close.value : this.close,
+      volume: data.volume.present ? data.volume.value : this.volume,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedCandle(')
+          ..write('symbolId: $symbolId, ')
+          ..write('timeframeCode: $timeframeCode, ')
+          ..write('open: $open, ')
+          ..write('high: $high, ')
+          ..write('low: $low, ')
+          ..write('close: $close, ')
+          ..write('volume: $volume, ')
+          ..write('timestamp: $timestamp')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    symbolId,
+    timeframeCode,
+    open,
+    high,
+    low,
+    close,
+    volume,
+    timestamp,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CachedCandle &&
+          other.symbolId == this.symbolId &&
+          other.timeframeCode == this.timeframeCode &&
+          other.open == this.open &&
+          other.high == this.high &&
+          other.low == this.low &&
+          other.close == this.close &&
+          other.volume == this.volume &&
+          other.timestamp == this.timestamp);
+}
+
+class CachedCandlesCompanion extends UpdateCompanion<CachedCandle> {
+  final Value<String> symbolId;
+  final Value<String> timeframeCode;
+  final Value<double> open;
+  final Value<double> high;
+  final Value<double> low;
+  final Value<double> close;
+  final Value<double> volume;
+  final Value<DateTime> timestamp;
+  final Value<int> rowid;
+  const CachedCandlesCompanion({
+    this.symbolId = const Value.absent(),
+    this.timeframeCode = const Value.absent(),
+    this.open = const Value.absent(),
+    this.high = const Value.absent(),
+    this.low = const Value.absent(),
+    this.close = const Value.absent(),
+    this.volume = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CachedCandlesCompanion.insert({
+    required String symbolId,
+    required String timeframeCode,
+    required double open,
+    required double high,
+    required double low,
+    required double close,
+    required double volume,
+    required DateTime timestamp,
+    this.rowid = const Value.absent(),
+  }) : symbolId = Value(symbolId),
+       timeframeCode = Value(timeframeCode),
+       open = Value(open),
+       high = Value(high),
+       low = Value(low),
+       close = Value(close),
+       volume = Value(volume),
+       timestamp = Value(timestamp);
+  static Insertable<CachedCandle> custom({
+    Expression<String>? symbolId,
+    Expression<String>? timeframeCode,
+    Expression<double>? open,
+    Expression<double>? high,
+    Expression<double>? low,
+    Expression<double>? close,
+    Expression<double>? volume,
+    Expression<DateTime>? timestamp,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (symbolId != null) 'symbol_id': symbolId,
+      if (timeframeCode != null) 'timeframe_code': timeframeCode,
+      if (open != null) 'open': open,
+      if (high != null) 'high': high,
+      if (low != null) 'low': low,
+      if (close != null) 'close': close,
+      if (volume != null) 'volume': volume,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CachedCandlesCompanion copyWith({
+    Value<String>? symbolId,
+    Value<String>? timeframeCode,
+    Value<double>? open,
+    Value<double>? high,
+    Value<double>? low,
+    Value<double>? close,
+    Value<double>? volume,
+    Value<DateTime>? timestamp,
+    Value<int>? rowid,
+  }) {
+    return CachedCandlesCompanion(
+      symbolId: symbolId ?? this.symbolId,
+      timeframeCode: timeframeCode ?? this.timeframeCode,
+      open: open ?? this.open,
+      high: high ?? this.high,
+      low: low ?? this.low,
+      close: close ?? this.close,
+      volume: volume ?? this.volume,
+      timestamp: timestamp ?? this.timestamp,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (symbolId.present) {
+      map['symbol_id'] = Variable<String>(symbolId.value);
+    }
+    if (timeframeCode.present) {
+      map['timeframe_code'] = Variable<String>(timeframeCode.value);
+    }
+    if (open.present) {
+      map['open'] = Variable<double>(open.value);
+    }
+    if (high.present) {
+      map['high'] = Variable<double>(high.value);
+    }
+    if (low.present) {
+      map['low'] = Variable<double>(low.value);
+    }
+    if (close.present) {
+      map['close'] = Variable<double>(close.value);
+    }
+    if (volume.present) {
+      map['volume'] = Variable<double>(volume.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedCandlesCompanion(')
+          ..write('symbolId: $symbolId, ')
+          ..write('timeframeCode: $timeframeCode, ')
+          ..write('open: $open, ')
+          ..write('high: $high, ')
+          ..write('low: $low, ')
+          ..write('close: $close, ')
+          ..write('volume: $volume, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CachedOrderBooksTable extends CachedOrderBooks
+    with TableInfo<$CachedOrderBooksTable, CachedOrderBook> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CachedOrderBooksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _symbolIdMeta = const VerificationMeta(
+    'symbolId',
+  );
+  @override
+  late final GeneratedColumn<String> symbolId = GeneratedColumn<String>(
+    'symbol_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bidsJsonMeta = const VerificationMeta(
+    'bidsJson',
+  );
+  @override
+  late final GeneratedColumn<String> bidsJson = GeneratedColumn<String>(
+    'bids_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _asksJsonMeta = const VerificationMeta(
+    'asksJson',
+  );
+  @override
+  late final GeneratedColumn<String> asksJson = GeneratedColumn<String>(
+    'asks_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timestampMeta = const VerificationMeta(
+    'timestamp',
+  );
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+    'timestamp',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    symbolId,
+    bidsJson,
+    asksJson,
+    timestamp,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cached_order_books';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CachedOrderBook> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('symbol_id')) {
+      context.handle(
+        _symbolIdMeta,
+        symbolId.isAcceptableOrUnknown(data['symbol_id']!, _symbolIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_symbolIdMeta);
+    }
+    if (data.containsKey('bids_json')) {
+      context.handle(
+        _bidsJsonMeta,
+        bidsJson.isAcceptableOrUnknown(data['bids_json']!, _bidsJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bidsJsonMeta);
+    }
+    if (data.containsKey('asks_json')) {
+      context.handle(
+        _asksJsonMeta,
+        asksJson.isAcceptableOrUnknown(data['asks_json']!, _asksJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_asksJsonMeta);
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(
+        _timestampMeta,
+        timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timestampMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {symbolId};
+  @override
+  CachedOrderBook map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CachedOrderBook(
+      symbolId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}symbol_id'],
+      )!,
+      bidsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bids_json'],
+      )!,
+      asksJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}asks_json'],
+      )!,
+      timestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}timestamp'],
+      )!,
+    );
+  }
+
+  @override
+  $CachedOrderBooksTable createAlias(String alias) {
+    return $CachedOrderBooksTable(attachedDatabase, alias);
+  }
+}
+
+class CachedOrderBook extends DataClass implements Insertable<CachedOrderBook> {
+  final String symbolId;
+  final String bidsJson;
+  final String asksJson;
+  final DateTime timestamp;
+  const CachedOrderBook({
+    required this.symbolId,
+    required this.bidsJson,
+    required this.asksJson,
+    required this.timestamp,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['symbol_id'] = Variable<String>(symbolId);
+    map['bids_json'] = Variable<String>(bidsJson);
+    map['asks_json'] = Variable<String>(asksJson);
+    map['timestamp'] = Variable<DateTime>(timestamp);
+    return map;
+  }
+
+  CachedOrderBooksCompanion toCompanion(bool nullToAbsent) {
+    return CachedOrderBooksCompanion(
+      symbolId: Value(symbolId),
+      bidsJson: Value(bidsJson),
+      asksJson: Value(asksJson),
+      timestamp: Value(timestamp),
+    );
+  }
+
+  factory CachedOrderBook.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CachedOrderBook(
+      symbolId: serializer.fromJson<String>(json['symbolId']),
+      bidsJson: serializer.fromJson<String>(json['bidsJson']),
+      asksJson: serializer.fromJson<String>(json['asksJson']),
+      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'symbolId': serializer.toJson<String>(symbolId),
+      'bidsJson': serializer.toJson<String>(bidsJson),
+      'asksJson': serializer.toJson<String>(asksJson),
+      'timestamp': serializer.toJson<DateTime>(timestamp),
+    };
+  }
+
+  CachedOrderBook copyWith({
+    String? symbolId,
+    String? bidsJson,
+    String? asksJson,
+    DateTime? timestamp,
+  }) => CachedOrderBook(
+    symbolId: symbolId ?? this.symbolId,
+    bidsJson: bidsJson ?? this.bidsJson,
+    asksJson: asksJson ?? this.asksJson,
+    timestamp: timestamp ?? this.timestamp,
+  );
+  CachedOrderBook copyWithCompanion(CachedOrderBooksCompanion data) {
+    return CachedOrderBook(
+      symbolId: data.symbolId.present ? data.symbolId.value : this.symbolId,
+      bidsJson: data.bidsJson.present ? data.bidsJson.value : this.bidsJson,
+      asksJson: data.asksJson.present ? data.asksJson.value : this.asksJson,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedOrderBook(')
+          ..write('symbolId: $symbolId, ')
+          ..write('bidsJson: $bidsJson, ')
+          ..write('asksJson: $asksJson, ')
+          ..write('timestamp: $timestamp')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(symbolId, bidsJson, asksJson, timestamp);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CachedOrderBook &&
+          other.symbolId == this.symbolId &&
+          other.bidsJson == this.bidsJson &&
+          other.asksJson == this.asksJson &&
+          other.timestamp == this.timestamp);
+}
+
+class CachedOrderBooksCompanion extends UpdateCompanion<CachedOrderBook> {
+  final Value<String> symbolId;
+  final Value<String> bidsJson;
+  final Value<String> asksJson;
+  final Value<DateTime> timestamp;
+  final Value<int> rowid;
+  const CachedOrderBooksCompanion({
+    this.symbolId = const Value.absent(),
+    this.bidsJson = const Value.absent(),
+    this.asksJson = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CachedOrderBooksCompanion.insert({
+    required String symbolId,
+    required String bidsJson,
+    required String asksJson,
+    required DateTime timestamp,
+    this.rowid = const Value.absent(),
+  }) : symbolId = Value(symbolId),
+       bidsJson = Value(bidsJson),
+       asksJson = Value(asksJson),
+       timestamp = Value(timestamp);
+  static Insertable<CachedOrderBook> custom({
+    Expression<String>? symbolId,
+    Expression<String>? bidsJson,
+    Expression<String>? asksJson,
+    Expression<DateTime>? timestamp,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (symbolId != null) 'symbol_id': symbolId,
+      if (bidsJson != null) 'bids_json': bidsJson,
+      if (asksJson != null) 'asks_json': asksJson,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CachedOrderBooksCompanion copyWith({
+    Value<String>? symbolId,
+    Value<String>? bidsJson,
+    Value<String>? asksJson,
+    Value<DateTime>? timestamp,
+    Value<int>? rowid,
+  }) {
+    return CachedOrderBooksCompanion(
+      symbolId: symbolId ?? this.symbolId,
+      bidsJson: bidsJson ?? this.bidsJson,
+      asksJson: asksJson ?? this.asksJson,
+      timestamp: timestamp ?? this.timestamp,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (symbolId.present) {
+      map['symbol_id'] = Variable<String>(symbolId.value);
+    }
+    if (bidsJson.present) {
+      map['bids_json'] = Variable<String>(bidsJson.value);
+    }
+    if (asksJson.present) {
+      map['asks_json'] = Variable<String>(asksJson.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedOrderBooksCompanion(')
+          ..write('symbolId: $symbolId, ')
+          ..write('bidsJson: $bidsJson, ')
+          ..write('asksJson: $asksJson, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CachedTradesTable extends CachedTrades
+    with TableInfo<$CachedTradesTable, CachedTrade> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CachedTradesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _symbolIdMeta = const VerificationMeta(
+    'symbolId',
+  );
+  @override
+  late final GeneratedColumn<String> symbolId = GeneratedColumn<String>(
+    'symbol_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tradesJsonMeta = const VerificationMeta(
+    'tradesJson',
+  );
+  @override
+  late final GeneratedColumn<String> tradesJson = GeneratedColumn<String>(
+    'trades_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timestampMeta = const VerificationMeta(
+    'timestamp',
+  );
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+    'timestamp',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [symbolId, tradesJson, timestamp];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cached_trades';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CachedTrade> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('symbol_id')) {
+      context.handle(
+        _symbolIdMeta,
+        symbolId.isAcceptableOrUnknown(data['symbol_id']!, _symbolIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_symbolIdMeta);
+    }
+    if (data.containsKey('trades_json')) {
+      context.handle(
+        _tradesJsonMeta,
+        tradesJson.isAcceptableOrUnknown(data['trades_json']!, _tradesJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tradesJsonMeta);
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(
+        _timestampMeta,
+        timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timestampMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {symbolId};
+  @override
+  CachedTrade map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CachedTrade(
+      symbolId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}symbol_id'],
+      )!,
+      tradesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}trades_json'],
+      )!,
+      timestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}timestamp'],
+      )!,
+    );
+  }
+
+  @override
+  $CachedTradesTable createAlias(String alias) {
+    return $CachedTradesTable(attachedDatabase, alias);
+  }
+}
+
+class CachedTrade extends DataClass implements Insertable<CachedTrade> {
+  final String symbolId;
+  final String tradesJson;
+  final DateTime timestamp;
+  const CachedTrade({
+    required this.symbolId,
+    required this.tradesJson,
+    required this.timestamp,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['symbol_id'] = Variable<String>(symbolId);
+    map['trades_json'] = Variable<String>(tradesJson);
+    map['timestamp'] = Variable<DateTime>(timestamp);
+    return map;
+  }
+
+  CachedTradesCompanion toCompanion(bool nullToAbsent) {
+    return CachedTradesCompanion(
+      symbolId: Value(symbolId),
+      tradesJson: Value(tradesJson),
+      timestamp: Value(timestamp),
+    );
+  }
+
+  factory CachedTrade.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CachedTrade(
+      symbolId: serializer.fromJson<String>(json['symbolId']),
+      tradesJson: serializer.fromJson<String>(json['tradesJson']),
+      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'symbolId': serializer.toJson<String>(symbolId),
+      'tradesJson': serializer.toJson<String>(tradesJson),
+      'timestamp': serializer.toJson<DateTime>(timestamp),
+    };
+  }
+
+  CachedTrade copyWith({
+    String? symbolId,
+    String? tradesJson,
+    DateTime? timestamp,
+  }) => CachedTrade(
+    symbolId: symbolId ?? this.symbolId,
+    tradesJson: tradesJson ?? this.tradesJson,
+    timestamp: timestamp ?? this.timestamp,
+  );
+  CachedTrade copyWithCompanion(CachedTradesCompanion data) {
+    return CachedTrade(
+      symbolId: data.symbolId.present ? data.symbolId.value : this.symbolId,
+      tradesJson: data.tradesJson.present
+          ? data.tradesJson.value
+          : this.tradesJson,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedTrade(')
+          ..write('symbolId: $symbolId, ')
+          ..write('tradesJson: $tradesJson, ')
+          ..write('timestamp: $timestamp')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(symbolId, tradesJson, timestamp);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CachedTrade &&
+          other.symbolId == this.symbolId &&
+          other.tradesJson == this.tradesJson &&
+          other.timestamp == this.timestamp);
+}
+
+class CachedTradesCompanion extends UpdateCompanion<CachedTrade> {
+  final Value<String> symbolId;
+  final Value<String> tradesJson;
+  final Value<DateTime> timestamp;
+  final Value<int> rowid;
+  const CachedTradesCompanion({
+    this.symbolId = const Value.absent(),
+    this.tradesJson = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CachedTradesCompanion.insert({
+    required String symbolId,
+    required String tradesJson,
+    required DateTime timestamp,
+    this.rowid = const Value.absent(),
+  }) : symbolId = Value(symbolId),
+       tradesJson = Value(tradesJson),
+       timestamp = Value(timestamp);
+  static Insertable<CachedTrade> custom({
+    Expression<String>? symbolId,
+    Expression<String>? tradesJson,
+    Expression<DateTime>? timestamp,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (symbolId != null) 'symbol_id': symbolId,
+      if (tradesJson != null) 'trades_json': tradesJson,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CachedTradesCompanion copyWith({
+    Value<String>? symbolId,
+    Value<String>? tradesJson,
+    Value<DateTime>? timestamp,
+    Value<int>? rowid,
+  }) {
+    return CachedTradesCompanion(
+      symbolId: symbolId ?? this.symbolId,
+      tradesJson: tradesJson ?? this.tradesJson,
+      timestamp: timestamp ?? this.timestamp,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (symbolId.present) {
+      map['symbol_id'] = Variable<String>(symbolId.value);
+    }
+    if (tradesJson.present) {
+      map['trades_json'] = Variable<String>(tradesJson.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedTradesCompanion(')
+          ..write('symbolId: $symbolId, ')
+          ..write('tradesJson: $tradesJson, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+abstract class _$AppDatabase extends GeneratedDatabase {
+  _$AppDatabase(QueryExecutor e) : super(e);
+  $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $CachedTickersTable cachedTickers = $CachedTickersTable(this);
+  late final $CachedCandlesTable cachedCandles = $CachedCandlesTable(this);
+  late final $CachedOrderBooksTable cachedOrderBooks = $CachedOrderBooksTable(
+    this,
+  );
+  late final $CachedTradesTable cachedTrades = $CachedTradesTable(this);
+  @override
+  Iterable<TableInfo<Table, Object?>> get allTables =>
+      allSchemaEntities.whereType<TableInfo<Table, Object?>>();
+  @override
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    cachedTickers,
+    cachedCandles,
+    cachedOrderBooks,
+    cachedTrades,
+  ];
+}
+
+typedef $$CachedTickersTableCreateCompanionBuilder =
+    CachedTickersCompanion Function({
+      required String symbolId,
+      required double lastPrice,
+      required double bid,
+      required double ask,
+      required double change24h,
+      required double change24hPercent,
+      required double volume,
+      required DateTime timestamp,
+      Value<int> rowid,
+    });
+typedef $$CachedTickersTableUpdateCompanionBuilder =
+    CachedTickersCompanion Function({
+      Value<String> symbolId,
+      Value<double> lastPrice,
+      Value<double> bid,
+      Value<double> ask,
+      Value<double> change24h,
+      Value<double> change24hPercent,
+      Value<double> volume,
+      Value<DateTime> timestamp,
+      Value<int> rowid,
+    });
+
+class $$CachedTickersTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedTickersTable> {
+  $$CachedTickersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get symbolId => $composableBuilder(
+    column: $table.symbolId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lastPrice => $composableBuilder(
+    column: $table.lastPrice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bid => $composableBuilder(
+    column: $table.bid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get ask => $composableBuilder(
+    column: $table.ask,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get change24h => $composableBuilder(
+    column: $table.change24h,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get change24hPercent => $composableBuilder(
+    column: $table.change24hPercent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get volume => $composableBuilder(
+    column: $table.volume,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CachedTickersTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedTickersTable> {
+  $$CachedTickersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get symbolId => $composableBuilder(
+    column: $table.symbolId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lastPrice => $composableBuilder(
+    column: $table.lastPrice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bid => $composableBuilder(
+    column: $table.bid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get ask => $composableBuilder(
+    column: $table.ask,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get change24h => $composableBuilder(
+    column: $table.change24h,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get change24hPercent => $composableBuilder(
+    column: $table.change24hPercent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get volume => $composableBuilder(
+    column: $table.volume,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CachedTickersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedTickersTable> {
+  $$CachedTickersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get symbolId =>
+      $composableBuilder(column: $table.symbolId, builder: (column) => column);
+
+  GeneratedColumn<double> get lastPrice =>
+      $composableBuilder(column: $table.lastPrice, builder: (column) => column);
+
+  GeneratedColumn<double> get bid =>
+      $composableBuilder(column: $table.bid, builder: (column) => column);
+
+  GeneratedColumn<double> get ask =>
+      $composableBuilder(column: $table.ask, builder: (column) => column);
+
+  GeneratedColumn<double> get change24h =>
+      $composableBuilder(column: $table.change24h, builder: (column) => column);
+
+  GeneratedColumn<double> get change24hPercent => $composableBuilder(
+    column: $table.change24hPercent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get volume =>
+      $composableBuilder(column: $table.volume, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+}
+
+class $$CachedTickersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CachedTickersTable,
+          CachedTicker,
+          $$CachedTickersTableFilterComposer,
+          $$CachedTickersTableOrderingComposer,
+          $$CachedTickersTableAnnotationComposer,
+          $$CachedTickersTableCreateCompanionBuilder,
+          $$CachedTickersTableUpdateCompanionBuilder,
+          (
+            CachedTicker,
+            BaseReferences<_$AppDatabase, $CachedTickersTable, CachedTicker>,
+          ),
+          CachedTicker,
+          PrefetchHooks Function()
+        > {
+  $$CachedTickersTableTableManager(_$AppDatabase db, $CachedTickersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CachedTickersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedTickersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedTickersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> symbolId = const Value.absent(),
+                Value<double> lastPrice = const Value.absent(),
+                Value<double> bid = const Value.absent(),
+                Value<double> ask = const Value.absent(),
+                Value<double> change24h = const Value.absent(),
+                Value<double> change24hPercent = const Value.absent(),
+                Value<double> volume = const Value.absent(),
+                Value<DateTime> timestamp = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CachedTickersCompanion(
+                symbolId: symbolId,
+                lastPrice: lastPrice,
+                bid: bid,
+                ask: ask,
+                change24h: change24h,
+                change24hPercent: change24hPercent,
+                volume: volume,
+                timestamp: timestamp,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String symbolId,
+                required double lastPrice,
+                required double bid,
+                required double ask,
+                required double change24h,
+                required double change24hPercent,
+                required double volume,
+                required DateTime timestamp,
+                Value<int> rowid = const Value.absent(),
+              }) => CachedTickersCompanion.insert(
+                symbolId: symbolId,
+                lastPrice: lastPrice,
+                bid: bid,
+                ask: ask,
+                change24h: change24h,
+                change24hPercent: change24hPercent,
+                volume: volume,
+                timestamp: timestamp,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CachedTickersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CachedTickersTable,
+      CachedTicker,
+      $$CachedTickersTableFilterComposer,
+      $$CachedTickersTableOrderingComposer,
+      $$CachedTickersTableAnnotationComposer,
+      $$CachedTickersTableCreateCompanionBuilder,
+      $$CachedTickersTableUpdateCompanionBuilder,
+      (
+        CachedTicker,
+        BaseReferences<_$AppDatabase, $CachedTickersTable, CachedTicker>,
+      ),
+      CachedTicker,
+      PrefetchHooks Function()
+    >;
+typedef $$CachedCandlesTableCreateCompanionBuilder =
+    CachedCandlesCompanion Function({
+      required String symbolId,
+      required String timeframeCode,
+      required double open,
+      required double high,
+      required double low,
+      required double close,
+      required double volume,
+      required DateTime timestamp,
+      Value<int> rowid,
+    });
+typedef $$CachedCandlesTableUpdateCompanionBuilder =
+    CachedCandlesCompanion Function({
+      Value<String> symbolId,
+      Value<String> timeframeCode,
+      Value<double> open,
+      Value<double> high,
+      Value<double> low,
+      Value<double> close,
+      Value<double> volume,
+      Value<DateTime> timestamp,
+      Value<int> rowid,
+    });
+
+class $$CachedCandlesTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedCandlesTable> {
+  $$CachedCandlesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get symbolId => $composableBuilder(
+    column: $table.symbolId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get timeframeCode => $composableBuilder(
+    column: $table.timeframeCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get open => $composableBuilder(
+    column: $table.open,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get high => $composableBuilder(
+    column: $table.high,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get low => $composableBuilder(
+    column: $table.low,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get close => $composableBuilder(
+    column: $table.close,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get volume => $composableBuilder(
+    column: $table.volume,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CachedCandlesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedCandlesTable> {
+  $$CachedCandlesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get symbolId => $composableBuilder(
+    column: $table.symbolId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get timeframeCode => $composableBuilder(
+    column: $table.timeframeCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get open => $composableBuilder(
+    column: $table.open,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get high => $composableBuilder(
+    column: $table.high,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get low => $composableBuilder(
+    column: $table.low,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get close => $composableBuilder(
+    column: $table.close,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get volume => $composableBuilder(
+    column: $table.volume,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CachedCandlesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedCandlesTable> {
+  $$CachedCandlesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get symbolId =>
+      $composableBuilder(column: $table.symbolId, builder: (column) => column);
+
+  GeneratedColumn<String> get timeframeCode => $composableBuilder(
+    column: $table.timeframeCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get open =>
+      $composableBuilder(column: $table.open, builder: (column) => column);
+
+  GeneratedColumn<double> get high =>
+      $composableBuilder(column: $table.high, builder: (column) => column);
+
+  GeneratedColumn<double> get low =>
+      $composableBuilder(column: $table.low, builder: (column) => column);
+
+  GeneratedColumn<double> get close =>
+      $composableBuilder(column: $table.close, builder: (column) => column);
+
+  GeneratedColumn<double> get volume =>
+      $composableBuilder(column: $table.volume, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+}
+
+class $$CachedCandlesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CachedCandlesTable,
+          CachedCandle,
+          $$CachedCandlesTableFilterComposer,
+          $$CachedCandlesTableOrderingComposer,
+          $$CachedCandlesTableAnnotationComposer,
+          $$CachedCandlesTableCreateCompanionBuilder,
+          $$CachedCandlesTableUpdateCompanionBuilder,
+          (
+            CachedCandle,
+            BaseReferences<_$AppDatabase, $CachedCandlesTable, CachedCandle>,
+          ),
+          CachedCandle,
+          PrefetchHooks Function()
+        > {
+  $$CachedCandlesTableTableManager(_$AppDatabase db, $CachedCandlesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CachedCandlesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedCandlesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedCandlesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> symbolId = const Value.absent(),
+                Value<String> timeframeCode = const Value.absent(),
+                Value<double> open = const Value.absent(),
+                Value<double> high = const Value.absent(),
+                Value<double> low = const Value.absent(),
+                Value<double> close = const Value.absent(),
+                Value<double> volume = const Value.absent(),
+                Value<DateTime> timestamp = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CachedCandlesCompanion(
+                symbolId: symbolId,
+                timeframeCode: timeframeCode,
+                open: open,
+                high: high,
+                low: low,
+                close: close,
+                volume: volume,
+                timestamp: timestamp,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String symbolId,
+                required String timeframeCode,
+                required double open,
+                required double high,
+                required double low,
+                required double close,
+                required double volume,
+                required DateTime timestamp,
+                Value<int> rowid = const Value.absent(),
+              }) => CachedCandlesCompanion.insert(
+                symbolId: symbolId,
+                timeframeCode: timeframeCode,
+                open: open,
+                high: high,
+                low: low,
+                close: close,
+                volume: volume,
+                timestamp: timestamp,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CachedCandlesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CachedCandlesTable,
+      CachedCandle,
+      $$CachedCandlesTableFilterComposer,
+      $$CachedCandlesTableOrderingComposer,
+      $$CachedCandlesTableAnnotationComposer,
+      $$CachedCandlesTableCreateCompanionBuilder,
+      $$CachedCandlesTableUpdateCompanionBuilder,
+      (
+        CachedCandle,
+        BaseReferences<_$AppDatabase, $CachedCandlesTable, CachedCandle>,
+      ),
+      CachedCandle,
+      PrefetchHooks Function()
+    >;
+typedef $$CachedOrderBooksTableCreateCompanionBuilder =
+    CachedOrderBooksCompanion Function({
+      required String symbolId,
+      required String bidsJson,
+      required String asksJson,
+      required DateTime timestamp,
+      Value<int> rowid,
+    });
+typedef $$CachedOrderBooksTableUpdateCompanionBuilder =
+    CachedOrderBooksCompanion Function({
+      Value<String> symbolId,
+      Value<String> bidsJson,
+      Value<String> asksJson,
+      Value<DateTime> timestamp,
+      Value<int> rowid,
+    });
+
+class $$CachedOrderBooksTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedOrderBooksTable> {
+  $$CachedOrderBooksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get symbolId => $composableBuilder(
+    column: $table.symbolId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bidsJson => $composableBuilder(
+    column: $table.bidsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get asksJson => $composableBuilder(
+    column: $table.asksJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CachedOrderBooksTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedOrderBooksTable> {
+  $$CachedOrderBooksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get symbolId => $composableBuilder(
+    column: $table.symbolId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bidsJson => $composableBuilder(
+    column: $table.bidsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get asksJson => $composableBuilder(
+    column: $table.asksJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CachedOrderBooksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedOrderBooksTable> {
+  $$CachedOrderBooksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get symbolId =>
+      $composableBuilder(column: $table.symbolId, builder: (column) => column);
+
+  GeneratedColumn<String> get bidsJson =>
+      $composableBuilder(column: $table.bidsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get asksJson =>
+      $composableBuilder(column: $table.asksJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+}
+
+class $$CachedOrderBooksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CachedOrderBooksTable,
+          CachedOrderBook,
+          $$CachedOrderBooksTableFilterComposer,
+          $$CachedOrderBooksTableOrderingComposer,
+          $$CachedOrderBooksTableAnnotationComposer,
+          $$CachedOrderBooksTableCreateCompanionBuilder,
+          $$CachedOrderBooksTableUpdateCompanionBuilder,
+          (
+            CachedOrderBook,
+            BaseReferences<
+              _$AppDatabase,
+              $CachedOrderBooksTable,
+              CachedOrderBook
+            >,
+          ),
+          CachedOrderBook,
+          PrefetchHooks Function()
+        > {
+  $$CachedOrderBooksTableTableManager(
+    _$AppDatabase db,
+    $CachedOrderBooksTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CachedOrderBooksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedOrderBooksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedOrderBooksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> symbolId = const Value.absent(),
+                Value<String> bidsJson = const Value.absent(),
+                Value<String> asksJson = const Value.absent(),
+                Value<DateTime> timestamp = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CachedOrderBooksCompanion(
+                symbolId: symbolId,
+                bidsJson: bidsJson,
+                asksJson: asksJson,
+                timestamp: timestamp,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String symbolId,
+                required String bidsJson,
+                required String asksJson,
+                required DateTime timestamp,
+                Value<int> rowid = const Value.absent(),
+              }) => CachedOrderBooksCompanion.insert(
+                symbolId: symbolId,
+                bidsJson: bidsJson,
+                asksJson: asksJson,
+                timestamp: timestamp,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CachedOrderBooksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CachedOrderBooksTable,
+      CachedOrderBook,
+      $$CachedOrderBooksTableFilterComposer,
+      $$CachedOrderBooksTableOrderingComposer,
+      $$CachedOrderBooksTableAnnotationComposer,
+      $$CachedOrderBooksTableCreateCompanionBuilder,
+      $$CachedOrderBooksTableUpdateCompanionBuilder,
+      (
+        CachedOrderBook,
+        BaseReferences<_$AppDatabase, $CachedOrderBooksTable, CachedOrderBook>,
+      ),
+      CachedOrderBook,
+      PrefetchHooks Function()
+    >;
+typedef $$CachedTradesTableCreateCompanionBuilder =
+    CachedTradesCompanion Function({
+      required String symbolId,
+      required String tradesJson,
+      required DateTime timestamp,
+      Value<int> rowid,
+    });
+typedef $$CachedTradesTableUpdateCompanionBuilder =
+    CachedTradesCompanion Function({
+      Value<String> symbolId,
+      Value<String> tradesJson,
+      Value<DateTime> timestamp,
+      Value<int> rowid,
+    });
+
+class $$CachedTradesTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedTradesTable> {
+  $$CachedTradesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get symbolId => $composableBuilder(
+    column: $table.symbolId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tradesJson => $composableBuilder(
+    column: $table.tradesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CachedTradesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedTradesTable> {
+  $$CachedTradesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get symbolId => $composableBuilder(
+    column: $table.symbolId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tradesJson => $composableBuilder(
+    column: $table.tradesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CachedTradesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedTradesTable> {
+  $$CachedTradesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get symbolId =>
+      $composableBuilder(column: $table.symbolId, builder: (column) => column);
+
+  GeneratedColumn<String> get tradesJson => $composableBuilder(
+    column: $table.tradesJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+}
+
+class $$CachedTradesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CachedTradesTable,
+          CachedTrade,
+          $$CachedTradesTableFilterComposer,
+          $$CachedTradesTableOrderingComposer,
+          $$CachedTradesTableAnnotationComposer,
+          $$CachedTradesTableCreateCompanionBuilder,
+          $$CachedTradesTableUpdateCompanionBuilder,
+          (
+            CachedTrade,
+            BaseReferences<_$AppDatabase, $CachedTradesTable, CachedTrade>,
+          ),
+          CachedTrade,
+          PrefetchHooks Function()
+        > {
+  $$CachedTradesTableTableManager(_$AppDatabase db, $CachedTradesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CachedTradesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedTradesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedTradesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> symbolId = const Value.absent(),
+                Value<String> tradesJson = const Value.absent(),
+                Value<DateTime> timestamp = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CachedTradesCompanion(
+                symbolId: symbolId,
+                tradesJson: tradesJson,
+                timestamp: timestamp,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String symbolId,
+                required String tradesJson,
+                required DateTime timestamp,
+                Value<int> rowid = const Value.absent(),
+              }) => CachedTradesCompanion.insert(
+                symbolId: symbolId,
+                tradesJson: tradesJson,
+                timestamp: timestamp,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CachedTradesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CachedTradesTable,
+      CachedTrade,
+      $$CachedTradesTableFilterComposer,
+      $$CachedTradesTableOrderingComposer,
+      $$CachedTradesTableAnnotationComposer,
+      $$CachedTradesTableCreateCompanionBuilder,
+      $$CachedTradesTableUpdateCompanionBuilder,
+      (
+        CachedTrade,
+        BaseReferences<_$AppDatabase, $CachedTradesTable, CachedTrade>,
+      ),
+      CachedTrade,
+      PrefetchHooks Function()
+    >;
+
+class $AppDatabaseManager {
+  final _$AppDatabase _db;
+  $AppDatabaseManager(this._db);
+  $$CachedTickersTableTableManager get cachedTickers =>
+      $$CachedTickersTableTableManager(_db, _db.cachedTickers);
+  $$CachedCandlesTableTableManager get cachedCandles =>
+      $$CachedCandlesTableTableManager(_db, _db.cachedCandles);
+  $$CachedOrderBooksTableTableManager get cachedOrderBooks =>
+      $$CachedOrderBooksTableTableManager(_db, _db.cachedOrderBooks);
+  $$CachedTradesTableTableManager get cachedTrades =>
+      $$CachedTradesTableTableManager(_db, _db.cachedTrades);
+}

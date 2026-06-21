@@ -1,0 +1,6 @@
+{
+  "elements": {},
+  "imports": [
+    "package:youtrade/core/failures.dart"
+  ]
+}

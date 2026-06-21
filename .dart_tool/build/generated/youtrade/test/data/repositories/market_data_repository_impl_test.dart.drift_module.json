@@ -1,0 +1,12 @@
+{
+  "elements": {},
+  "imports": [
+    "package:flutter_test/flutter_test.dart",
+    "package:youtrade/core/result.dart",
+    "package:youtrade/data/repositories/market_data_repository_impl.dart",
+    "package:youtrade/domain/entities/symbol.dart",
+    "package:youtrade/domain/entities/timeframe.dart",
+    "package:youtrade/domain/entities/venue.dart",
+    "package:youtrade/domain/registry/exchange_capability.dart"
+  ]
+}

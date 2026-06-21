@@ -1,0 +1,8 @@
+{
+  "elements": {},
+  "imports": [
+    "package:flutter_test/flutter_test.dart",
+    "package:youtrade/core/failures.dart",
+    "package:youtrade/core/result.dart"
+  ]
+}

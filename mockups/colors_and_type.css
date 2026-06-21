@@ -1,0 +1,301 @@
+/* ==========================================================================
+   OpenTreasury Design System — Colors & Type
+   Sourced from packages/ui/src/styles.css in the opentreasury monorepo.
+   Tailwind v4 tokens flattened into plain CSS custom properties, with
+   semantic typography helpers on top.
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap");
+
+:root {
+  /* ── Type families ─────────────────────────────────────────────────
+     Mono-forward system: Geist for text, JetBrains Mono for display
+     + technical accents, Instrument Serif italic for editorial pull
+     quotes, eyebrows and section ledes. */
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* ── Type scale (from @theme) ─────────────────────────────────────── */
+  --text-display: 5rem;        /* 80px — hero */
+  --text-display-lh: 1;
+  --text-display-ls: -0.02em;
+
+  --text-ui: 0.75rem;          /* 12px — uppercase eyebrow */
+  --text-ui-lh: 1.2;
+  --text-ui-ls: 0.05em;
+
+  --text-ui-xs: 0.5625rem;     /* 9px — micro-eyebrow */
+  --text-ui-xs-lh: 1.2;
+  --text-ui-xs-ls: 0.07em;
+
+  /* ── Neutrals — raw primitives ────────────────────────────────────── */
+  --color-carbon: #020d23;           /* primary text in light */
+  --color-carbon-hover: #061336;
+  --color-carbon-muted: #212b44;
+  --color-carbon-60: rgba(2, 13, 35, 0.6);
+  --color-carbon-40: rgba(2, 13, 35, 0.4);
+  --color-carbon-8:  rgba(2, 13, 35, 0.08);
+  --color-carbon-4:  rgba(2, 13, 35, 0.04);
+  --color-titanium:  #f7f4f3;        /* warm off-white */
+  --color-dark:      #030612;        /* near-black */
+  --color-white-70:  rgba(255, 255, 255, 0.7);
+  --color-white-50:  rgba(255, 255, 255, 0.5);
+  --color-white-15:  rgba(255, 255, 255, 0.15);
+  --color-white-8:   rgba(255, 255, 255, 0.08);
+
+  /* ── Brand triads — seven families, each bold / soft / vivid ──────── */
+  --color-cobalt-bold:    #152d80;
+  --color-cobalt-soft:    #b4d7ff;
+  --color-cobalt-vivid:   #0355f3;
+  --color-turquoise-bold: #005060;
+  --color-turquoise-soft: #bdecf6;
+  --color-turquoise-vivid:#00bbcc;
+  --color-emerald-bold:   #1d683f;   /* logo colour */
+  --color-emerald-soft:   #e8f5ce;
+  --color-emerald-vivid:  #01a54c;
+  --color-amethyst-bold:  #4c2672;
+  --color-amethyst-soft:  #e9cdff;
+  --color-amethyst-vivid: #ae89ff;
+  --color-fuchsia-bold:   #720741;
+  --color-fuchsia-soft:   #ffcce7;
+  --color-fuchsia-vivid:  #ff8afa;
+  --color-sienna-bold:    #ad4010;
+  --color-sienna-soft:    #fce3c5;
+  --color-sienna-vivid:   #ffc368;
+  --color-ochre-bold:     #995e05;
+  --color-ochre-soft:     #fbeebb;
+  --color-ochre-vivid:    #ffd468;
+
+  /* ── Interactive blue (primary action) ────────────────────────────── */
+  --color-blue:         #1634ef;
+  --color-blue-hover:   #3952f1;
+  --color-blue-subtle:  #e0e2ff;
+  --color-blue-muted:   #eff0fc;
+
+  /* ── Status ───────────────────────────────────────────────────────── */
+  --color-success:        #1d683f;
+  --color-success-bg:     #e8f5ce;
+  --color-success-border: rgba(29, 104, 63, 0.3);
+  --color-warning:        #995e05;
+  --color-warning-bg:     #fefce8;
+  --color-warning-border: rgba(153, 94, 5, 0.3);
+
+  /* ── Shadows (very low chroma, built on carbon) ───────────────────── */
+  --shadow-minimal:  0 1px 2px rgba(2,13,35,0.07);
+  --shadow-subtle:   0 0 8px rgba(2,13,35,0.08), 0 0 20px rgba(2,13,35,0.02);
+  --shadow-medium:   0 11px 32px rgba(0,0,0,0.12);
+  --shadow-standard: 0 0 20px -6px rgba(2,13,35,0.24), 0 0 0 1px rgba(2,13,35,0.06);
+  --shadow-heavy:    0 0 0 1px rgba(2,13,35,0.06), 0 16px 60px -30px rgba(2,13,35,0.24), 0 50px 100px -20px rgba(2,13,35,0.25);
+  --shadow-glow:     0 0 0 4px rgba(255,255,255,0.5), 0 4px 100px rgba(0,0,0,0.1);
+  --shadow-nav:      0 1px 0 rgba(2,13,35,0.08);
+
+  /* ── Transitions ──────────────────────────────────────────────────── */
+  --transition-fast:   0.15s ease;
+  --transition-base:   0.25s ease;
+  --transition-medium: 0.35s ease;
+  --transition-slow:   0.55s cubic-bezier(0.165, 0.84, 0.44, 1);
+
+  /* ── Radii — OpenTreasury is intentionally SHARP. Everything 0/4px. */
+  --radius-none: 0px;
+  --radius-sm:   4px;   /* buttons, inputs, tags, small cards */
+  --radius-md:   8px;   /* cards (0.5rem in source) */
+  --radius-lg:   8px;
+  --radius-full: 0px;   /* pills do NOT exist */
+
+  /* ── Semantic — LIGHT theme (default) ─────────────────────────────── */
+  --color-background: #ffffff;
+  --color-foreground: #020d23;
+  --color-primary: #1634ef;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f7f4f3;
+  --color-secondary-foreground: #020d23;
+  --color-accent: #f7f4f3;
+  --color-accent-foreground: #020d23;
+  --color-destructive: lch(94.759 3.672 17.122);
+  --color-destructive-foreground: lch(50 80 29);
+  --color-error: lch(50 80 29);
+  --color-error-bg: lch(94.759 3.672 17.122);
+  --color-error-border: lch(50 80 29 / 0.3);
+  --color-muted: #f7f4f3;
+  --color-muted-foreground: rgba(2, 13, 35, 0.6);
+  --color-card: #ffffff;
+  --color-card-foreground: #020d23;
+  --color-border: rgba(2, 13, 35, 0.08);
+  --color-ring: #1634ef;
+
+  /* Tag palette — light (bg L=92, low chroma) */
+  --color-tag-cobalt-bg:    lch(92 30 265);
+  --color-tag-turquoise-bg: lch(92 25 200);
+  --color-tag-emerald-bg:   lch(92 28 145);
+  --color-tag-amethyst-bg:  lch(92 30 310);
+  --color-tag-fuchsia-bg:   lch(92 30 345);
+  --color-tag-sienna-bg:    lch(92 30 40);
+  --color-tag-ochre-bg:     lch(92 28 75);
+}
+
+.dark {
+  --color-background: #050505;
+  --color-foreground: #ffffff;
+  --color-primary: #1634ef;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #1a1a1a;
+  --color-secondary-foreground: #ffffff;
+  --color-accent: #1a1a1a;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: lch(11.798 12.827 18.725);
+  --color-destructive-foreground: lch(80 80 29);
+  --color-error: lch(80 80 29);
+  --color-error-bg: lch(11.798 12.827 18.725);
+  --color-error-border: lch(80 80 29 / 0.3);
+  --color-muted: #1a1a1a;
+  --color-muted-foreground: rgba(255, 255, 255, 0.55);
+  --color-card: lab(8.30603 0.618205 -2.16572);
+  --color-card-foreground: #ffffff;
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-ring: #1634ef;
+
+  --color-tag-cobalt-bg:    lch(20 35 265);
+  --color-tag-turquoise-bg: lch(20 30 200);
+  --color-tag-emerald-bg:   lch(20 30 145);
+  --color-tag-amethyst-bg:  lch(20 35 310);
+  --color-tag-fuchsia-bg:   lch(20 35 345);
+  --color-tag-sienna-bg:    lch(20 35 40);
+  --color-tag-ochre-bg:     lch(20 30 75);
+}
+
+/* ==========================================================================
+   Base + semantic type helpers
+   OpenTreasury's type personality: technical mono-forward. JetBrains Mono
+   drives display type (at reduced weight for refinement); Geist runs body
+   and UI; Instrument Serif italic is a single editorial accent.
+   ========================================================================== */
+   ========================================================================== */
+
+html, body {
+  font-family: var(--font-sans);
+  color: var(--color-foreground);
+  background: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.display,
+h1.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.75rem, 5vw + 1rem, 5rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+h1, .h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 3rem;       /* 48px */
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+h2, .h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 2.25rem;    /* 36px */
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+h3, .h3 {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 1.5rem;     /* 24px — matches CardTitle */
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+h4, .h4 {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 1.125rem;   /* 18px */
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+}
+
+p, .body {
+  font-size: 1rem;       /* 16px */
+  line-height: 1.55;
+  color: var(--color-foreground);
+}
+
+.body-lg {
+  font-size: 1.125rem;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.muted {
+  color: var(--color-muted-foreground);
+}
+
+.small, small {
+  font-size: 0.875rem;   /* 14px */
+  line-height: 1.5;
+}
+
+/* Editorial italic serif — used for sub-heads and blockquotes */
+.serif-italic,
+.editorial {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* 12px uppercase eyebrow / metadata label */
+.ui-eyebrow {
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-lh);
+  letter-spacing: var(--text-ui-ls);
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+  font-weight: 500;
+}
+
+/* 9px micro-eyebrow */
+.ui-micro {
+  font-size: var(--text-ui-xs);
+  line-height: var(--text-ui-xs-lh);
+  letter-spacing: var(--text-ui-xs-ls);
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+/* Mono for money, addresses, hashes */
+.mono, code, .tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Amount formatter — large int + smaller fractional */
+.amount { font-variant-numeric: tabular-nums; }
+.amount .frac { font-size: 0.75em; opacity: 0.6; vertical-align: 0.25em; }
+
+/* Blockquote (matches .prose blockquote in source) */
+blockquote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--color-card-foreground);
+  background: var(--color-card);
+  border: none;
+  border-inline-start: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.25rem 1rem;
+  margin: 3rem 0;
+}
+
+a { color: inherit; text-decoration: none; }
+a:hover { color: var(--color-muted-foreground); transition: color var(--transition-base); }

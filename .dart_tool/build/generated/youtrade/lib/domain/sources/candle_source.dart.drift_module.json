@@ -1,0 +1,9 @@
+{
+  "elements": {},
+  "imports": [
+    "package:youtrade/core/result.dart",
+    "package:youtrade/domain/entities/candle.dart",
+    "package:youtrade/domain/entities/symbol.dart",
+    "package:youtrade/domain/entities/timeframe.dart"
+  ]
+}

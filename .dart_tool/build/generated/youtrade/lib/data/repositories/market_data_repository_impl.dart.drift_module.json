@@ -1,0 +1,16 @@
+{
+  "elements": {},
+  "imports": [
+    "package:youtrade/core/failures.dart",
+    "package:youtrade/core/result.dart",
+    "package:youtrade/domain/entities/candle.dart",
+    "package:youtrade/domain/entities/order_book.dart",
+    "package:youtrade/domain/entities/symbol.dart",
+    "package:youtrade/domain/entities/ticker.dart",
+    "package:youtrade/domain/entities/timeframe.dart",
+    "package:youtrade/domain/entities/trade.dart",
+    "package:youtrade/domain/registry/exchange_capability.dart",
+    "package:youtrade/domain/repositories/market_data_repository.dart",
+    "package:youtrade/data/datasources/mock/mock_market_data_store.dart"
+  ]
+}

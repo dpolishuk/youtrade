@@ -1,0 +1,8 @@
+{
+  "elements": {},
+  "imports": [
+    "package:youtrade/core/result.dart",
+    "package:youtrade/domain/entities/order_book.dart",
+    "package:youtrade/domain/entities/symbol.dart"
+  ]
+}

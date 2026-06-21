@@ -1,0 +1,65 @@
+{
+  "elements": {
+    "AppDatabase": {
+      "id": {
+        "library_uri": "package:youtrade/data/datasources/local/app_database.dart",
+        "name": "AppDatabase"
+      },
+      "declaration": {
+        "source_uri": "package:youtrade/data/datasources/local/app_database.dart",
+        "offset": 338,
+        "name": "AppDatabase"
+      },
+      "references": [
+        {
+          "library_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+          "name": "cached_tickers"
+        },
+        {
+          "library_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+          "name": "cached_candles"
+        },
+        {
+          "library_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+          "name": "cached_order_books"
+        },
+        {
+          "library_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+          "name": "cached_trades"
+        }
+      ],
+      "type": "database",
+      "tables": [
+        {
+          "library_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+          "name": "cached_tickers"
+        },
+        {
+          "library_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+          "name": "cached_candles"
+        },
+        {
+          "library_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+          "name": "cached_order_books"
+        },
+        {
+          "library_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+          "name": "cached_trades"
+        }
+      ],
+      "views": [],
+      "includes": [],
+      "queries": [],
+      "schema_version": 1,
+      "daos": [],
+      "has_constructor_arg": false
+    }
+  },
+  "imports": [
+    "package:drift/drift.dart",
+    "package:drift/native.dart",
+    "package:path/path.dart",
+    "package:path_provider/path_provider.dart",
+    "package:youtrade/data/datasources/local/market_cache_tables.dart"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "elements": {},
+  "imports": [
+    "package:drift/drift.dart",
+    "package:youtrade/domain/entities/candle.dart",
+    "package:youtrade/domain/entities/order_book.dart",
+    "package:youtrade/domain/entities/symbol.dart",
+    "package:youtrade/domain/entities/ticker.dart",
+    "package:youtrade/domain/entities/timeframe.dart",
+    "package:youtrade/domain/entities/trade.dart",
+    "package:youtrade/data/datasources/local/app_database.dart"
+  ]
+}

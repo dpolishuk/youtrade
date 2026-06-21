@@ -1,0 +1,632 @@
+{
+  "elements": {
+    "cached_tickers": {
+      "id": {
+        "library_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+        "name": "cached_tickers"
+      },
+      "declaration": {
+        "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+        "offset": 42,
+        "name": "CachedTickers"
+      },
+      "references": [],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "symbol_id",
+          "nameInDart": "symbolId",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 89,
+            "name": "symbolId"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "last_price",
+          "nameInDart": "lastPrice",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 128,
+            "name": "lastPrice"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "bid",
+          "nameInDart": "bid",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 168,
+            "name": "bid"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "ask",
+          "nameInDart": "ask",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 202,
+            "name": "ask"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "change24h",
+          "nameInDart": "change24h",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 236,
+            "name": "change24h"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "change24h_percent",
+          "nameInDart": "change24hPercent",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 276,
+            "name": "change24hPercent"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "volume",
+          "nameInDart": "volume",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 323,
+            "name": "volume"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "timestamp",
+          "nameInDart": "timestamp",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 364,
+            "name": "timestamp"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [
+        {
+          "type": "primary_key",
+          "columns": [
+            "symbol_id"
+          ]
+        }
+      ],
+      "custom_parent_class": null,
+      "interfaces_for_row_class": [],
+      "fixed_entity_info_name": null,
+      "base_dart_name": "CachedTickers",
+      "row_class_name": "CachedTicker",
+      "companion_class_name": null,
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    },
+    "cached_candles": {
+      "id": {
+        "library_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+        "name": "cached_candles"
+      },
+      "declaration": {
+        "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+        "offset": 457,
+        "name": "CachedCandles"
+      },
+      "references": [],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "symbol_id",
+          "nameInDart": "symbolId",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 504,
+            "name": "symbolId"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "timeframe_code",
+          "nameInDart": "timeframeCode",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 543,
+            "name": "timeframeCode"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "open",
+          "nameInDart": "open",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 587,
+            "name": "open"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "high",
+          "nameInDart": "high",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 622,
+            "name": "high"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "low",
+          "nameInDart": "low",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 657,
+            "name": "low"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "close",
+          "nameInDart": "close",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 691,
+            "name": "close"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "double"
+          },
+          "nullable": false,
+          "nameInSql": "volume",
+          "nameInDart": "volume",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 727,
+            "name": "volume"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "timestamp",
+          "nameInDart": "timestamp",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 768,
+            "name": "timestamp"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [
+        {
+          "type": "primary_key",
+          "columns": [
+            "symbol_id",
+            "timeframe_code",
+            "timestamp"
+          ]
+        }
+      ],
+      "custom_parent_class": null,
+      "interfaces_for_row_class": [],
+      "fixed_entity_info_name": null,
+      "base_dart_name": "CachedCandles",
+      "row_class_name": "CachedCandle",
+      "companion_class_name": null,
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    },
+    "cached_order_books": {
+      "id": {
+        "library_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+        "name": "cached_order_books"
+      },
+      "declaration": {
+        "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+        "offset": 887,
+        "name": "CachedOrderBooks"
+      },
+      "references": [],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "symbol_id",
+          "nameInDart": "symbolId",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 937,
+            "name": "symbolId"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "bids_json",
+          "nameInDart": "bidsJson",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 976,
+            "name": "bidsJson"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "asks_json",
+          "nameInDart": "asksJson",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 1015,
+            "name": "asksJson"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "timestamp",
+          "nameInDart": "timestamp",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 1058,
+            "name": "timestamp"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [
+        {
+          "type": "primary_key",
+          "columns": [
+            "symbol_id"
+          ]
+        }
+      ],
+      "custom_parent_class": null,
+      "interfaces_for_row_class": [],
+      "fixed_entity_info_name": null,
+      "base_dart_name": "CachedOrderBooks",
+      "row_class_name": "CachedOrderBook",
+      "companion_class_name": null,
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    },
+    "cached_trades": {
+      "id": {
+        "library_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+        "name": "cached_trades"
+      },
+      "declaration": {
+        "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+        "offset": 1151,
+        "name": "CachedTrades"
+      },
+      "references": [],
+      "type": "table",
+      "columns": [
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "symbol_id",
+          "nameInDart": "symbolId",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 1197,
+            "name": "symbolId"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "string"
+          },
+          "nullable": false,
+          "nameInSql": "trades_json",
+          "nameInDart": "tradesJson",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 1236,
+            "name": "tradesJson"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        },
+        {
+          "sqlType": {
+            "builtin": "dateTime"
+          },
+          "nullable": false,
+          "nameInSql": "timestamp",
+          "nameInDart": "timestamp",
+          "declaration": {
+            "source_uri": "package:youtrade/data/datasources/local/market_cache_tables.dart",
+            "offset": 1281,
+            "name": "timestamp"
+          },
+          "typeConverter": null,
+          "clientDefaultCode": null,
+          "defaultArgument": null,
+          "overriddenJsonName": null,
+          "referenceName": null,
+          "documentationComment": null,
+          "constraints": [],
+          "customConstraints": null
+        }
+      ],
+      "existing_data_class": null,
+      "table_constraints": [
+        {
+          "type": "primary_key",
+          "columns": [
+            "symbol_id"
+          ]
+        }
+      ],
+      "custom_parent_class": null,
+      "interfaces_for_row_class": [],
+      "fixed_entity_info_name": null,
+      "base_dart_name": "CachedTrades",
+      "row_class_name": "CachedTrade",
+      "companion_class_name": null,
+      "without_rowid": false,
+      "strict": false,
+      "write_default_constraints": true,
+      "custom_constraints": [],
+      "attached_indices": []
+    }
+  },
+  "imports": [
+    "package:drift/drift.dart"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "elements": {},
+  "imports": [
+    "package:drift/native.dart",
+    "package:flutter_test/flutter_test.dart",
+    "package:youtrade/data/datasources/local/app_database.dart",
+    "package:youtrade/data/datasources/local/market_cache_data_source.dart",
+    "package:youtrade/domain/entities/candle.dart",
+    "package:youtrade/domain/entities/order_book.dart",
+    "package:youtrade/domain/entities/symbol.dart",
+    "package:youtrade/domain/entities/ticker.dart",
+    "package:youtrade/domain/entities/timeframe.dart",
+    "package:youtrade/domain/entities/trade.dart",
+    "package:youtrade/domain/entities/venue.dart"
+  ]
+}
