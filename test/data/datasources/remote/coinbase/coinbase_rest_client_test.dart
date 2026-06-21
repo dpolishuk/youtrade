@@ -260,6 +260,148 @@ void main() {
       );
     });
 
+    test('fetchTicker returns 0.0 change24hPercent when open is 0', () async {
+      final client = CoinbaseRestClient(
+        httpClient: twoCallClient(
+          statsResponse: http.Response(
+            '{"open":"0","high":"110.0","low":"90.0","volume":"1000.0","last":"100.0","volume_30day":"50000.0"}',
+            200,
+          ),
+          tickerResponse: http.Response(
+            '{"trade_id":1,"price":"100.0","size":"1.0","bid":"99.5","ask":"100.5","volume":"1000.0","time":"2024-06-21T12:00:00.000Z"}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Success<Ticker>>());
+      result.when(
+        success: (ticker) => expect(ticker.change24hPercent, 0.0),
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test(
+      'fetchTicker falls back to stats volume when quote volume is null',
+      () async {
+        final client = CoinbaseRestClient(
+          httpClient: twoCallClient(
+            statsResponse: http.Response(
+              '{"open":"99.0","high":"110.0","low":"90.0","volume":"5000.0","last":"100.0","volume_30day":"50000.0"}',
+              200,
+            ),
+            tickerResponse: http.Response(
+              '{"trade_id":1,"price":"100.0","size":"1.0","bid":"99.5","ask":"100.5","time":"2024-06-21T12:00:00.000Z"}',
+              200,
+            ),
+          ),
+        );
+
+        final result = await client.fetchTicker(symbol);
+        expect(result, isA<Success<Ticker>>());
+        result.when(
+          success: (ticker) => expect(ticker.volume, 5000.0),
+          failure: (_) => fail('expected success'),
+        );
+      },
+    );
+
+    test('fetchCandles returns NetworkFailure on request exception', () async {
+      final client = CoinbaseRestClient(
+        httpClient: MockClient((_) async => throw Exception('timeout')),
+      );
+      final result = await client.fetchCandles(symbol, Timeframe.h1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'Coinbase candles request failed: Exception: timeout',
+          );
+        },
+      );
+    });
+
+    test('fetchCandles returns ParseFailure on non-numeric values', () async {
+      final client = CoinbaseRestClient(
+        httpClient: MockClient(
+          (_) async =>
+              http.Response('[["not-a-time",0.5,2.0,1.0,1.5,100.0]]', 200),
+        ),
+      );
+
+      final result = await client.fetchCandles(symbol, Timeframe.h1, limit: 1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Coinbase candles parse failed:'));
+          expect(failure.message, contains('FormatException'));
+        },
+      );
+    });
+
+    test('fetchOrderBook returns ParseFailure on malformed JSON', () async {
+      final client = CoinbaseRestClient(
+        httpClient: MockClient((_) async => http.Response('not-json', 200)),
+      );
+      final result = await client.fetchOrderBook(symbol);
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith('Coinbase order book parse failed:'),
+          );
+        },
+      );
+    });
+
+    test(
+      'fetchOrderBook returns NetworkFailure on request exception',
+      () async {
+        final client = CoinbaseRestClient(
+          httpClient: MockClient((_) async => throw Exception('timeout')),
+        );
+        final result = await client.fetchOrderBook(symbol);
+        expect(result, isA<Err<OrderBook>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<NetworkFailure>());
+            expect(
+              failure.message,
+              'Coinbase order book request failed: Exception: timeout',
+            );
+          },
+        );
+      },
+    );
+
+    test('fetchTrades returns NetworkFailure on request exception', () async {
+      final client = CoinbaseRestClient(
+        httpClient: MockClient((_) async => throw Exception('timeout')),
+      );
+      final result = await client.fetchTrades(symbol);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'Coinbase trades request failed: Exception: timeout',
+          );
+        },
+      );
+    });
+
     test(
       'fetchTicker returns ParseFailure on missing required fields',
       () async {

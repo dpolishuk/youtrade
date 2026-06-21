@@ -282,6 +282,98 @@ void main() {
       );
     });
 
+    test('watchOrderBook emits UnknownFailure on stream error', () async {
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final error = Exception('ws error');
+      final future = client.watchOrderBook(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.addError(error);
+
+      final result = await future;
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'Coinbase WS order book error');
+          expect((failure as UnknownFailure).error, error);
+        },
+      );
+    });
+
+    test('watchTrades emits UnknownFailure on stream error', () async {
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final error = Exception('ws error');
+      final future = client.watchTrades(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.addError(error);
+
+      final result = await future;
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'Coinbase WS trade error');
+          expect((failure as UnknownFailure).error, error);
+        },
+      );
+    });
+
+    test('watchTicker emits UnknownFailure on connection failure', () async {
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) => FakeWebSocketChannel(
+          ready: Future.error(Exception('connect failed')),
+        ),
+      );
+
+      final error = await client.watchTicker(symbol).first;
+      expect(error, isA<Err<Ticker>>());
+      error.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'Coinbase WS ticker error');
+        },
+      );
+    });
+
+    test('watchOrderBook emits UnknownFailure on connection failure', () async {
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) => FakeWebSocketChannel(
+          ready: Future.error(Exception('connect failed')),
+        ),
+      );
+
+      final error = await client.watchOrderBook(symbol).first;
+      expect(error, isA<Err<OrderBook>>());
+    });
+
+    test('watchTrades emits UnknownFailure on connection failure', () async {
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) => FakeWebSocketChannel(
+          ready: Future.error(Exception('connect failed')),
+        ),
+      );
+
+      final error = await client.watchTrades(symbol).first;
+      expect(error, isA<Err<List<Trade>>>());
+    });
+
     test('watchOrderBook parses l2update message', () async {
       late FakeWebSocketChannel channel;
       final client = CoinbaseWebSocketClient(

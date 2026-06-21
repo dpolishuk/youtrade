@@ -280,6 +280,204 @@ void main() {
       );
     });
 
+    test('fetchTicker returns 0.0 change24hPercent when open24h is 0', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"code":"0","msg":"","data":[{"instId":"BTC-USDT","last":"100.0","bidPx":"99.5","askPx":"100.5","open24h":"0","vol24h":"1000.0","ts":"1718952000000"}]}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Success<Ticker>>());
+      result.when(
+        success: (ticker) => expect(ticker.change24hPercent, 0.0),
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('fetchTicker falls back to UTC now when timestamp is missing', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"code":"0","msg":"","data":[{"instId":"BTC-USDT","last":"100.0","bidPx":"99.5","askPx":"100.5","open24h":"99.0","vol24h":"1000.0"}]}',
+            200,
+          ),
+        ),
+      );
+
+      final before = DateTime.now().toUtc();
+      final result = await client.fetchTicker(symbol);
+      final after = DateTime.now().toUtc();
+      expect(result, isA<Success<Ticker>>());
+      result.when(
+        success: (ticker) {
+          expect(
+            ticker.timestamp.isAfter(
+              before.subtract(const Duration(seconds: 1)),
+            ),
+            isTrue,
+          );
+          expect(
+            ticker.timestamp.isBefore(after.add(const Duration(seconds: 1))),
+            isTrue,
+          );
+          expect(ticker.timestamp.isUtc, isTrue);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('fetchCandles returns NetworkFailure on API error code', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response('{"code":"50001","msg":"Invalid"}', 200),
+        ),
+      );
+      final result = await client.fetchCandles(symbol, Timeframe.h1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'OKX candles API error: 50001 Invalid');
+        },
+      );
+    });
+
+    test('fetchCandles returns NetworkFailure on request exception', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient((_) async => throw Exception('timeout')),
+      );
+      final result = await client.fetchCandles(symbol, Timeframe.h1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'OKX candles request failed: Exception: timeout',
+          );
+        },
+      );
+    });
+
+    test('fetchOrderBook returns NetworkFailure on API error code', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response('{"code":"50001","msg":"Invalid"}', 200),
+        ),
+      );
+      final result = await client.fetchOrderBook(symbol);
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'OKX order book API error: 50001 Invalid');
+        },
+      );
+    });
+
+    test('fetchOrderBook returns Success with empty bids and asks', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient(
+          (_) async =>
+              http.Response('{"code":"0","data":[{"bids":[],"asks":[]}]}', 200),
+        ),
+      );
+
+      final result = await client.fetchOrderBook(symbol);
+      expect(result, isA<Success<OrderBook>>());
+      result.when(
+        success: (orderBook) {
+          expect(orderBook.bids, isEmpty);
+          expect(orderBook.asks, isEmpty);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test(
+      'fetchOrderBook returns NetworkFailure on request exception',
+      () async {
+        final client = OKXRestClient(
+          httpClient: MockClient((_) async => throw Exception('timeout')),
+        );
+        final result = await client.fetchOrderBook(symbol);
+        expect(result, isA<Err<OrderBook>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<NetworkFailure>());
+            expect(
+              failure.message,
+              'OKX order book request failed: Exception: timeout',
+            );
+          },
+        );
+      },
+    );
+
+    test('fetchTrades returns NetworkFailure on API error code', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response('{"code":"50001","msg":"Invalid"}', 200),
+        ),
+      );
+      final result = await client.fetchTrades(symbol);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'OKX trades API error: 50001 Invalid');
+        },
+      );
+    });
+
+    test('fetchTrades maps unknown side to sell', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"code":"0","data":[{"instId":"BTC-USDT","tradeId":"1","px":"100.0","sz":"1.0","side":"unknown","ts":"1718952000000"}]}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTrades(symbol);
+      expect(result, isA<Success<List<Trade>>>());
+      result.when(
+        success: (trades) {
+          expect(trades.length, 1);
+          expect(trades.first.side, TradeSide.sell);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('fetchTrades returns NetworkFailure on request exception', () async {
+      final client = OKXRestClient(
+        httpClient: MockClient((_) async => throw Exception('timeout')),
+      );
+      final result = await client.fetchTrades(symbol);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'OKX trades request failed: Exception: timeout',
+          );
+        },
+      );
+    });
+
     test('fetchTicker returns ParseFailure on empty data list', () async {
       final client = OKXRestClient(
         httpClient: MockClient(

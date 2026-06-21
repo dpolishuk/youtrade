@@ -260,6 +260,134 @@ void main() {
       );
     });
 
+    test('watchTicker ignores subscription ack without data list', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+
+      channel.add(
+        '{"event":"subscribe","arg":{"channel":"tickers","instId":"BTC-USDT"}}',
+      );
+      channel.add(
+        '{"arg":{"channel":"tickers","instId":"BTC-USDT"},"data":[{"instId":"BTC-USDT","last":"100.0","bidPx":"99.5","askPx":"100.5","open24h":"99.0","vol24h":"1000.0","ts":"1718952000000"}]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<Ticker>>());
+    });
+
+    test('watchOrderBook emits UnknownFailure on stream error', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final error = Exception('ws error');
+      final future = client.watchOrderBook(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.addError(error);
+
+      final result = await future;
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'OKX WS order book error');
+          expect((failure as UnknownFailure).error, error);
+        },
+      );
+    });
+
+    test('watchTrades emits UnknownFailure on stream error', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final error = Exception('ws error');
+      final future = client.watchTrades(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.addError(error);
+
+      final result = await future;
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'OKX WS trades error');
+          expect((failure as UnknownFailure).error, error);
+        },
+      );
+    });
+
+    test('watchTicker emits UnknownFailure on connection failure', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel(
+            ready: Future.error(Exception('connect failed')),
+          );
+          return channel;
+        },
+      );
+
+      final error = await client.watchTicker(symbol).first;
+      expect(error, isA<Err<Ticker>>());
+      error.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'OKX WS ticker error');
+          expect((failure as UnknownFailure).error, isA<Exception>());
+        },
+      );
+    });
+
+    test('watchOrderBook emits UnknownFailure on connection failure', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel(
+            ready: Future.error(Exception('connect failed')),
+          );
+          return channel;
+        },
+      );
+
+      final error = await client.watchOrderBook(symbol).first;
+      expect(error, isA<Err<OrderBook>>());
+    });
+
+    test('watchTrades emits UnknownFailure on connection failure', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel(
+            ready: Future.error(Exception('connect failed')),
+          );
+          return channel;
+        },
+      );
+
+      final error = await client.watchTrades(symbol).first;
+      expect(error, isA<Err<List<Trade>>>());
+    });
+
     test('watchOrderBook parses delta message', () async {
       late FakeWebSocketChannel channel;
       final client = OKXWebSocketClient(

@@ -6,10 +6,13 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 class FakeWebSocketChannel extends StreamChannelMixin<dynamic>
     implements WebSocketChannel {
-  FakeWebSocketChannel() : _outgoing = StreamController<dynamic>.broadcast() {
+  FakeWebSocketChannel({Future<void>? ready})
+    : _ready = ready ?? Future.value(),
+      _outgoing = StreamController<dynamic>.broadcast() {
     _sink = FakeWebSocketSink(_outgoing.sink);
   }
 
+  final Future<void> _ready;
   final StreamController<dynamic> _incoming = StreamController<dynamic>();
   final StreamController<dynamic> _outgoing;
   late final FakeWebSocketSink _sink;
@@ -28,7 +31,7 @@ class FakeWebSocketChannel extends StreamChannelMixin<dynamic>
   FakeWebSocketSink get sink => _sink;
 
   @override
-  Future<void> get ready => Future.value();
+  Future<void> get ready => _ready;
 
   @override
   String? get protocol => null;
