@@ -34,6 +34,13 @@ void main() {
     isEnabled: true,
   );
 
+  final bybitCredentials = ExchangeCredentials(
+    venue: Venue.bybit,
+    apiKey: 'bybit-api-key',
+    secret: 'bybit-secret',
+    isEnabled: true,
+  );
+
   group('ExchangeCredentialsNotifier', () {
     test('initial state is loading', () {
       final container = makeContainer();
@@ -210,6 +217,90 @@ void main() {
       final failure = states.last as ExchangeCredentialsTestFailure;
       expect(failure.venue, Venue.binance.displayName);
       expect(failure.failure, isA<NetworkFailure>());
+    });
+
+    test(
+      'clearTestResult transitions from test success to loaded credentials',
+      () async {
+        when(
+          () => mockRepository.testConnection(binanceCredentials),
+        ).thenAnswer((_) async => const Success<bool>(true));
+        when(() => mockRepository.list()).thenAnswer(
+          (_) async => Success([binanceCredentials, bybitCredentials]),
+        );
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <ExchangeCredentialsState>[];
+        container.listen(
+          exchangeCredentialsNotifierProvider,
+          (_, state) => states.add(state),
+        );
+
+        await container
+            .read(exchangeCredentialsNotifierProvider.notifier)
+            .testConnection(binanceCredentials);
+        container
+            .read(exchangeCredentialsNotifierProvider.notifier)
+            .clearTestResult();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(states.length, 4);
+        expect(states[0], isA<ExchangeCredentialsTesting>());
+        expect(states[1], isA<ExchangeCredentialsTestSuccess>());
+        expect(states[2], isA<ExchangeCredentialsLoading>());
+        expect(states[3], isA<ExchangeCredentialsLoaded>());
+        final loaded = states.last as ExchangeCredentialsLoaded;
+        expect(loaded.credentials, [binanceCredentials, bybitCredentials]);
+      },
+    );
+
+    test('save success reloads correct filtered list', () async {
+      when(
+        () => mockRepository.save(bybitCredentials),
+      ).thenAnswer((_) async => const Success<void>(null));
+      when(() => mockRepository.list()).thenAnswer(
+        (_) async => Success([binanceCredentials, bybitCredentials]),
+      );
+
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      final states = <ExchangeCredentialsState>[];
+      container.listen(
+        exchangeCredentialsNotifierProvider,
+        (_, state) => states.add(state),
+      );
+
+      await container
+          .read(exchangeCredentialsNotifierProvider.notifier)
+          .save(bybitCredentials);
+
+      expect(states.length, 1);
+      final loaded = states.single as ExchangeCredentialsLoaded;
+      expect(loaded.credentials, [binanceCredentials, bybitCredentials]);
+    });
+
+    test('delete non-existent venue emits repository error', () async {
+      when(() => mockRepository.delete(Venue.okx)).thenAnswer(
+        (_) async => const Err<void>(UnknownFailure('Venue not found')),
+      );
+
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      final states = <ExchangeCredentialsState>[];
+      container.listen(
+        exchangeCredentialsNotifierProvider,
+        (_, state) => states.add(state),
+      );
+
+      await container
+          .read(exchangeCredentialsNotifierProvider.notifier)
+          .delete(Venue.okx);
+
+      expect(states.length, 1);
+      final error = states.single as ExchangeCredentialsError;
+      expect(error.failure, isA<UnknownFailure>());
+      expect(error.failure.message, 'Venue not found');
     });
   });
 }

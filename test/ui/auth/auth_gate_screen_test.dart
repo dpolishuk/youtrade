@@ -5,21 +5,29 @@ import 'package:mocktail/mocktail.dart';
 import 'package:youtrade/core/result.dart';
 import 'package:youtrade/domain/auth/auth_failure.dart';
 import 'package:youtrade/domain/auth/local_auth_service.dart';
+
 import 'package:youtrade/presentation/auth/auth_guard_provider.dart';
 import 'package:youtrade/ui/auth/auth_gate_screen.dart';
+
+import '../../fakes/fake_pin_auth_service.dart';
 
 class MockLocalAuthService extends Mock implements LocalAuthService {}
 
 void main() {
   late MockLocalAuthService mockService;
+  late FakePinAuthService fakePinAuth;
 
   setUp(() {
     mockService = MockLocalAuthService();
+    fakePinAuth = FakePinAuthService();
   });
 
   Widget buildApp() {
     return ProviderScope(
-      overrides: [localAuthServiceProvider.overrideWithValue(mockService)],
+      overrides: [
+        localAuthServiceProvider.overrideWithValue(mockService),
+        pinAuthServiceProvider.overrideWithValue(fakePinAuth),
+      ],
       child: MaterialApp(
         home: AuthGateScreen(
           child: Scaffold(
@@ -33,17 +41,33 @@ void main() {
 
   group('AuthGateScreen', () {
     testWidgets('shows loading while state is unknown', (tester) async {
-      when(
-        () => mockService.canCheckBiometrics(),
-      ).thenAnswer((_) async => false);
-
       await tester.pumpWidget(buildApp());
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.text('YouTrade is locked'), findsNothing);
     });
 
-    testWidgets('shows locked gate when unauthenticated', (tester) async {
+    testWidgets('shows set PIN flow when no PIN is configured', (tester) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Set up PIN'), findsOneWidget);
+      expect(
+        find.text('Create a 4-digit PIN to secure YouTrade'),
+        findsOneWidget,
+      );
+      expect(find.text('Set PIN'), findsOneWidget);
+      expect(find.text('Unlock with biometrics'), findsNothing);
+      expect(find.text('Welcome to YouTrade'), findsNothing);
+    });
+
+    testWidgets('shows locked gate when PIN is set', (tester) async {
+      fakePinAuth.setStoredPin('1234');
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => false);
@@ -53,7 +77,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('YouTrade is locked'), findsOneWidget);
-      expect(find.text('Unlock with biometrics'), findsOneWidget);
       expect(find.text('Unlock with PIN'), findsOneWidget);
       expect(find.text('Welcome to YouTrade'), findsNothing);
     });
@@ -61,6 +84,7 @@ void main() {
     testWidgets('shows protected content after biometric success', (
       tester,
     ) async {
+      fakePinAuth.setStoredPin('1234');
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => true);
@@ -76,9 +100,29 @@ void main() {
       expect(find.text('YouTrade is locked'), findsNothing);
     });
 
+    testWidgets('sets PIN and shows protected content on first use', (
+      tester,
+    ) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '5678');
+      await tester.tap(find.text('Set PIN'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Welcome to YouTrade'), findsOneWidget);
+      expect(find.text('Set up PIN'), findsNothing);
+    });
+
     testWidgets('shows protected content after correct PIN entry', (
       tester,
     ) async {
+      fakePinAuth.setStoredPin('1234');
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => false);
@@ -96,6 +140,7 @@ void main() {
     });
 
     testWidgets('shows error after incorrect PIN entry', (tester) async {
+      fakePinAuth.setStoredPin('1234');
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => false);
@@ -113,9 +158,72 @@ void main() {
       expect(find.text('Welcome to YouTrade'), findsNothing);
     });
 
+    testWidgets('shows validation error on empty PIN submission', (
+      tester,
+    ) async {
+      fakePinAuth.setStoredPin('1234');
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Unlock with PIN'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('PIN must be exactly 4 digits'), findsOneWidget);
+      expect(find.text('YouTrade is locked'), findsOneWidget);
+      expect(find.text('Welcome to YouTrade'), findsNothing);
+    });
+
+    testWidgets('truncates very long PIN to max length and unlocks', (
+      tester,
+    ) async {
+      fakePinAuth.setStoredPin('1234');
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '1234567890');
+      await tester.tap(find.text('Unlock with PIN'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Welcome to YouTrade'), findsOneWidget);
+      expect(find.text('YouTrade is locked'), findsNothing);
+    });
+
+    testWidgets('handles rapid biometric and PIN taps without crashing', (
+      tester,
+    ) async {
+      fakePinAuth.setStoredPin('1234');
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '1234');
+      await tester.tap(find.text('Unlock with PIN'));
+      await tester.tap(find.text('Unlock with PIN'));
+      await tester.tap(find.text('Unlock with PIN'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Welcome to YouTrade'), findsOneWidget);
+      expect(find.text('YouTrade is locked'), findsNothing);
+    });
+
     testWidgets('shows error when biometric authentication fails', (
       tester,
     ) async {
+      fakePinAuth.setStoredPin('1234');
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => true);

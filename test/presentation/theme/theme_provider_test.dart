@@ -72,6 +72,43 @@ void main() {
         AppVisualDirection.flux,
       );
     });
+
+    test('rapid light/dark toggles end in the correct state', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(themeSettingsProvider.notifier);
+
+      for (var i = 0; i < 20; i++) {
+        notifier.toggleLightDark();
+      }
+
+      expect(container.read(themeSettingsProvider).themeMode, ThemeMode.dark);
+
+      notifier.toggleLightDark();
+      expect(container.read(themeSettingsProvider).themeMode, ThemeMode.light);
+    });
+
+    test('concurrent notifier reads return consistent state', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      container
+          .read(themeSettingsProvider.notifier)
+          .setThemeMode(ThemeMode.light);
+      container
+          .read(themeSettingsProvider.notifier)
+          .setVisualDirection(AppVisualDirection.carbon);
+
+      const expected = ThemeSettings(
+        themeMode: ThemeMode.light,
+        visualDirection: AppVisualDirection.carbon,
+      );
+
+      final reads = await Future.wait(
+        List.generate(50, (_) async => container.read(themeSettingsProvider)),
+      );
+
+      expect(reads, everyElement(expected));
+    });
   });
 
   group('appThemeProvider', () {
@@ -81,6 +118,54 @@ void main() {
 
       final theme = container.read(appThemeProvider);
 
+      expect(theme.brightness, Brightness.dark);
+      expect(
+        theme.colorScheme.primary,
+        AppTheme.dark(AppVisualDirection.flux).colorScheme.primary,
+      );
+    });
+
+    testWidgets('resolves light theme when system brightness is light', (
+      tester,
+    ) async {
+      tester.binding.platformDispatcher.platformBrightnessTestValue =
+          Brightness.light;
+      addTearDown(() {
+        tester.binding.platformDispatcher.clearPlatformBrightnessTestValue();
+      });
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      container
+          .read(themeSettingsProvider.notifier)
+          .setThemeMode(ThemeMode.system);
+      await tester.pump();
+
+      final theme = container.read(appThemeProvider);
+      expect(theme.brightness, Brightness.light);
+      expect(
+        theme.colorScheme.primary,
+        AppTheme.light(AppVisualDirection.flux).colorScheme.primary,
+      );
+    });
+
+    testWidgets('resolves dark theme when system brightness is dark', (
+      tester,
+    ) async {
+      tester.binding.platformDispatcher.platformBrightnessTestValue =
+          Brightness.dark;
+      addTearDown(() {
+        tester.binding.platformDispatcher.clearPlatformBrightnessTestValue();
+      });
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      container
+          .read(themeSettingsProvider.notifier)
+          .setThemeMode(ThemeMode.system);
+      await tester.pump();
+
+      final theme = container.read(appThemeProvider);
       expect(theme.brightness, Brightness.dark);
       expect(
         theme.colorScheme.primary,
