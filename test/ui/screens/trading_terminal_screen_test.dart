@@ -116,7 +116,7 @@ void main() {
         marketDataRepositoryProvider.overrideWithValue(_FakeRepository()),
       ],
       child: MaterialApp(
-        theme: ThemeData.dark(),
+        theme: AppTheme.dark(AppVisualDirection.flux),
         home: const TradingTerminalScreen(),
       ),
     );
@@ -128,7 +128,7 @@ void main() {
     ) async {
       await tester.pumpWidget(buildApp());
       await tester.pump();
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byType(CandlestickChart), findsOneWidget);
       expect(find.byType(TradeTicket), findsOneWidget);
@@ -141,10 +141,12 @@ void main() {
 
     testWidgets('switches to Book tab and shows order book', (tester) async {
       await tester.pumpWidget(buildApp());
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       await tester.tap(find.text('Book'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Price'), findsOneWidget);
       expect(find.textContaining('spread'), findsOneWidget);
