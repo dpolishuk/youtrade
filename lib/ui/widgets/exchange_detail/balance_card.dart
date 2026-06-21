@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
 class BalanceCard extends StatelessWidget {
-  const BalanceCard({
-    required this.label,
-    required this.value,
-    super.key,
-  });
+  const BalanceCard({required this.label, required this.value, super.key});
 
   final String label;
   final String value;
