@@ -1,9 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/core/result.dart';
 import 'package:youtrade/data/datasources/remote/bybit/bybit_rest_client.dart';
+import 'package:youtrade/domain/entities/candle.dart';
 import 'package:youtrade/domain/entities/symbol.dart';
+import 'package:youtrade/domain/entities/ticker.dart';
 import 'package:youtrade/domain/entities/timeframe.dart';
 import 'package:youtrade/domain/entities/trade.dart';
 import 'package:youtrade/domain/entities/venue.dart';
@@ -44,12 +47,21 @@ void main() {
       );
     });
 
+    // Catches the wrong failure type or message when Bybit returns a non-200
+    // response, which would hide the real HTTP error from callers.
     test('fetchTicker returns Failure on non-200', () async {
       final client = BybitRestClient(
         httpClient: MockClient((_) async => http.Response('bad', 400)),
       );
       final result = await client.fetchTicker(symbol);
-      expect(result, isA<Err>());
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Bybit ticker 400');
+        },
+      );
     });
 
     test('fetchCandles returns Success on valid response', () async {
@@ -120,6 +132,44 @@ void main() {
           expect(trades.first.side, TradeSide.buy);
         },
         failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('fetchTicker returns ParseFailure on empty list', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((request) async {
+          expect(request.url.path, '/v5/market/tickers');
+          return http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[]}}',
+            200,
+          );
+        }),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) => expect(failure, isA<ParseFailure>()),
+      );
+    });
+
+    test('fetchCandles returns ParseFailure on type mismatch', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((request) async {
+          expect(request.url.path, '/v5/market/kline');
+          return http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"spot","symbol":"BTCUSDT","list":"not-a-list"}}',
+            200,
+          );
+        }),
+      );
+
+      final result = await client.fetchCandles(symbol, Timeframe.h1, limit: 1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) => expect(failure, isA<ParseFailure>()),
       );
     });
   });

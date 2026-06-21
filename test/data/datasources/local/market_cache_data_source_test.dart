@@ -46,31 +46,34 @@ void main() {
       expect(retrieved, ticker);
     });
 
+    // Catches OHLCV field corruption, volume loss, or ordering bugs in the
+    // candle cache roundtrip.
     test('saves and retrieves candles', () async {
-      final candles = [
-        Candle(
-          open: 1.0,
-          high: 2.0,
-          low: 0.5,
-          close: 1.5,
-          volume: 100.0,
-          timestamp: DateTime(2026, 6, 21, 11),
-        ),
-        Candle(
-          open: 1.5,
-          high: 2.5,
-          low: 1.0,
-          close: 2.0,
-          volume: 200.0,
-          timestamp: DateTime(2026, 6, 21, 12),
-        ),
-      ];
+      final olderCandle = Candle(
+        open: 1.0,
+        high: 2.0,
+        low: 0.5,
+        close: 1.5,
+        volume: 100.0,
+        timestamp: DateTime(2026, 6, 21, 11),
+      );
+      final newerCandle = Candle(
+        open: 1.5,
+        high: 2.5,
+        low: 1.0,
+        close: 2.0,
+        volume: 200.0,
+        timestamp: DateTime(2026, 6, 21, 12),
+      );
+      final candles = [olderCandle, newerCandle];
       await cache.saveCandles(symbol, Timeframe.h1, candles);
       final retrieved = await cache.getCandles(symbol, Timeframe.h1);
-      expect(retrieved.length, 2);
-      expect(retrieved.map((c) => c.close), containsAll([1.5, 2.0]));
+      // The data source returns candles ordered newest-first.
+      expect(retrieved, [newerCandle, olderCandle]);
     });
 
+    // Catches bid/ask level corruption, amount loss, or timestamp drift in the
+    // order book cache roundtrip.
     test('saves and retrieves order book', () async {
       final orderBook = OrderBook(
         bids: const [OrderBookLevel(price: 99.0, amount: 1.0)],
@@ -80,8 +83,8 @@ void main() {
       await cache.saveOrderBook(symbol, orderBook);
       final retrieved = await cache.getOrderBook(symbol);
       expect(retrieved, isNotNull);
-      expect(retrieved!.bids.first.price, 99.0);
-      expect(retrieved.asks.first.price, 101.0);
+      expect(retrieved!.bids, orderBook.bids);
+      expect(retrieved.asks, orderBook.asks);
       expect(retrieved.timestamp, orderBook.timestamp);
     });
 
