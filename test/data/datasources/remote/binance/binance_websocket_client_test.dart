@@ -86,9 +86,20 @@ void main() {
       );
 
       final result = await future;
-      expect(result, isA<Success>());
+      expect(result, isA<Success<Ticker>>());
       result.when(
-        success: (ticker) => expect(ticker.lastPrice, 100.0),
+        success: (ticker) {
+          expect(ticker.lastPrice, 100.0);
+          expect(ticker.bid, 99.5);
+          expect(ticker.ask, 100.5);
+          expect(ticker.change24h, 1.0);
+          expect(ticker.change24hPercent, 0.01);
+          expect(ticker.volume, 1000.0);
+          expect(
+            ticker.timestamp,
+            DateTime.fromMillisecondsSinceEpoch(1718952000000, isUtc: true),
+          );
+        },
         failure: (_) => fail('expected success'),
       );
     });

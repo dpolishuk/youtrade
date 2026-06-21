@@ -28,7 +28,7 @@ void main() {
 
       expect(theme.brightness, Brightness.dark);
       expect(theme.colorScheme.brightness, Brightness.dark);
-      expect(theme.colorScheme.primary, const Color(0xFF1634EF));
+      expect(theme.colorScheme.primary, const Color(0xFF0355F3));
     });
 
     test('Flux and Carbon directions produce different accent colors', () {
@@ -49,6 +49,28 @@ void main() {
       expect(appColors!.bullish, isA<Color>());
       expect(appColors.bearish, isA<Color>());
       expect(appColors.accent, equals(theme.colorScheme.primary));
+    });
+
+    test('display type uses Space Grotesk', () {
+      final theme = AppTheme.dark(AppVisualDirection.flux);
+
+      expect(theme.textTheme.displayLarge?.fontFamily, 'Space Grotesk');
+      expect(theme.textTheme.headlineLarge?.fontFamily, 'Space Grotesk');
+    });
+
+    test('body and label type uses Geist', () {
+      final theme = AppTheme.dark(AppVisualDirection.flux);
+
+      expect(theme.textTheme.bodyMedium?.fontFamily, 'Geist');
+      expect(theme.textTheme.labelLarge?.fontFamily, 'Geist');
+      expect(theme.textTheme.headlineSmall?.fontFamily, 'Geist');
+    });
+
+    test('mono and serif helpers return expected families', () {
+      const color = Colors.white;
+
+      expect(AppTheme.mono(color: color).fontFamily, 'JetBrains Mono');
+      expect(AppTheme.serifItalic(color: color).fontFamily, 'Instrument Serif');
     });
   });
 }

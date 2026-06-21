@@ -1,81 +1,30 @@
-import 'dart:async';
-
-import 'package:async/async.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:stream_channel/stream_channel.dart';
 import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/core/result.dart';
-import 'package:youtrade/data/datasources/remote/bybit/bybit_websocket_client.dart';
+import 'package:youtrade/data/datasources/remote/coinbase/coinbase_websocket_client.dart';
 import 'package:youtrade/domain/entities/order_book.dart';
 import 'package:youtrade/domain/entities/symbol.dart';
 import 'package:youtrade/domain/entities/ticker.dart';
+import 'package:youtrade/domain/entities/trade.dart';
 import 'package:youtrade/domain/entities/venue.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
-class _FakeWebSocketChannel extends StreamChannelMixin<dynamic>
-    implements WebSocketChannel {
-  _FakeWebSocketChannel() : _outgoing = StreamController<dynamic>.broadcast() {
-    _sink = _FakeWebSocketSink(_outgoing.sink);
-  }
-
-  final StreamController<dynamic> _incoming = StreamController<dynamic>();
-  final StreamController<dynamic> _outgoing;
-  late final _FakeWebSocketSink _sink;
-
-  void add(dynamic value) => _incoming.add(value);
-
-  void addError(Object error, [StackTrace? stackTrace]) =>
-      _incoming.addError(error, stackTrace);
-
-  Stream<dynamic> get outgoingStream => _outgoing.stream;
-
-  @override
-  Stream<dynamic> get stream => _incoming.stream;
-
-  @override
-  _FakeWebSocketSink get sink => _sink;
-
-  @override
-  Future<void> get ready => Future.value();
-
-  @override
-  String? get protocol => null;
-
-  @override
-  int? get closeCode => null;
-
-  @override
-  String? get closeReason => null;
-}
-
-class _FakeWebSocketSink extends DelegatingStreamSink<dynamic>
-    implements WebSocketSink {
-  _FakeWebSocketSink(super.sink);
-
-  bool closed = false;
-
-  @override
-  Future close([int? closeCode, String? closeReason]) {
-    closed = true;
-    return super.close();
-  }
-}
+import '../../../../fakes/fake_websocket_channel.dart';
 
 void main() {
-  group('BybitWebSocketClient', () {
+  group('CoinbaseWebSocketClient', () {
     final symbol = TradingSymbol(
       base: 'BTC',
-      quote: 'USDT',
-      venue: Venue.bybit,
-      rawSymbol: 'BTCUSDT',
+      quote: 'USD',
+      venue: Venue.coinbase,
+      rawSymbol: 'BTCUSD',
     );
 
     test('watchTicker sends subscribe and parses ticker message', () async {
-      late _FakeWebSocketChannel channel;
+      late FakeWebSocketChannel channel;
       final outgoing = <dynamic>[];
-      final client = BybitWebSocketClient(
+      final client = CoinbaseWebSocketClient(
         channelFactory: (url) {
-          channel = _FakeWebSocketChannel();
+          channel = FakeWebSocketChannel();
           channel.outgoingStream.listen(outgoing.add);
           return channel;
         },
@@ -86,12 +35,12 @@ void main() {
       await Future.delayed(Duration.zero);
 
       expect(outgoing.length, 1);
-      expect(outgoing.first, contains('"op":"subscribe"'));
-      expect(outgoing.first, contains('"channel":"tickers"'));
-      expect(outgoing.first, contains('"symbol":"BTCUSDT"'));
+      expect(outgoing.first, contains('"type":"subscribe"'));
+      expect(outgoing.first, contains('"channels":["ticker"]'));
+      expect(outgoing.first, contains('"product_ids":["BTC-USD"]'));
 
       channel.add(
-        '{"topic":"tickers.BTCUSDT","ts":1718952000000,"data":{"symbol":"BTCUSDT","lastPrice":"100.0","bid1Price":"99.5","ask1Price":"100.5","price24hPcnt":"0.01","turnover24h":"1000.0","volume24h":"1000.0"}}',
+        '{"type":"ticker","sequence":1,"product_id":"BTC-USD","price":"100.0","open_24h":"99.0","volume_24h":"1000.0","low_24h":"90.0","high_24h":"110.0","best_bid":"99.5","best_ask":"100.5","time":"2024-06-21T12:00:00.000Z","trade_id":1,"last_size":"1.0"}',
       );
 
       final result = await future;
@@ -101,24 +50,19 @@ void main() {
           expect(ticker.lastPrice, 100.0);
           expect(ticker.bid, 99.5);
           expect(ticker.ask, 100.5);
-          expect(ticker.change24h, 0.0);
-          expect(ticker.change24hPercent, 0.01);
+          expect(ticker.change24h, 1.0);
           expect(ticker.volume, 1000.0);
-          expect(
-            DateTime.now().toUtc().difference(ticker.timestamp).inSeconds,
-            lessThan(5),
-          );
         },
         failure: (_) => fail('expected success'),
       );
     });
 
-    test('watchOrderBook sends subscribe and parses orderbook message', () async {
-      late _FakeWebSocketChannel channel;
+    test('watchOrderBook sends subscribe and parses snapshot message', () async {
+      late FakeWebSocketChannel channel;
       final outgoing = <dynamic>[];
-      final client = BybitWebSocketClient(
+      final client = CoinbaseWebSocketClient(
         channelFactory: (url) {
-          channel = _FakeWebSocketChannel();
+          channel = FakeWebSocketChannel();
           channel.outgoingStream.listen(outgoing.add);
           return channel;
         },
@@ -129,29 +73,29 @@ void main() {
       await Future.delayed(Duration.zero);
 
       expect(outgoing.length, 1);
-      expect(outgoing.first, contains('"channel":"orderbook"'));
+      expect(outgoing.first, contains('"channels":["level2"]'));
 
       channel.add(
-        '{"topic":"orderbook.1.BTCUSDT","ts":1718952000000,"type":"snapshot","data":{"s":"BTCUSDT","b":[["99.0","1.0"]],"a":[["101.0","1.0"]],"u":1,"seq":1}}',
+        '{"type":"snapshot","product_id":"BTC-USD","bids":[["99.5","1"]],"asks":[["100.5","1"]]}',
       );
 
       final result = await future;
-      expect(result, isA<Success>());
+      expect(result, isA<Success<OrderBook>>());
       result.when(
         success: (orderBook) {
-          expect(orderBook.bids.first.price, 99.0);
-          expect(orderBook.asks.first.price, 101.0);
+          expect(orderBook.bids.first.price, 99.5);
+          expect(orderBook.asks.first.price, 100.5);
         },
         failure: (_) => fail('expected success'),
       );
     });
 
-    test('watchTrades sends subscribe and parses trade message', () async {
-      late _FakeWebSocketChannel channel;
+    test('watchTrades sends subscribe and parses match message', () async {
+      late FakeWebSocketChannel channel;
       final outgoing = <dynamic>[];
-      final client = BybitWebSocketClient(
+      final client = CoinbaseWebSocketClient(
         channelFactory: (url) {
-          channel = _FakeWebSocketChannel();
+          channel = FakeWebSocketChannel();
           channel.outgoingStream.listen(outgoing.add);
           return channel;
         },
@@ -162,14 +106,14 @@ void main() {
       await Future.delayed(Duration.zero);
 
       expect(outgoing.length, 1);
-      expect(outgoing.first, contains('"channel":"publicTrade"'));
+      expect(outgoing.first, contains('"channels":["matches"]'));
 
       channel.add(
-        '{"topic":"publicTrade.BTCUSDT","ts":1718952000000,"data":[{"i":"1","T":1718952000000,"p":"100.0","v":"1.0","S":"Buy","s":"BTCUSDT"}]}',
+        '{"type":"match","trade_id":1,"sequence":1,"maker_order_id":"m1","taker_order_id":"t1","time":"2024-06-21T12:00:00.000Z","product_id":"BTC-USD","size":"1.0","price":"100.0","side":"buy"}',
       );
 
       final result = await future;
-      expect(result, isA<Success>());
+      expect(result, isA<Success<List<Trade>>>());
       result.when(
         success: (trades) {
           expect(trades.length, 1);
@@ -179,11 +123,32 @@ void main() {
       );
     });
 
-    test('watchTicker closes sink when subscription is cancelled', () async {
-      late _FakeWebSocketChannel channel;
-      final client = BybitWebSocketClient(
+    test('watchTicker ignores non-ticker messages', () async {
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
         channelFactory: (url) {
-          channel = _FakeWebSocketChannel();
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+
+      channel.add('{"type":"subscriptions"}');
+      channel.add(
+        '{"type":"ticker","sequence":1,"product_id":"BTC-USD","price":"100.0","open_24h":"99.0","volume_24h":"1000.0","low_24h":"90.0","high_24h":"110.0","best_bid":"99.5","best_ask":"100.5","time":"2024-06-21T12:00:00.000Z","trade_id":1,"last_size":"1.0"}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<Ticker>>());
+    });
+
+    test('watchTicker closes sink when subscription is cancelled', () async {
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
           return channel;
         },
       );
@@ -199,10 +164,10 @@ void main() {
     });
 
     test('watchOrderBook closes sink when subscription is cancelled', () async {
-      late _FakeWebSocketChannel channel;
-      final client = BybitWebSocketClient(
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
         channelFactory: (url) {
-          channel = _FakeWebSocketChannel();
+          channel = FakeWebSocketChannel();
           return channel;
         },
       );
@@ -218,10 +183,10 @@ void main() {
     });
 
     test('watchTrades closes sink when subscription is cancelled', () async {
-      late _FakeWebSocketChannel channel;
-      final client = BybitWebSocketClient(
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
         channelFactory: (url) {
-          channel = _FakeWebSocketChannel();
+          channel = FakeWebSocketChannel();
           return channel;
         },
       );
@@ -237,10 +202,10 @@ void main() {
     });
 
     test('watchTicker emits ParseFailure on malformed message', () async {
-      late _FakeWebSocketChannel channel;
-      final client = BybitWebSocketClient(
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
         channelFactory: (url) {
-          channel = _FakeWebSocketChannel();
+          channel = FakeWebSocketChannel();
           return channel;
         },
       );
@@ -257,24 +222,24 @@ void main() {
           expect(failure, isA<ParseFailure>());
           expect(
             failure.message,
-            startsWith('Bybit WS ticker parse failed: FormatException'),
+            startsWith('Coinbase WS ticker parse failed: FormatException'),
           );
         },
       );
     });
 
-    test('watchTicker emits ParseFailure on empty message', () async {
-      late _FakeWebSocketChannel channel;
-      final client = BybitWebSocketClient(
+    test('watchTicker emits ParseFailure on missing required fields', () async {
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
         channelFactory: (url) {
-          channel = _FakeWebSocketChannel();
+          channel = FakeWebSocketChannel();
           return channel;
         },
       );
 
       final future = client.watchTicker(symbol).first;
       await Future.delayed(Duration.zero);
-      channel.add('');
+      channel.add('{"type":"ticker","product_id":"BTC-USD"}');
 
       final result = await future;
       expect(result, isA<Err<Ticker>>());
@@ -284,42 +249,18 @@ void main() {
           expect(failure, isA<ParseFailure>());
           expect(
             failure.message,
-            startsWith('Bybit WS ticker parse failed: FormatException'),
+            startsWith('Coinbase WS ticker parse failed:'),
           );
-        },
-      );
-    });
-
-    test('watchTicker emits ParseFailure on missing data key', () async {
-      late _FakeWebSocketChannel channel;
-      final client = BybitWebSocketClient(
-        channelFactory: (url) {
-          channel = _FakeWebSocketChannel();
-          return channel;
-        },
-      );
-
-      final future = client.watchTicker(symbol).first;
-      await Future.delayed(Duration.zero);
-      channel.add('{"topic":"tickers.BTCUSDT","ts":1718952000000}');
-
-      final result = await future;
-      expect(result, isA<Err<Ticker>>());
-      result.when(
-        success: (_) => fail('expected failure'),
-        failure: (failure) {
-          expect(failure, isA<ParseFailure>());
-          expect(failure.message, startsWith('Bybit WS ticker parse failed:'));
           expect(failure.message, contains("type 'Null'"));
         },
       );
     });
 
     test('watchTicker emits UnknownFailure on stream error', () async {
-      late _FakeWebSocketChannel channel;
-      final client = BybitWebSocketClient(
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
         channelFactory: (url) {
-          channel = _FakeWebSocketChannel();
+          channel = FakeWebSocketChannel();
           return channel;
         },
       );
@@ -335,17 +276,17 @@ void main() {
         success: (_) => fail('expected failure'),
         failure: (failure) {
           expect(failure, isA<UnknownFailure>());
-          expect(failure.message, 'Bybit WS ticker error');
+          expect(failure.message, 'Coinbase WS ticker error');
           expect((failure as UnknownFailure).error, error);
         },
       );
     });
 
-    test('watchOrderBook parses delta message', () async {
-      late _FakeWebSocketChannel channel;
-      final client = BybitWebSocketClient(
+    test('watchOrderBook parses l2update message', () async {
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
         channelFactory: (url) {
-          channel = _FakeWebSocketChannel();
+          channel = FakeWebSocketChannel();
           return channel;
         },
       );
@@ -353,15 +294,15 @@ void main() {
       final future = client.watchOrderBook(symbol).first;
       await Future.delayed(Duration.zero);
       channel.add(
-        '{"topic":"orderbook.1.BTCUSDT","ts":1718952000000,"type":"delta","data":{"s":"BTCUSDT","b":[["99.0","1.0"]],"a":[["101.0","1.0"]],"u":2,"seq":2}}',
+        '{"type":"l2update","product_id":"BTC-USD","changes":[["buy","99.5","1"],["sell","100.5","1"]]}',
       );
 
       final result = await future;
       expect(result, isA<Success<OrderBook>>());
       result.when(
         success: (orderBook) {
-          expect(orderBook.bids.first.price, 99.0);
-          expect(orderBook.asks.first.price, 101.0);
+          expect(orderBook.bids.first.price, 99.5);
+          expect(orderBook.asks.first.price, 100.5);
         },
         failure: (_) => fail('expected success'),
       );

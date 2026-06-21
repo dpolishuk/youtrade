@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:youtrade/data/datasources/mock/mock_market_data_store.dart';
 import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/core/result.dart';
 import 'package:youtrade/data/repositories/market_data_repository_impl.dart';
@@ -316,6 +318,88 @@ class _FakeMarketCacheDataSource implements MarketCache {
       _trades[symbol.id];
 }
 
+final class _ParseFailureTickerSource implements TickerSource {
+  @override
+  Future<Result<Ticker>> fetchTicker(TradingSymbol symbol) async =>
+      const Err<Ticker>(ParseFailure('ticker parse error'));
+}
+
+final class _ParseFailureCandleSource implements CandleSource {
+  @override
+  Future<Result<List<Candle>>> fetchCandles(
+    TradingSymbol symbol,
+    Timeframe timeframe, {
+    int? limit,
+  }) async => const Err<List<Candle>>(ParseFailure('candles parse error'));
+}
+
+final class _ParseFailureOrderBookSource implements OrderBookSource {
+  @override
+  Future<Result<OrderBook>> fetchOrderBook(
+    TradingSymbol symbol, {
+    int? depth,
+  }) async => const Err<OrderBook>(ParseFailure('order book parse error'));
+}
+
+final class _ParseFailureTradeSource implements TradeSource {
+  @override
+  Future<Result<List<Trade>>> fetchTrades(
+    TradingSymbol symbol, {
+    int? limit,
+  }) async => const Err<List<Trade>>(ParseFailure('trades parse error'));
+}
+
+final class _ThrowingRandom implements Random {
+  @override
+  double nextDouble() => throw Exception('random boom');
+
+  @override
+  int nextInt(int max) => throw Exception('random boom');
+
+  @override
+  bool nextBool() => throw Exception('random boom');
+}
+
+void _expectTickerEquals(Ticker actual, Ticker expected) {
+  expect(actual.symbol, expected.symbol);
+  expect(actual.lastPrice, expected.lastPrice);
+  expect(actual.bid, expected.bid);
+  expect(actual.ask, expected.ask);
+  expect(actual.change24h, expected.change24h);
+  expect(actual.change24hPercent, expected.change24hPercent);
+  expect(actual.volume, expected.volume);
+}
+
+void _expectCandlesEqual(List<Candle> actual, List<Candle> expected) {
+  expect(actual.length, expected.length);
+  for (var i = 0; i < actual.length; i++) {
+    final a = actual[i];
+    final e = expected[i];
+    expect(a.open, e.open);
+    expect(a.high, e.high);
+    expect(a.low, e.low);
+    expect(a.close, e.close);
+    expect(a.volume, e.volume);
+  }
+}
+
+void _expectOrderBookEquals(OrderBook actual, OrderBook expected) {
+  expect(actual.bids, expected.bids);
+  expect(actual.asks, expected.asks);
+}
+
+void _expectTradesEqual(List<Trade> actual, List<Trade> expected) {
+  expect(actual.length, expected.length);
+  for (var i = 0; i < actual.length; i++) {
+    final a = actual[i];
+    final e = expected[i];
+    expect(a.price, e.price);
+    expect(a.amount, e.amount);
+    expect(a.side, e.side);
+    expect(a.tradeId, e.tradeId);
+  }
+}
+
 void main() {
   group('MarketDataRepositoryImpl with fake sources', () {
     final symbol = TradingSymbol(
@@ -466,6 +550,8 @@ void main() {
     );
 
     test('getTicker returns mock data when offline', () async {
+      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expected = await expectedStore.getTicker(symbol);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
         isOnline: false,
@@ -473,14 +559,17 @@ void main() {
 
       final result = await repository.getTicker(symbol);
 
-      expect(result, isA<Success>());
-      result.when(
-        success: (ticker) => expect(ticker.symbol, symbol),
-        failure: (_) => fail('expected success'),
-      );
+      expect(result, isA<Success<Ticker>>());
+      _expectTickerEquals((result as Success<Ticker>).value, expected);
     });
 
     test('getCandles returns mock data when offline', () async {
+      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expected = await expectedStore.getCandles(
+        symbol,
+        Timeframe.h1,
+        limit: 5,
+      );
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
         isOnline: false,
@@ -492,23 +581,23 @@ void main() {
         limit: 5,
       );
 
-      expect(result, isA<Success>());
-      result.when(
-        success: (candles) => expect(candles.length, 5),
-        failure: (_) => fail('expected success'),
-      );
+      expect(result, isA<Success<List<Candle>>>());
+      _expectCandlesEqual((result as Success<List<Candle>>).value, expected);
     });
 
     test('watchTicker emits mock data when offline', () async {
+      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expected = await expectedStore.watchTicker(symbol).first;
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
         isOnline: false,
       );
 
-      final values = await repository.watchTicker(symbol).take(2).toList();
+      final values = await repository.watchTicker(symbol).take(1).toList();
 
-      expect(values.length, 2);
-      expect(values.every((r) => r is Success), isTrue);
+      expect(values.length, 1);
+      expect(values.first, isA<Success<Ticker>>());
+      _expectTickerEquals((values.first as Success<Ticker>).value, expected);
     });
   });
 
@@ -533,6 +622,8 @@ void main() {
     });
 
     test('getTicker falls back to mock on network failure', () async {
+      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expected = await expectedStore.getTicker(symbol);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
         isOnline: true,
@@ -541,14 +632,17 @@ void main() {
 
       final result = await repository.getTicker(symbol);
 
-      expect(result, isA<Success>());
-      result.when(
-        success: (ticker) => expect(ticker.symbol, symbol),
-        failure: (_) => fail('expected mock fallback success'),
-      );
+      expect(result, isA<Success<Ticker>>());
+      _expectTickerEquals((result as Success<Ticker>).value, expected);
     });
 
     test('getCandles falls back to mock on network failure', () async {
+      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expected = await expectedStore.getCandles(
+        symbol,
+        Timeframe.h1,
+        limit: 3,
+      );
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
         isOnline: true,
@@ -561,14 +655,13 @@ void main() {
         limit: 3,
       );
 
-      expect(result, isA<Success>());
-      result.when(
-        success: (candles) => expect(candles.length, 3),
-        failure: (_) => fail('expected mock fallback success'),
-      );
+      expect(result, isA<Success<List<Candle>>>());
+      _expectCandlesEqual((result as Success<List<Candle>>).value, expected);
     });
 
     test('getOrderBook falls back to mock on network failure', () async {
+      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expected = await expectedStore.getOrderBook(symbol, depth: 3);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
         isOnline: true,
@@ -577,17 +670,13 @@ void main() {
 
       final result = await repository.getOrderBook(symbol, depth: 3);
 
-      expect(result, isA<Success>());
-      result.when(
-        success: (orderBook) {
-          expect(orderBook.bids.length, 3);
-          expect(orderBook.asks.length, 3);
-        },
-        failure: (_) => fail('expected mock fallback success'),
-      );
+      expect(result, isA<Success<OrderBook>>());
+      _expectOrderBookEquals((result as Success<OrderBook>).value, expected);
     });
 
     test('getTrades falls back to mock on network failure', () async {
+      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expected = await expectedStore.getTrades(symbol, limit: 3);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
         isOnline: true,
@@ -596,11 +685,8 @@ void main() {
 
       final result = await repository.getTrades(symbol, limit: 3);
 
-      expect(result, isA<Success>());
-      result.when(
-        success: (trades) => expect(trades.length, 3),
-        failure: (_) => fail('expected mock fallback success'),
-      );
+      expect(result, isA<Success<List<Trade>>>());
+      _expectTradesEqual((result as Success<List<Trade>>).value, expected);
     });
   });
 
@@ -1332,5 +1418,522 @@ void main() {
         },
       );
     });
+  });
+
+  group('MarketDataRepositoryImpl missing venue sources fallback', () {
+    final symbol = TradingSymbol(
+      base: 'BTC',
+      quote: 'USDT',
+      venue: Venue.binance,
+      rawSymbol: 'BTCUSDT',
+    );
+
+    test(
+      'getTicker falls back to mock when venueSources has no entry',
+      () async {
+        final expectedStore = MockMarketDataStore(random: Random(42));
+        final expected = await expectedStore.getTicker(symbol);
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          mockStore: MockMarketDataStore(random: Random(42)),
+        );
+
+        final result = await repository.getTicker(symbol);
+
+        expect(result, isA<Success<Ticker>>());
+        _expectTickerEquals((result as Success<Ticker>).value, expected);
+      },
+    );
+
+    test(
+      'getCandles falls back to mock when venueSources has no entry',
+      () async {
+        final expectedStore = MockMarketDataStore(random: Random(42));
+        final expected = await expectedStore.getCandles(
+          symbol,
+          Timeframe.h1,
+          limit: 3,
+        );
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          mockStore: MockMarketDataStore(random: Random(42)),
+        );
+
+        final result = await repository.getCandles(
+          symbol,
+          Timeframe.h1,
+          limit: 3,
+        );
+
+        expect(result, isA<Success<List<Candle>>>());
+        _expectCandlesEqual((result as Success<List<Candle>>).value, expected);
+      },
+    );
+
+    test(
+      'getOrderBook falls back to mock when venueSources has no entry',
+      () async {
+        final expectedStore = MockMarketDataStore(random: Random(42));
+        final expected = await expectedStore.getOrderBook(symbol, depth: 3);
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          mockStore: MockMarketDataStore(random: Random(42)),
+        );
+
+        final result = await repository.getOrderBook(symbol, depth: 3);
+
+        expect(result, isA<Success<OrderBook>>());
+        _expectOrderBookEquals((result as Success<OrderBook>).value, expected);
+      },
+    );
+
+    test(
+      'getTrades falls back to mock when venueSources has no entry',
+      () async {
+        final expectedStore = MockMarketDataStore(random: Random(42));
+        final expected = await expectedStore.getTrades(symbol, limit: 3);
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          mockStore: MockMarketDataStore(random: Random(42)),
+        );
+
+        final result = await repository.getTrades(symbol, limit: 3);
+
+        expect(result, isA<Success<List<Trade>>>());
+        _expectTradesEqual((result as Success<List<Trade>>).value, expected);
+      },
+    );
+  });
+
+  group('MarketDataRepositoryImpl parse failure path', () {
+    final symbol = TradingSymbol(
+      base: 'BTC',
+      quote: 'USDT',
+      venue: Venue.binance,
+      rawSymbol: 'BTCUSDT',
+    );
+
+    VenueSources parseFailingSources() => VenueSources(
+      ticker: _ParseFailureTickerSource(),
+      candles: _ParseFailureCandleSource(),
+      orderBook: _ParseFailureOrderBookSource(),
+      trades: _ParseFailureTradeSource(),
+      stream: _FailingStreamSource(),
+    );
+
+    test(
+      'getTicker returns ParseFailure when source returns ParseFailure',
+      () async {
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          venueSources: {Venue.binance: parseFailingSources()},
+        );
+
+        final result = await repository.getTicker(symbol);
+
+        expect(result, isA<Err<Ticker>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<ParseFailure>());
+            expect(failure.message, 'ticker parse error');
+          },
+        );
+      },
+    );
+
+    test(
+      'getCandles returns ParseFailure when source returns ParseFailure',
+      () async {
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          venueSources: {Venue.binance: parseFailingSources()},
+        );
+
+        final result = await repository.getCandles(symbol, Timeframe.h1);
+
+        expect(result, isA<Err<List<Candle>>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<ParseFailure>());
+            expect(failure.message, 'candles parse error');
+          },
+        );
+      },
+    );
+
+    test(
+      'getOrderBook returns ParseFailure when source returns ParseFailure',
+      () async {
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          venueSources: {Venue.binance: parseFailingSources()},
+        );
+
+        final result = await repository.getOrderBook(symbol);
+
+        expect(result, isA<Err<OrderBook>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<ParseFailure>());
+            expect(failure.message, 'order book parse error');
+          },
+        );
+      },
+    );
+
+    test(
+      'getTrades returns ParseFailure when source returns ParseFailure',
+      () async {
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          venueSources: {Venue.binance: parseFailingSources()},
+        );
+
+        final result = await repository.getTrades(symbol);
+
+        expect(result, isA<Err<List<Trade>>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<ParseFailure>());
+            expect(failure.message, 'trades parse error');
+          },
+        );
+      },
+    );
+  });
+
+  group('MarketDataRepositoryImpl mock fallback failure path', () {
+    final symbol = TradingSymbol(
+      base: 'BTC',
+      quote: 'USDT',
+      venue: Venue.binance,
+      rawSymbol: 'BTCUSDT',
+    );
+
+    VenueSources networkFailingSources() => VenueSources(
+      ticker: _FailingTickerSource(),
+      candles: _FailingCandleSource(),
+      orderBook: _FailingOrderBookSource(),
+      trades: _FailingTradeSource(),
+      stream: _FailingStreamSource(),
+    );
+
+    test(
+      'getTicker returns UnknownFailure when network fails and mock throws',
+      () async {
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          venueSources: {Venue.binance: networkFailingSources()},
+          mockStore: MockMarketDataStore(random: _ThrowingRandom()),
+        );
+
+        final result = await repository.getTicker(symbol);
+
+        expect(result, isA<Err<Ticker>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<UnknownFailure>());
+            expect(failure.message, 'mock fallback failed');
+          },
+        );
+      },
+    );
+
+    test(
+      'getCandles returns UnknownFailure when network fails and mock throws',
+      () async {
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          venueSources: {Venue.binance: networkFailingSources()},
+          mockStore: MockMarketDataStore(random: _ThrowingRandom()),
+        );
+
+        final result = await repository.getCandles(symbol, Timeframe.h1);
+
+        expect(result, isA<Err<List<Candle>>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<UnknownFailure>());
+            expect(failure.message, 'mock fallback failed');
+          },
+        );
+      },
+    );
+
+    test(
+      'getOrderBook returns UnknownFailure when network fails and mock throws',
+      () async {
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          venueSources: {Venue.binance: networkFailingSources()},
+          mockStore: MockMarketDataStore(random: _ThrowingRandom()),
+        );
+
+        final result = await repository.getOrderBook(symbol);
+
+        expect(result, isA<Err<OrderBook>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<UnknownFailure>());
+            expect(failure.message, 'mock fallback failed');
+          },
+        );
+      },
+    );
+
+    test(
+      'getTrades returns UnknownFailure when network fails and mock throws',
+      () async {
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          venueSources: {Venue.binance: networkFailingSources()},
+          mockStore: MockMarketDataStore(random: _ThrowingRandom()),
+        );
+
+        final result = await repository.getTrades(symbol);
+
+        expect(result, isA<Err<List<Trade>>>());
+        result.when(
+          success: (_) => fail('expected failure'),
+          failure: (failure) {
+            expect(failure, isA<UnknownFailure>());
+            expect(failure.message, 'mock fallback failed');
+          },
+        );
+      },
+    );
+  });
+
+  group('MarketDataRepositoryImpl background refresh exception path', () {
+    final symbol = TradingSymbol(
+      base: 'BTC',
+      quote: 'USDT',
+      venue: Venue.binance,
+      rawSymbol: 'BTCUSDT',
+    );
+
+    final freshTicker = Ticker(
+      symbol: symbol,
+      lastPrice: 100,
+      bid: 99,
+      ask: 101,
+      change24h: 1,
+      change24hPercent: 0.01,
+      volume: 1000,
+      timestamp: DateTime.now().toUtc().subtract(const Duration(seconds: 10)),
+    );
+
+    final freshCandles = [
+      Candle(
+        open: 1,
+        high: 2,
+        low: 0.5,
+        close: 1.5,
+        volume: 100,
+        timestamp: DateTime.now().toUtc().subtract(const Duration(minutes: 2)),
+      ),
+    ];
+
+    final freshOrderBook = OrderBook(
+      bids: const [OrderBookLevel(price: 99, amount: 1)],
+      asks: const [OrderBookLevel(price: 101, amount: 1)],
+      timestamp: DateTime.now().toUtc().subtract(const Duration(seconds: 10)),
+    );
+
+    final freshTrades = [
+      Trade(
+        price: 100,
+        amount: 1,
+        side: TradeSide.buy,
+        timestamp: DateTime.now().toUtc().subtract(const Duration(seconds: 10)),
+        tradeId: 't1',
+      ),
+    ];
+
+    test(
+      'getTicker returns cached value when background refresh throws',
+      () async {
+        final cache = _FakeMarketCacheDataSource()..saveTicker(freshTicker);
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          cache: cache,
+          venueSources: {
+            Venue.binance: VenueSources(
+              ticker: _ThrowingTickerSource(),
+              candles: _FailingCandleSource(),
+              orderBook: _FailingOrderBookSource(),
+              trades: _FailingTradeSource(),
+              stream: _FailingStreamSource(),
+            ),
+          },
+        );
+
+        final result = await repository.getTicker(symbol);
+
+        expect(result, isA<Success<Ticker>>());
+        expect((result as Success<Ticker>).value, freshTicker);
+        await pumpEventQueue();
+      },
+    );
+
+    test(
+      'getCandles returns cached value when background refresh throws',
+      () async {
+        final cache = _FakeMarketCacheDataSource()
+          ..saveCandles(symbol, Timeframe.h1, freshCandles);
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          cache: cache,
+          venueSources: {
+            Venue.binance: VenueSources(
+              ticker: _FailingTickerSource(),
+              candles: _ThrowingCandleSource(),
+              orderBook: _FailingOrderBookSource(),
+              trades: _FailingTradeSource(),
+              stream: _FailingStreamSource(),
+            ),
+          },
+        );
+
+        final result = await repository.getCandles(symbol, Timeframe.h1);
+
+        expect(result, isA<Success<List<Candle>>>());
+        expect((result as Success<List<Candle>>).value, freshCandles);
+        await pumpEventQueue();
+      },
+    );
+
+    test(
+      'getOrderBook returns cached value when background refresh throws',
+      () async {
+        final cache = _FakeMarketCacheDataSource()
+          ..saveOrderBook(symbol, freshOrderBook);
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          cache: cache,
+          venueSources: {
+            Venue.binance: VenueSources(
+              ticker: _FailingTickerSource(),
+              candles: _FailingCandleSource(),
+              orderBook: _ThrowingOrderBookSource2(),
+              trades: _FailingTradeSource(),
+              stream: _FailingStreamSource(),
+            ),
+          },
+        );
+
+        final result = await repository.getOrderBook(symbol);
+
+        expect(result, isA<Success<OrderBook>>());
+        expect((result as Success<OrderBook>).value, freshOrderBook);
+        await pumpEventQueue();
+      },
+    );
+
+    test(
+      'getTrades returns cached value when background refresh throws',
+      () async {
+        final cache = _FakeMarketCacheDataSource()
+          ..saveTrades(symbol, freshTrades);
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          cache: cache,
+          venueSources: {
+            Venue.binance: VenueSources(
+              ticker: _FailingTickerSource(),
+              candles: _FailingCandleSource(),
+              orderBook: _FailingOrderBookSource(),
+              trades: _ThrowingTradeSource2(),
+              stream: _FailingStreamSource(),
+            ),
+          },
+        );
+
+        final result = await repository.getTrades(symbol);
+
+        expect(result, isA<Success<List<Trade>>>());
+        expect((result as Success<List<Trade>>).value, freshTrades);
+        await pumpEventQueue();
+      },
+    );
+  });
+
+  group('MarketDataRepositoryImpl watch mock fallback', () {
+    final symbol = TradingSymbol(
+      base: 'BTC',
+      quote: 'USDT',
+      venue: Venue.binance,
+      rawSymbol: 'BTCUSDT',
+    );
+
+    test(
+      'watchTicker falls back to mock stream when no cache and no stream source',
+      () async {
+        final expectedStore = MockMarketDataStore(random: Random(42));
+        final first = await expectedStore.getTicker(symbol);
+        final second = await expectedStore.getTicker(symbol);
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          mockStore: MockMarketDataStore(random: Random(42)),
+        );
+
+        final values = await repository.watchTicker(symbol).take(2).toList();
+
+        expect(values.length, 2);
+        expect(values[0], isA<Success<Ticker>>());
+        _expectTickerEquals((values[0] as Success<Ticker>).value, first);
+        expect(values[1], isA<Success<Ticker>>());
+        _expectTickerEquals((values[1] as Success<Ticker>).value, second);
+      },
+    );
+
+    test(
+      'watchOrderBook falls back to mock stream when no cache and no stream source',
+      () async {
+        final expectedStore = MockMarketDataStore(random: Random(42));
+        final first = await expectedStore.getOrderBook(symbol);
+        final second = await expectedStore.getOrderBook(symbol);
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          mockStore: MockMarketDataStore(random: Random(42)),
+        );
+
+        final values = await repository.watchOrderBook(symbol).take(2).toList();
+
+        expect(values.length, 2);
+        expect(values[0], isA<Success<OrderBook>>());
+        _expectOrderBookEquals((values[0] as Success<OrderBook>).value, first);
+        expect(values[1], isA<Success<OrderBook>>());
+        _expectOrderBookEquals((values[1] as Success<OrderBook>).value, second);
+      },
+    );
+
+    test(
+      'watchTrades falls back to mock stream when no cache and no stream source',
+      () async {
+        final expectedStore = MockMarketDataStore(random: Random(42));
+        final first = await expectedStore.getTrades(symbol);
+        final second = await expectedStore.getTrades(symbol);
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          mockStore: MockMarketDataStore(random: Random(42)),
+        );
+
+        final values = await repository.watchTrades(symbol).take(2).toList();
+
+        expect(values.length, 2);
+        expect(values[0], isA<Success<List<Trade>>>());
+        _expectTradesEqual((values[0] as Success<List<Trade>>).value, first);
+        expect(values[1], isA<Success<List<Trade>>>());
+        _expectTradesEqual((values[1] as Success<List<Trade>>).value, second);
+      },
+    );
   });
 }

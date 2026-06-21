@@ -21,23 +21,31 @@ class SecurePinAuthService implements PinAuthService {
 
   @override
   Future<bool> isPinSet() async {
-    final hash = await _storage.read(key: _pinHashKey);
-    return hash != null && hash.isNotEmpty;
+    try {
+      final hash = await _storage.read(key: _pinHashKey);
+      return hash != null && hash.isNotEmpty;
+    } on Object {
+      return false;
+    }
   }
 
   @override
   Future<bool> authenticatePin(String pin) async {
     if (pin.length < _minPinLength) return false;
 
-    final storedHash = await _storage.read(key: _pinHashKey);
-    if (storedHash == null) {
-      final result = await setPin(pin);
-      return result is Success<void>;
-    }
+    try {
+      final storedHash = await _storage.read(key: _pinHashKey);
+      if (storedHash == null) {
+        final result = await setPin(pin);
+        return result is Success<void>;
+      }
 
-    final salt = await _storage.read(key: _pinSaltKey) ?? '';
-    final hash = _hashPin(pin, salt);
-    return hash == storedHash;
+      final salt = await _storage.read(key: _pinSaltKey) ?? '';
+      final hash = _hashPin(pin, salt);
+      return hash == storedHash;
+    } on Object {
+      return false;
+    }
   }
 
   @override

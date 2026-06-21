@@ -7,35 +7,39 @@ import 'theme_mode.dart';
 ///
 /// Themes are dark-first and parameterized by [AppVisualDirection]
 /// (Flux vs Carbon) so the two directions share the same structure but differ
-/// in accent and background hues.
+/// in accent and background hues. Colors are sourced from
+/// [mockups/colors_and_type.css].
 abstract final class AppTheme {
-  static const _carbonSurface = Color(0xFF061336);
-  static const _fluxSurface = Color(0xFF0A0F1E);
-  static const _lightSurface = Color(0xFFFFFFFF);
-  static const _titanium = Color(0xFFF7F4F3);
+  // Surfaces
+  static const _dark = Color(0xFF030612); // --color-dark
+  static const _carbonHover = Color(0xFF061336); // --color-carbon-hover
+  static const _lightSurface = Color(0xFFFFFFFF); // --color-background
+  static const _titanium = Color(0xFFF7F4F3); // --color-titanium
 
-  static const _cobalt = Color(0xFF1634EF);
-  static const _turquoise = Color(0xFF00BBCC);
-  static const _turquoiseBold = Color(0xFF005060);
-  static const _emerald = Color(0xFF01A54C);
-  static const _emeraldBold = Color(0xFF1D683F);
+  // Brand accents (from the CSS triads)
+  static const _cobaltVivid = Color(0xFF0355F3); // --color-cobalt-vivid
+  static const _turquoiseVivid = Color(0xFF00BBCC); // --color-turquoise-vivid
+  static const _turquoiseBold = Color(0xFF005060); // --color-turquoise-bold
+  static const _emeraldVivid = Color(0xFF01A54C); // --color-emerald-vivid
+  static const _emeraldBold = Color(0xFF1D683F); // --color-emerald-bold
   static const _rose = Color(0xFFFF4D4D);
   static const _roseBold = Color(0xFFDC2626);
 
-  static const _carbon = Color(0xFF020D23);
+  // Neutrals
+  static const _carbon = Color(0xFF020D23); // --color-carbon
   static const _white = Color(0xFFFFFFFF);
-  static const _white55 = Color(0x8CFFFFFF);
-  static const _white8 = Color(0x14FFFFFF);
-  static const _white6 = Color(0x0FFFFFFF);
-  static const _carbon60 = Color(0x99020D23);
-  static const _carbon8 = Color(0x14020D23);
+  static const _white55 = Color(0x8CFFFFFF); // ~ --color-white-50
+  static const _white8 = Color(0x14FFFFFF); // --color-white-8
+  static const _white6 = Color(0x0FFFFFFF); // --color-border (dark)
+  static const _carbon60 = Color(0x99020D23); // --color-carbon-60
+  static const _carbon8 = Color(0x14020D23); // --color-carbon-8
 
   /// Builds a dark theme for the given visual direction.
   static ThemeData dark(AppVisualDirection direction) {
-    final primary = direction == AppVisualDirection.flux ? _turquoise : _cobalt;
-    final surface = direction == AppVisualDirection.flux
-        ? _fluxSurface
-        : _carbonSurface;
+    final primary = direction == AppVisualDirection.flux
+        ? _turquoiseVivid
+        : _cobaltVivid;
+    final surface = direction == AppVisualDirection.flux ? _dark : _carbonHover;
 
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primary,
@@ -54,7 +58,7 @@ abstract final class AppTheme {
     return _baseTheme(
       colorScheme: colorScheme,
       appColorTheme: AppColorTheme(
-        bullish: _emerald,
+        bullish: _emeraldVivid,
         bearish: _rose,
         accent: primary,
         surfaceGlass: _white8,
@@ -68,7 +72,7 @@ abstract final class AppTheme {
   static ThemeData light(AppVisualDirection direction) {
     final primary = direction == AppVisualDirection.flux
         ? _turquoiseBold
-        : _cobalt;
+        : _cobaltVivid;
     final accent = direction == AppVisualDirection.flux
         ? const Color(0xFFBDECF6)
         : _titanium;
@@ -182,86 +186,114 @@ abstract final class AppTheme {
     );
   }
 
+  /// Returns a monospace text style for prices, addresses and hashes.
+  static TextStyle mono({required Color color, double fontSize = 14}) =>
+      TextStyle(
+        fontFamily: 'JetBrains Mono',
+        fontSize: fontSize,
+        color: color,
+        fontWeight: FontWeight.w500,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+
+  /// Returns an italic serif text style for editorial accents.
+  static TextStyle serifItalic({required Color color, double fontSize = 16}) =>
+      TextStyle(
+        fontFamily: 'Instrument Serif',
+        fontSize: fontSize,
+        color: color,
+        fontStyle: FontStyle.italic,
+        fontWeight: FontWeight.w400,
+      );
+
   static TextTheme _buildTextTheme(Color onSurface) {
+    // Display and large headlines use Space Grotesk; body/UI use Geist,
+    // matching the mockup type scale.
+    const spaceGrotesk = TextStyle(fontFamily: 'Space Grotesk');
+    const geist = TextStyle(fontFamily: 'Geist');
+
     return TextTheme(
-      displayLarge: TextStyle(
-        fontFamily: 'Space Grotesk',
+      displayLarge: spaceGrotesk.copyWith(
         fontSize: 80,
         height: 1.0,
         letterSpacing: -0.02 * 80,
         color: onSurface,
         fontWeight: FontWeight.w400,
       ),
-      displayMedium: TextStyle(
-        fontFamily: 'Space Grotesk',
+      displayMedium: spaceGrotesk.copyWith(
         fontSize: 48,
         height: 1.0,
         letterSpacing: -0.02 * 48,
         color: onSurface,
         fontWeight: FontWeight.w400,
       ),
-      displaySmall: TextStyle(
-        fontFamily: 'Space Grotesk',
+      displaySmall: spaceGrotesk.copyWith(
         fontSize: 36,
         height: 1.05,
         letterSpacing: -0.02 * 36,
         color: onSurface,
         fontWeight: FontWeight.w400,
       ),
-      headlineLarge: TextStyle(
-        fontFamily: 'Geist',
+      headlineLarge: spaceGrotesk.copyWith(
         fontSize: 24,
         height: 1.1,
         letterSpacing: -0.01 * 24,
         color: onSurface,
         fontWeight: FontWeight.w500,
       ),
-      headlineMedium: TextStyle(
-        fontFamily: 'Geist',
+      headlineMedium: spaceGrotesk.copyWith(
         fontSize: 18,
         height: 1.2,
         letterSpacing: -0.005 * 18,
         color: onSurface,
         fontWeight: FontWeight.w500,
       ),
-      bodyLarge: TextStyle(
-        fontFamily: 'Geist',
+      headlineSmall: geist.copyWith(
+        fontSize: 24,
+        height: 1.1,
+        letterSpacing: -0.01 * 24,
+        color: onSurface,
+        fontWeight: FontWeight.w500,
+      ),
+      titleLarge: geist.copyWith(
+        fontSize: 18,
+        height: 1.2,
+        letterSpacing: -0.005 * 18,
+        color: onSurface,
+        fontWeight: FontWeight.w500,
+      ),
+      bodyLarge: geist.copyWith(
         fontSize: 18,
         height: 1.55,
         color: onSurface,
         fontWeight: FontWeight.w400,
       ),
-      bodyMedium: TextStyle(
-        fontFamily: 'Geist',
+      bodyMedium: geist.copyWith(
         fontSize: 16,
         height: 1.55,
         color: onSurface,
         fontWeight: FontWeight.w400,
       ),
-      bodySmall: TextStyle(
-        fontFamily: 'Geist',
+      bodySmall: geist.copyWith(
         fontSize: 14,
         height: 1.5,
         color: onSurface,
         fontWeight: FontWeight.w400,
       ),
-      labelLarge: TextStyle(
-        fontFamily: 'Geist',
+      labelLarge: geist.copyWith(
         fontSize: 12,
         height: 1.2,
         letterSpacing: 0.05 * 12,
         color: onSurface,
         fontWeight: FontWeight.w500,
       ),
-      labelMedium: TextStyle(
-        fontFamily: 'Geist',
+      labelMedium: geist.copyWith(
         fontSize: 11,
         height: 1.2,
         color: onSurface,
         fontWeight: FontWeight.w500,
       ),
-      labelSmall: TextStyle(
-        fontFamily: 'Geist',
+      labelSmall: geist.copyWith(
         fontSize: 9,
         height: 1.2,
         letterSpacing: 0.07 * 9,

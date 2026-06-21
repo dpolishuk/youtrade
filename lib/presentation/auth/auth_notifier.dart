@@ -16,6 +16,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   bool _pinSet = false;
   bool _isBiometricAvailable = false;
+  bool _isAuthenticating = false;
 
   bool get isPinSet => _pinSet;
 
@@ -55,32 +56,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> authenticateWithPin(String pin) async {
-    _pinSet = await _pinAuthService.isPinSet();
+    if (_isAuthenticating) return;
+    _isAuthenticating = true;
+    try {
+      _pinSet = await _pinAuthService.isPinSet();
 
-    if (!_pinRegex.hasMatch(pin)) {
-      state = const AuthError(
-        PinValidationFailure('PIN must be exactly 4 digits'),
-      );
-      return;
-    }
+      if (!_pinRegex.hasMatch(pin)) {
+        state = const AuthError(
+          PinValidationFailure('PIN must be exactly 4 digits'),
+        );
+        return;
+      }
 
-    if (!_pinSet) {
-      final result = await _pinAuthService.setPin(pin);
-      result.when(
-        success: (_) {
-          _pinSet = true;
-          state = const AuthAuthenticated();
-        },
-        failure: (failure) => state = AuthError(failure),
-      );
-      return;
-    }
+      if (!_pinSet) {
+        final result = await _pinAuthService.setPin(pin);
+        result.when(
+          success: (_) {
+            _pinSet = true;
+            state = const AuthAuthenticated();
+          },
+          failure: (failure) => state = AuthError(failure),
+        );
+        return;
+      }
 
-    final isValid = await _pinAuthService.authenticatePin(pin);
-    if (isValid) {
-      state = const AuthAuthenticated();
-    } else {
-      state = const AuthError(PinMismatchFailure());
+      final isValid = await _pinAuthService.authenticatePin(pin);
+      if (isValid) {
+        state = const AuthAuthenticated();
+      } else {
+        state = const AuthError(PinMismatchFailure());
+      }
+    } finally {
+      _isAuthenticating = false;
     }
   }
 

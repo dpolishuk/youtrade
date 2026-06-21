@@ -9,6 +9,7 @@ import 'package:youtrade/presentation/auth/auth_guard_provider.dart';
 import 'package:youtrade/presentation/auth/auth_state.dart';
 
 import '../../fakes/fake_pin_auth_service.dart';
+import '../../fakes/racey_fake_pin_auth_service.dart';
 
 class MockLocalAuthService extends Mock implements LocalAuthService {}
 
@@ -389,5 +390,110 @@ void main() {
       final unauthenticated = states.last as AuthUnauthenticated;
       expect(unauthenticated.pinSet, isTrue);
     });
+
+    test(
+      'initialize emits AuthError with AuthCancelledFailure when biometric auth is cancelled',
+      () async {
+        fakePinAuth.setStoredPin('1234');
+        when(
+          () => mockLocalAuth.canCheckBiometrics(),
+        ).thenAnswer((_) async => true);
+        when(
+          () => mockLocalAuth.authenticate(),
+        ).thenAnswer((_) async => const Err<bool>(AuthCancelledFailure()));
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container.read(authNotifierProvider.notifier).initialize();
+
+        expect(states, [isA<AuthError>()]);
+        final error = states.single as AuthError;
+        expect(error.failure, isA<AuthCancelledFailure>());
+        expect(error.failure.message, 'Authentication was cancelled.');
+      },
+    );
+
+    test(
+      'initialize emits AuthError with AuthFailedFailure when biometric auth fails',
+      () async {
+        fakePinAuth.setStoredPin('1234');
+        when(
+          () => mockLocalAuth.canCheckBiometrics(),
+        ).thenAnswer((_) async => true);
+        when(
+          () => mockLocalAuth.authenticate(),
+        ).thenAnswer((_) async => const Err<bool>(AuthFailedFailure()));
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container.read(authNotifierProvider.notifier).initialize();
+
+        expect(states, [isA<AuthError>()]);
+        final error = states.single as AuthError;
+        expect(error.failure, isA<AuthFailedFailure>());
+        expect(
+          error.failure.message,
+          'Authentication failed. Please try again.',
+        );
+      },
+    );
+
+    test(
+      'authenticateWithBiometrics attempts local auth and authenticates when no PIN is set',
+      () async {
+        when(
+          () => mockLocalAuth.authenticate(),
+        ).thenAnswer((_) async => const Success<bool>(true));
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithBiometrics();
+
+        expect(states, [isA<AuthAuthenticated>()]);
+        expect(container.read(authNotifierProvider.notifier).isPinSet, isFalse);
+      },
+    );
+
+    test(
+      'authenticateWithPin rapid calls produce deterministic authenticated state',
+      () async {
+        final raceyPinAuth = RaceyFakePinAuthService();
+        final container = ProviderContainer(
+          overrides: [
+            localAuthServiceProvider.overrideWithValue(mockLocalAuth),
+            pinAuthServiceProvider.overrideWithValue(raceyPinAuth),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final futures = <Future<void>>[
+          container
+              .read(authNotifierProvider.notifier)
+              .authenticateWithPin('1234'),
+          container
+              .read(authNotifierProvider.notifier)
+              .authenticateWithPin('1234'),
+          container
+              .read(authNotifierProvider.notifier)
+              .authenticateWithPin('1234'),
+        ];
+
+        await Future.wait(futures);
+
+        expect(container.read(authNotifierProvider), isA<AuthAuthenticated>());
+        expect(container.read(authNotifierProvider.notifier).isPinSet, isTrue);
+      },
+    );
   });
 }

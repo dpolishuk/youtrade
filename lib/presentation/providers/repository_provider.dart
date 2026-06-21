@@ -6,6 +6,10 @@ import '../../data/datasources/remote/binance/binance_rest_client.dart';
 import '../../data/datasources/remote/binance/binance_websocket_client.dart';
 import '../../data/datasources/remote/bybit/bybit_rest_client.dart';
 import '../../data/datasources/remote/bybit/bybit_websocket_client.dart';
+import '../../data/datasources/remote/coinbase/coinbase_rest_client.dart';
+import '../../data/datasources/remote/coinbase/coinbase_websocket_client.dart';
+import '../../data/datasources/remote/okx/okx_rest_client.dart';
+import '../../data/datasources/remote/okx/okx_websocket_client.dart';
 import '../../data/repositories/market_data_repository_impl.dart';
 import '../../domain/entities/venue.dart';
 import '../../domain/registry/exchange_capability.dart';
@@ -33,6 +37,14 @@ final class _StaticExchangeCapabilityRegistry
     ),
     const ExchangeCapability(
       venue: Venue.bybit,
+      supportedFeatures: _allMarketDataFeatures,
+    ),
+    const ExchangeCapability(
+      venue: Venue.okx,
+      supportedFeatures: _allMarketDataFeatures,
+    ),
+    const ExchangeCapability(
+      venue: Venue.coinbase,
       supportedFeatures: _allMarketDataFeatures,
     ),
   ];
@@ -65,6 +77,8 @@ final marketDataRepositoryProvider = Provider<MarketDataRepository>((ref) {
 
   final binanceRest = BinanceRestClient();
   final bybitRest = BybitRestClient();
+  final okxRest = OKXRestClient();
+  final coinbaseRest = CoinbaseRestClient();
 
   return MarketDataRepositoryImpl(
     registry: const _StaticExchangeCapabilityRegistry(),
@@ -84,6 +98,20 @@ final marketDataRepositoryProvider = Provider<MarketDataRepository>((ref) {
         orderBook: bybitRest,
         trades: bybitRest,
         stream: BybitWebSocketClient(),
+      ),
+      Venue.okx: VenueSources(
+        ticker: okxRest,
+        candles: okxRest,
+        orderBook: okxRest,
+        trades: okxRest,
+        stream: OKXWebSocketClient(),
+      ),
+      Venue.coinbase: VenueSources(
+        ticker: coinbaseRest,
+        candles: coinbaseRest,
+        orderBook: coinbaseRest,
+        trades: coinbaseRest,
+        stream: CoinbaseWebSocketClient(),
       ),
     },
   );

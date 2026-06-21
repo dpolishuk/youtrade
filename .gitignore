@@ -1,2 +1,44 @@
-# bv (beads viewer) local config and caches
+# Flutter / Dart build artifacts
+.dart_tool/
+build/
+coverage/
+
+# iOS / macOS / Android / Windows / Linux generated files
+ios/Flutter/Flutter.podspec
+ios/.symlinks/
+ios/Pods/
+ios/Runner.xcworkspace/xcshareddata/
+ios/Runner.xcodeproj/project.xcworkspace/
+macos/Flutter/ephemeral/
+macos/Pods/
+macos/.symlinks/
+macos/Runner.xcworkspace/xcshareddata/
+macos/Runner.xcodeproj/project.xcworkspace/
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+windows/flutter/ephemeral/
+linux/flutter/ephemeral/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Local config / caches
 .bv/
+.opencode/cache/
+*.log
+
+# Environment / secrets
+.env
+*.keystore
+*.jks
+
+# Flutter generated plugin files (keep registrants tracked if desired; ignore lock hashes)
+.flutter-plugins*
+.pub-cache/
+.pub/
