@@ -6,7 +6,8 @@ enum AssetClass {
   crypto('Crypto'),
   forex('Forex'),
   equities('Equities'),
-  commodities('Commodities');
+  commodities('Commodities'),
+  options('Options');
 
   const AssetClass(this.label);
 

@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/datasources/local/app_database.dart';
+import '../../data/datasources/local/market_cache_data_source.dart';
 import '../../data/datasources/remote/binance/binance_rest_client.dart';
 import '../../data/datasources/remote/binance/binance_websocket_client.dart';
 import '../../data/datasources/remote/bybit/bybit_rest_client.dart';
@@ -8,6 +10,7 @@ import '../../data/repositories/market_data_repository_impl.dart';
 import '../../domain/entities/venue.dart';
 import '../../domain/registry/exchange_capability.dart';
 import '../../domain/repositories/market_data_repository.dart';
+import 'connectivity_provider.dart';
 
 const _allMarketDataFeatures = <MarketDataFeature>{
   MarketDataFeature.restTicker,
@@ -47,12 +50,26 @@ final class _StaticExchangeCapabilityRegistry
   }
 }
 
+final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
+
+final exchangeCapabilityRegistryProvider = Provider<ExchangeCapabilityRegistry>(
+  (ref) => const _StaticExchangeCapabilityRegistry(),
+);
+
 final marketDataRepositoryProvider = Provider<MarketDataRepository>((ref) {
+  final connectivityAsync = ref.watch(connectivityProvider);
+  final isOnline = connectivityAsync.valueOrNull ?? true;
+
+  final database = ref.watch(appDatabaseProvider);
+  final cache = MarketCacheDataSource(database: database);
+
   final binanceRest = BinanceRestClient();
   final bybitRest = BybitRestClient();
 
   return MarketDataRepositoryImpl(
     registry: const _StaticExchangeCapabilityRegistry(),
+    isOnline: isOnline,
+    cache: cache,
     venueSources: {
       Venue.binance: VenueSources(
         ticker: binanceRest,

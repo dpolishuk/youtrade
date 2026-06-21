@@ -39,3 +39,10 @@ final class PinMismatchFailure extends AuthFailure {
   @override
   String get message => 'Incorrect PIN. Please try again.';
 }
+
+final class PinValidationFailure extends AuthFailure {
+  const PinValidationFailure(this.message);
+
+  @override
+  final String message;
+}

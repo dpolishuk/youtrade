@@ -22,7 +22,7 @@ class _AuthGateScreenState extends ConsumerState<AuthGateScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authNotifierProvider.notifier).checkBiometricAvailability();
+      ref.read(authNotifierProvider.notifier).initialize();
     });
   }
 
@@ -48,6 +48,9 @@ class _AuthGateScreenState extends ConsumerState<AuthGateScreen> {
   Widget _buildGate(AuthState state) {
     final failure = state is AuthError ? state.failure : null;
     final theme = Theme.of(context);
+    final notifier = ref.read(authNotifierProvider.notifier);
+    final pinSet = notifier.isPinSet;
+    final canUseBiometrics = notifier.isBiometricAvailable && pinSet;
 
     return Scaffold(
       body: SafeArea(
@@ -64,39 +67,42 @@ class _AuthGateScreenState extends ConsumerState<AuthGateScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'YouTrade is locked',
+                pinSet ? 'YouTrade is locked' : 'Set up PIN',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
               Text(
-                'Authenticate to continue',
+                pinSet
+                    ? 'Authenticate to continue'
+                    : 'Create a 4-digit PIN to secure YouTrade',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: () {
-                  ref
-                      .read(authNotifierProvider.notifier)
-                      .authenticateWithBiometrics();
-                },
-                icon: const Icon(Icons.fingerprint),
-                label: const Text('Unlock with biometrics'),
-              ),
-              const SizedBox(height: 16),
+              if (canUseBiometrics)
+                ElevatedButton.icon(
+                  onPressed: () {
+                    ref
+                        .read(authNotifierProvider.notifier)
+                        .authenticateWithBiometrics();
+                  },
+                  icon: const Icon(Icons.fingerprint),
+                  label: const Text('Unlock with biometrics'),
+                ),
+              if (canUseBiometrics) const SizedBox(height: 16),
               TextField(
                 controller: _pinController,
                 keyboardType: TextInputType.number,
                 obscureText: true,
                 maxLength: 4,
                 textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  labelText: 'PIN',
-                  hintText: 'Enter PIN',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: pinSet ? 'PIN' : 'Create PIN',
+                  hintText: pinSet ? 'Enter PIN' : 'Choose a 4-digit PIN',
+                  border: const OutlineInputBorder(),
                   counterText: '',
                 ),
                 onSubmitted: (_) => _submitPin(),
@@ -104,7 +110,7 @@ class _AuthGateScreenState extends ConsumerState<AuthGateScreen> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _submitPin,
-                child: const Text('Unlock with PIN'),
+                child: Text(pinSet ? 'Unlock with PIN' : 'Set PIN'),
               ),
               if (failure != null) ...[
                 const SizedBox(height: 16),

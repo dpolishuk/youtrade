@@ -93,6 +93,33 @@ void main() {
       expect(find.text('GBPJPY'), findsOneWidget);
     });
 
+    testWidgets('keeps cursor position while typing in the middle', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildApp());
+      await tester.pumpAndSettle();
+
+      final searchField = find.byKey(const ValueKey('markets_search_field'));
+      await tester.tap(searchField);
+      await tester.pump();
+
+      final controller = tester.widget<TextField>(searchField).controller!;
+      controller.text = 'abc';
+      controller.selection = const TextSelection.collapsed(offset: 1);
+      await tester.pump();
+
+      tester.testTextInput.updateEditingValue(
+        const TextEditingValue(
+          text: 'axbc',
+          selection: TextSelection.collapsed(offset: 2),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(controller.text, 'axbc');
+      expect(controller.selection.baseOffset, 2);
+    });
+
     testWidgets('shows empty state when no markets match', (tester) async {
       await tester.pumpWidget(buildApp());
       await tester.pumpAndSettle();

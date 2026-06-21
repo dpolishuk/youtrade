@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/candle.dart';
 import '../../domain/entities/symbol.dart';
 import '../../domain/entities/ticker.dart';
+import '../../domain/entities/venue.dart';
 import '../../presentation/providers/market_data_providers.dart';
 import '../../presentation/providers/selected_symbol_provider.dart';
 import '../../presentation/providers/trading_terminal_provider.dart';
@@ -19,14 +20,21 @@ import '../widgets/trading_terminal/time_frame_selector.dart';
 import '../widgets/trading_terminal/trade_ticket.dart';
 
 class TradingTerminalScreen extends ConsumerWidget {
-  const TradingTerminalScreen({super.key});
+  const TradingTerminalScreen({this.symbol, super.key});
+
+  final String? symbol;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final symbol = ref.watch(selectedSymbolProvider);
-    final tickerAsync = ref.watch(tickerStreamProvider(symbol));
-    final candlesAsync = ref.watch(candlesProvider(symbol));
-    final tab = ref.watch(tradingTerminalProvider).selectedTab;
+    final selectedSymbol = symbol != null
+        ? TradingSymbol(base: symbol!, quote: 'USDT', venue: Venue.binance)
+        : ref.watch(selectedSymbolProvider);
+    final terminalState = ref.watch(tradingTerminalProvider);
+    final tickerAsync = ref.watch(tickerStreamProvider(selectedSymbol));
+    final candlesAsync = ref.watch(
+      candlesProvider((selectedSymbol, terminalState.selectedTimeframe)),
+    );
+    final tab = terminalState.selectedTab;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Terminal')),
@@ -39,16 +47,19 @@ class TradingTerminalScreen extends ConsumerWidget {
               const SymbolChipRow(),
               const SizedBox(height: 12),
               SymbolHeader(
-                symbol: symbol,
+                symbol: selectedSymbol,
                 tickerAsync: tickerAsync,
                 candlesAsync: candlesAsync,
               ),
               const TimeFrameSelector(),
-              CandlestickChart(symbol: symbol),
+              CandlestickChart(
+                symbol: selectedSymbol,
+                timeframe: terminalState.selectedTimeframe,
+              ),
               const SizedBox(height: 14),
               const LowerTabs(),
               _ActivePanel(
-                symbol: symbol,
+                symbol: selectedSymbol,
                 tickerAsync: tickerAsync,
                 candlesAsync: candlesAsync,
                 tab: tab,

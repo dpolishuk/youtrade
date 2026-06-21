@@ -32,6 +32,6 @@ class SecuritySection extends ConsumerWidget {
   }
 
   void _onBiometricPinTapped(BuildContext context, AuthNotifier notifier) {
-    notifier.checkBiometricAvailability();
+    notifier.initialize();
   }
 }

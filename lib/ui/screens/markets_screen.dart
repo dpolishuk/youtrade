@@ -28,15 +28,6 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
     final appColors = theme.extension<AppColorTheme>()!;
     final markets = ref.watch(filteredMarketScreenerItemsProvider);
 
-    ref.listen(marketScreenerSearchProvider, (previous, next) {
-      if (_searchController.text != next) {
-        _searchController.text = next;
-        _searchController.selection = TextSelection.collapsed(
-          offset: next.length,
-        );
-      }
-    });
-
     return Scaffold(
       appBar: AppBar(title: const Text('Markets'), centerTitle: false),
       body: SafeArea(

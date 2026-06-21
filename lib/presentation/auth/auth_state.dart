@@ -9,7 +9,9 @@ final class AuthUnknown extends AuthState {
 }
 
 final class AuthUnauthenticated extends AuthState {
-  const AuthUnauthenticated();
+  const AuthUnauthenticated({this.pinSet = true});
+
+  final bool pinSet;
 }
 
 final class AuthAuthenticated extends AuthState {

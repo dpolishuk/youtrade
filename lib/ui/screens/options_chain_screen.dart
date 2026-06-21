@@ -7,7 +7,9 @@ import '../widgets/options_chain/options_header.dart';
 import '../widgets/options_chain/strike_row.dart';
 
 class OptionsChainScreen extends StatefulWidget {
-  const OptionsChainScreen({super.key});
+  const OptionsChainScreen({this.symbol, super.key});
+
+  final String? symbol;
 
   @override
   State<OptionsChainScreen> createState() => _OptionsChainScreenState();

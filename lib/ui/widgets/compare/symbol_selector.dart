@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../presentation/theme/theme_extensions.dart';
 import 'compare_models.dart';
 
-/// Horizontal scrollable selector for up to two comparison symbols.
+/// Horizontal scrollable selector for 1-4 comparison symbols.
 class SymbolSelector extends StatelessWidget {
   const SymbolSelector({
     required this.selected,
@@ -47,10 +47,12 @@ class SymbolSelector extends StatelessWidget {
     );
 
     if (index >= 0) {
-      if (currentlySelected.length > 2) {
+      if (currentlySelected.length > 1) {
         currentlySelected.removeAt(index);
+      } else {
+        return;
       }
-    } else if (currentlySelected.length < 2) {
+    } else if (currentlySelected.length < 4) {
       currentlySelected.add(symbol);
     } else {
       currentlySelected
@@ -82,6 +84,7 @@ class _SymbolChip extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Material(
+      key: ValueKey('symbol_chip_${symbol.symbol}'),
       color: isSelected ? symbol.color : colorScheme.surface,
       borderRadius: BorderRadius.circular(7),
       child: InkWell(

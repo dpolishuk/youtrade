@@ -75,10 +75,7 @@ class _ExchangeDetailEditScreenState
         title: Text('${widget.venue.displayName} API'),
         actions: [
           if (!_isLoading)
-            TextButton(
-              onPressed: () => _save(context),
-              child: const Text('Save'),
-            ),
+            TextButton(onPressed: () => _save(), child: const Text('Save')),
         ],
       ),
       body: SafeArea(
@@ -175,7 +172,7 @@ class _ExchangeDetailEditScreenState
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
-                          onPressed: () => _delete(context),
+                          onPressed: () => _delete(),
                           icon: Icon(
                             Icons.delete_outline,
                             color: colors.bearish,
@@ -261,7 +258,7 @@ class _ExchangeDetailEditScreenState
         _secretController.text.isNotEmpty;
   }
 
-  void _save(BuildContext context) {
+  Future<void> _save() async {
     final credential = ExchangeCredentials(
       venue: widget.venue,
       apiKey: _apiKeyController.text.trim(),
@@ -269,8 +266,18 @@ class _ExchangeDetailEditScreenState
       isEnabled: _isEnabled,
     );
 
-    ref.read(exchangeCredentialsNotifierProvider.notifier).save(credential);
-    Navigator.of(context).pop();
+    await ref
+        .read(exchangeCredentialsNotifierProvider.notifier)
+        .save(credential);
+    if (!mounted) return;
+    final state = ref.read(exchangeCredentialsNotifierProvider);
+    if (state is ExchangeCredentialsError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Save failed: ${state.failure.message}')),
+      );
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   void _testConnection() {
@@ -286,10 +293,10 @@ class _ExchangeDetailEditScreenState
         .testConnection(credential);
   }
 
-  void _delete(BuildContext context) {
+  Future<void> _delete() async {
     final colors = Theme.of(context).extension<AppColorTheme>()!;
 
-    showDialog<void>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete credentials?'),
@@ -299,21 +306,30 @@ class _ExchangeDetailEditScreenState
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              ref
-                  .read(exchangeCredentialsNotifierProvider.notifier)
-                  .delete(widget.venue);
-              Navigator.of(context).pop();
-              Navigator.of(context).pop();
-            },
+            onPressed: () => Navigator.of(context).pop(true),
             child: Text('Delete', style: TextStyle(color: colors.bearish)),
           ),
         ],
       ),
     );
+
+    if (confirmed != true || !mounted) return;
+
+    await ref
+        .read(exchangeCredentialsNotifierProvider.notifier)
+        .delete(widget.venue);
+    if (!mounted) return;
+    final state = ref.read(exchangeCredentialsNotifierProvider);
+    if (state is ExchangeCredentialsError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Delete failed: ${state.failure.message}')),
+      );
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 }

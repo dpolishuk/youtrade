@@ -4,17 +4,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/candle.dart';
 import '../../../domain/entities/symbol.dart';
+import '../../../domain/entities/timeframe.dart';
 import '../../../presentation/providers/market_data_providers.dart';
 import '../../../presentation/theme/theme_extensions.dart';
 
 class CandlestickChart extends ConsumerWidget {
-  const CandlestickChart({required this.symbol, super.key});
+  const CandlestickChart({
+    required this.symbol,
+    required this.timeframe,
+    super.key,
+  });
 
   final TradingSymbol symbol;
+  final Timeframe timeframe;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final candlesAsync = ref.watch(candlesProvider(symbol));
+    final candlesAsync = ref.watch(candlesProvider((symbol, timeframe)));
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final appColors = theme.extension<AppColorTheme>()!;

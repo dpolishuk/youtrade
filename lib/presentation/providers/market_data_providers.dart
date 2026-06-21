@@ -6,35 +6,75 @@ import '../../domain/entities/symbol.dart';
 import '../../domain/entities/ticker.dart';
 import '../../domain/entities/timeframe.dart';
 import '../../domain/entities/trade.dart';
+import '../../domain/entities/venue.dart';
+import '../../domain/registry/exchange_capability.dart';
+import '../../domain/usecases/market_data_use_cases.dart';
 import 'repository_provider.dart';
+
+final getTickerUseCaseProvider = Provider<GetTickerUseCase>((ref) {
+  final repository = ref.watch(marketDataRepositoryProvider);
+  return GetTickerUseCase(repository);
+});
+
+final getCandlesUseCaseProvider = Provider<GetCandlesUseCase>((ref) {
+  final repository = ref.watch(marketDataRepositoryProvider);
+  return GetCandlesUseCase(repository);
+});
+
+final watchOrderBookUseCaseProvider = Provider<WatchOrderBookUseCase>((ref) {
+  final repository = ref.watch(marketDataRepositoryProvider);
+  return WatchOrderBookUseCase(repository);
+});
+
+final getTradesUseCaseProvider = Provider<GetTradesUseCase>((ref) {
+  final repository = ref.watch(marketDataRepositoryProvider);
+  return GetTradesUseCase(repository);
+});
+
+final watchTickerUseCaseProvider = Provider<WatchTickerUseCase>((ref) {
+  final repository = ref.watch(marketDataRepositoryProvider);
+  return WatchTickerUseCase(repository);
+});
+
+final watchTradesUseCaseProvider = Provider<WatchTradesUseCase>((ref) {
+  final repository = ref.watch(marketDataRepositoryProvider);
+  return WatchTradesUseCase(repository);
+});
+
+final getSupportedFeaturesUseCaseProvider =
+    Provider<GetSupportedFeaturesUseCase>((ref) {
+      final registry = ref.watch(exchangeCapabilityRegistryProvider);
+      return GetSupportedFeaturesUseCase(registry);
+    });
 
 final tickerStreamProvider = StreamProvider.family<Ticker, TradingSymbol>((
   ref,
   symbol,
 ) {
-  final repository = ref.watch(marketDataRepositoryProvider);
-  return repository
-      .watchTicker(symbol)
+  final useCase = ref.watch(watchTickerUseCaseProvider);
+  return useCase
+      .call(symbol)
       .map(
         (result) => result.fold((failure) => throw failure, (value) => value),
       );
 });
 
-final candlesProvider = FutureProvider.family<List<Candle>, TradingSymbol>((
-  ref,
-  symbol,
-) async {
-  final repository = ref.watch(marketDataRepositoryProvider);
-  const timeframe = Timeframe.h1;
-  final result = await repository.getCandles(symbol, timeframe);
-  return result.fold((failure) => throw failure, (value) => value);
-});
+final candlesProvider =
+    FutureProvider.family<List<Candle>, (TradingSymbol, Timeframe)>((
+      ref,
+      params,
+    ) async {
+      final (symbol, timeframe) = params;
+      final useCase = ref.watch(getCandlesUseCaseProvider);
+      final result = await useCase.call(symbol, timeframe);
+      return result.fold((failure) => throw failure, (value) => value);
+    });
 
 final orderBookStreamProvider = StreamProvider.family<OrderBook, TradingSymbol>(
   (ref, symbol) {
-    final repository = ref.watch(marketDataRepositoryProvider);
-    return repository
-        .watchOrderBook(symbol)
+    final useCase = ref.watch(watchOrderBookUseCaseProvider);
+    return useCase
+        .call(symbol)
         .map(
           (result) => result.fold((failure) => throw failure, (value) => value),
         );
@@ -45,10 +85,16 @@ final tradesStreamProvider = StreamProvider.family<List<Trade>, TradingSymbol>((
   ref,
   symbol,
 ) {
-  final repository = ref.watch(marketDataRepositoryProvider);
-  return repository
-      .watchTrades(symbol)
+  final useCase = ref.watch(watchTradesUseCaseProvider);
+  return useCase
+      .call(symbol)
       .map(
         (result) => result.fold((failure) => throw failure, (value) => value),
       );
 });
+
+final supportedFeaturesProvider =
+    Provider.family<Set<MarketDataFeature>, Venue>((ref, venue) {
+      final useCase = ref.watch(getSupportedFeaturesUseCaseProvider);
+      return useCase.call(venue);
+    });

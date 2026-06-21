@@ -84,6 +84,51 @@ void main() {
       );
     });
 
+    test('fetchCandles returns Failure on non-200', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient((_) async => http.Response('bad', 400)),
+      );
+      final result = await client.fetchCandles(symbol, Timeframe.h1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Binance candles 400');
+        },
+      );
+    });
+
+    test('fetchCandles returns ParseFailure on type mismatch', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response('{"not":"a list"}', 200),
+        ),
+      );
+
+      final result = await client.fetchCandles(symbol, Timeframe.h1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) => expect(failure, isA<ParseFailure>()),
+      );
+    });
+
+    test('fetchOrderBook returns Failure on non-200', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient((_) async => http.Response('bad', 400)),
+      );
+      final result = await client.fetchOrderBook(symbol);
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Binance order book 400');
+        },
+      );
+    });
+
     test('fetchOrderBook returns Success on valid response', () async {
       final client = BinanceRestClient(
         httpClient: MockClient((request) async {
@@ -103,6 +148,21 @@ void main() {
           expect(orderBook.asks.first.price, 101.0);
         },
         failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('fetchTrades returns Failure on non-200', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient((_) async => http.Response('bad', 400)),
+      );
+      final result = await client.fetchTrades(symbol);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Binance trades 400');
+        },
       );
     });
 

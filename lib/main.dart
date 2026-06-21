@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'presentation/routing/app_router.dart';
 import 'presentation/theme/theme_provider.dart';
-import 'ui/auth/auth_gate_screen.dart';
 
-void main() {
-  runApp(const ProviderScope(child: YouTradeApp()));
+void main({List<Override> overrides = const []}) {
+  runApp(ProviderScope(overrides: overrides, child: const YouTradeApp()));
 }
 
 class YouTradeApp extends ConsumerWidget {
@@ -14,18 +14,14 @@ class YouTradeApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(appThemeProvider);
+    final router = ref.watch(appRouterProvider);
 
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'YouTrade',
       theme: theme,
       darkTheme: theme,
       themeMode: ThemeMode.dark,
-      home: AuthGateScreen(
-        child: Scaffold(
-          appBar: AppBar(title: const Text('YouTrade')),
-          body: const Center(child: Text('Welcome to YouTrade')),
-        ),
-      ),
+      routerConfig: router,
     );
   }
 }
