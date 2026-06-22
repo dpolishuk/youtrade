@@ -9,9 +9,15 @@ class FakePinAuthService implements PinAuthService {
     this.exceptionOnIsPinSet,
     this.exceptionOnSet,
     this.exceptionOnAuthenticatePin,
-  }) : _pin = initialPin;
+    int initialFailedAttempts = 0,
+    DateTime? initialPinLockoutEnd,
+  }) : _pin = initialPin,
+       _failedPinAttempts = initialFailedAttempts,
+       _pinLockoutEnd = initialPinLockoutEnd;
 
   String? _pin;
+  int _failedPinAttempts;
+  DateTime? _pinLockoutEnd;
   final Failure? failureOnSet;
   final Exception? exceptionOnIsPinSet;
   final Exception? exceptionOnSet;
@@ -28,7 +34,7 @@ class FakePinAuthService implements PinAuthService {
   Future<bool> authenticatePin(String pin) async {
     final exception = exceptionOnAuthenticatePin;
     if (exception != null) throw exception;
-    if (pin.length < 4) return false;
+    if (pin.length != 4) return false;
     if (_pin == null) {
       _pin = pin;
       return true;
@@ -45,6 +51,22 @@ class FakePinAuthService implements PinAuthService {
     }
     _pin = pin;
     return const Success<void>(null);
+  }
+
+  @override
+  Future<int> getFailedPinAttempts() async => _failedPinAttempts;
+
+  @override
+  Future<void> setFailedPinAttempts(int attempts) async {
+    _failedPinAttempts = attempts;
+  }
+
+  @override
+  Future<DateTime?> getPinLockoutEnd() async => _pinLockoutEnd;
+
+  @override
+  Future<void> setPinLockoutEnd(DateTime? end) async {
+    _pinLockoutEnd = end;
   }
 
   void setStoredPin(String pin) {

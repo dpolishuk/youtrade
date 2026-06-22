@@ -7,6 +7,8 @@ class RaceyFakePinAuthService implements PinAuthService {
 
   int _setPinCalls = 0;
   String? _pin;
+  int _failedPinAttempts = 0;
+  DateTime? _pinLockoutEnd;
 
   @override
   Future<bool> isPinSet() async => _pin != null;
@@ -24,6 +26,22 @@ class RaceyFakePinAuthService implements PinAuthService {
     }
     _pin = pin;
     return const Success<void>(null);
+  }
+
+  @override
+  Future<int> getFailedPinAttempts() async => _failedPinAttempts;
+
+  @override
+  Future<void> setFailedPinAttempts(int attempts) async {
+    _failedPinAttempts = attempts;
+  }
+
+  @override
+  Future<DateTime?> getPinLockoutEnd() async => _pinLockoutEnd;
+
+  @override
+  Future<void> setPinLockoutEnd(DateTime? end) async {
+    _pinLockoutEnd = end;
   }
 
   int get setPinCallCount => _setPinCalls;

@@ -50,6 +50,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       if (!_pinSet) {
         _isBiometricAvailable = false;
+        await _resetPinLockout();
         state = const AuthUnauthenticated(pinSet: false);
         return;
       }
@@ -64,6 +65,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         return;
       }
 
+      await _loadPinLockoutState();
       state = const AuthUnauthenticated(pinSet: true);
     } on Object {
       _pinSet = false;
@@ -144,7 +146,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         _resetPinLockout();
         state = const AuthAuthenticated();
       } else {
-        _recordFailedPinAttempt();
+        await _recordFailedPinAttempt();
         state = const AuthError(PinMismatchFailure());
       }
     } on Object catch (e) {
@@ -174,15 +176,37 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return remaining > 0 ? remaining : 0;
   }
 
-  void _recordFailedPinAttempt() {
+  Future<void> _loadPinLockoutState() async {
+    try {
+      _failedPinAttempts = await _pinAuthService.getFailedPinAttempts();
+      _pinLockoutEnd = await _pinAuthService.getPinLockoutEnd();
+    } on Object {
+      _failedPinAttempts = 0;
+      _pinLockoutEnd = null;
+    }
+  }
+
+  Future<void> _recordFailedPinAttempt() async {
     _failedPinAttempts++;
     if (_failedPinAttempts >= _maxPinAttempts) {
       _pinLockoutEnd = _clock().add(_pinLockoutDuration);
     }
+    try {
+      await _pinAuthService.setFailedPinAttempts(_failedPinAttempts);
+      await _pinAuthService.setPinLockoutEnd(_pinLockoutEnd);
+    } on Object {
+      // Ignore persistence failures for lockout metadata.
+    }
   }
 
-  void _resetPinLockout() {
+  Future<void> _resetPinLockout() async {
     _failedPinAttempts = 0;
     _pinLockoutEnd = null;
+    try {
+      await _pinAuthService.setFailedPinAttempts(0);
+      await _pinAuthService.setPinLockoutEnd(null);
+    } on Object {
+      // Ignore persistence failures for lockout metadata.
+    }
   }
 }

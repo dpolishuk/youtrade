@@ -1231,6 +1231,151 @@ void main() {
       });
 
       test(
+        'lockout remains active after app restart with persisted state',
+        () async {
+          final storage = _FakeSecureStorage();
+          final service = SecurePinAuthService(storage: storage);
+          await service.setPin('1234');
+
+          when(
+            () => mockLocalAuth.canCheckBiometrics(),
+          ).thenAnswer((_) async => false);
+
+          final firstContainer = makeSecureContainer(storage);
+          addTearDown(firstContainer.dispose);
+          final firstStates = <AuthState>[];
+          firstContainer.listen(
+            authNotifierProvider,
+            (_, state) => firstStates.add(state),
+          );
+
+          await firstContainer.read(authNotifierProvider.notifier).initialize();
+          firstStates.clear();
+
+          for (var i = 0; i < 5; i++) {
+            await firstContainer
+                .read(authNotifierProvider.notifier)
+                .authenticateWithPin('0000');
+          }
+
+          await firstContainer
+              .read(authNotifierProvider.notifier)
+              .authenticateWithPin('1234');
+
+          expect(firstContainer.read(authNotifierProvider), isA<AuthError>());
+          final firstError =
+              firstContainer.read(authNotifierProvider) as AuthError;
+          expect(firstError.failure, isA<PinLockedFailure>());
+
+          firstContainer.dispose();
+
+          final secondContainer = makeSecureContainer(storage);
+          addTearDown(secondContainer.dispose);
+          final secondStates = <AuthState>[];
+          secondContainer.listen(
+            authNotifierProvider,
+            (_, state) => secondStates.add(state),
+          );
+
+          await secondContainer
+              .read(authNotifierProvider.notifier)
+              .initialize();
+          secondStates.clear();
+
+          await secondContainer
+              .read(authNotifierProvider.notifier)
+              .authenticateWithPin('1234');
+
+          expect(secondStates, [isA<AuthError>()]);
+          final secondError = secondStates.single as AuthError;
+          expect(secondError.failure, isA<PinLockedFailure>());
+          expect(
+            (secondError.failure as PinLockedFailure).remainingSeconds,
+            greaterThan(0),
+          );
+        },
+      );
+
+      test('expired lockout allows PIN entry after app restart', () async {
+        final storage = _FakeSecureStorage();
+        final service = SecurePinAuthService(storage: storage);
+        await service.setPin('1234');
+
+        when(
+          () => mockLocalAuth.canCheckBiometrics(),
+        ).thenAnswer((_) async => false);
+
+        final startTime = DateTime.utc(2026, 1, 1, 12, 0, 0);
+        var currentTime = startTime;
+
+        AuthNotifier createNotifier() =>
+            AuthNotifier(mockLocalAuth, service, clock: () => currentTime);
+
+        final firstContainer = ProviderContainer(
+          overrides: [
+            localAuthServiceProvider.overrideWithValue(mockLocalAuth),
+            pinAuthServiceProvider.overrideWithValue(service),
+            authNotifierProvider.overrideWith((ref) => createNotifier()),
+          ],
+        );
+        addTearDown(firstContainer.dispose);
+        final firstStates = <AuthState>[];
+        firstContainer.listen(
+          authNotifierProvider,
+          (_, state) => firstStates.add(state),
+        );
+
+        await firstContainer.read(authNotifierProvider.notifier).initialize();
+        firstStates.clear();
+
+        for (var i = 0; i < 5; i++) {
+          await firstContainer
+              .read(authNotifierProvider.notifier)
+              .authenticateWithPin('0000');
+        }
+
+        await firstContainer
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('1234');
+
+        expect(firstContainer.read(authNotifierProvider), isA<AuthError>());
+        final firstError =
+            firstContainer.read(authNotifierProvider) as AuthError;
+        expect(firstError.failure, isA<PinLockedFailure>());
+
+        firstContainer.dispose();
+
+        currentTime = startTime.add(const Duration(minutes: 15, seconds: 1));
+
+        final secondContainer = ProviderContainer(
+          overrides: [
+            localAuthServiceProvider.overrideWithValue(mockLocalAuth),
+            pinAuthServiceProvider.overrideWithValue(service),
+            authNotifierProvider.overrideWith((ref) => createNotifier()),
+          ],
+        );
+        addTearDown(secondContainer.dispose);
+        final secondStates = <AuthState>[];
+        secondContainer.listen(
+          authNotifierProvider,
+          (_, state) => secondStates.add(state),
+        );
+
+        await secondContainer.read(authNotifierProvider.notifier).initialize();
+        secondStates.clear();
+
+        await secondContainer
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('1234');
+
+        expect(secondStates, [isA<AuthAuthenticated>()]);
+        expect(
+          secondContainer.read(authNotifierProvider),
+          isA<AuthAuthenticated>(),
+        );
+      });
+
+      test(
         'concurrent authenticateWithPin calls produce deterministic authenticated state',
         () async {
           final storage = _FakeSecureStorage();
