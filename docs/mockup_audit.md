@@ -17,10 +17,10 @@ Legend:
 
 | Element | Mockup value | Current Flutter value | Status |
 |---|---|---|---|
-| Height | `46px` | matched | matched |
-| Background | transparent (inherits `#06080f`) | matched | matched |
-| Clock | `9:41`, JetBrains Mono, `13px`, weight 500, letter-spacing `-0.02em`, `#f2f5fa` | matched | matched |
-| Signal/WiFi/Battery icons | inline SVG, currentColor `#f2f5fa`, size ~17×11 / 16×11 / 25×12 | matched | matched |
+| Height | `46px` | system status bar height via `SafeArea` | gap |
+| Background | transparent (inherits `#06080f`) | system status bar background | gap |
+| Clock | `9:41`, JetBrains Mono, `13px`, weight 500, letter-spacing `-0.02em`, `#f2f5fa` | system clock | gap |
+| Signal/WiFi/Battery icons | inline SVG, currentColor `#f2f5fa`, size ~17×11 / 16×11 / 25×12 | system status icons | gap |
 | Center notch | `#000`, `104×30`, radius `16px` | system status bar; custom notch not implemented | gap |
 
 ### App Header
@@ -44,11 +44,11 @@ Legend:
 | Background | `#080b12` | matched | matched |
 | Border top | `1px rgba(255,255,255,0.07)` | matched | matched |
 | Labels | Portfolio, Markets, Trade, Options, More | matched | matched |
-| Icon size | `22×22` SVG | matched | matched |
+| Icon size | `22×22` SVG | `22×22` Material icons (outlined / filled) | gap |
 | Label font | JetBrains Mono, `8.5px`, weight 600, letter-spacing `0.04em` | matched | matched |
 | Active color | `#00e6d2` (Flux) | matched | matched |
 | Inactive color | `rgba(255,255,255,0.34)` | matched | matched |
-| Active indicator | `4×4` dot, radius 50%, bg `#00e6d2`, glow `rgba(0,230,210,0.5)` | matched | matched |
+| Active indicator | `4×4` dot, radius 50%, bg `#00e6d2`, glow `rgba(0,230,210,0.5)` | `NavigationBar` selection indicator disabled (transparent); no accent dot | gap |
 | Touch target | `5px 10px` padding, radius `9px` | matched | matched |
 
 ---
@@ -708,7 +708,8 @@ The auth gate must align to the mockup visual language: dark `#06080f` backgroun
 
 | Item | Status | Notes |
 |---|---|---|
-| Custom status bar / notch | gap | Uses the system status bar; the preview-wrapper notch is not implemented in the app. |
+| Custom status bar / device notch | gap | The implementation uses the system status bar and `SafeArea`. Rendering a custom 46px status bar with 9:41 clock, custom signal/WiFi/battery SVGs, and a center notch requires platform-specific work (e.g., `SystemChrome` overlays plus custom notch painting) that is beyond the current epic scope. |
+| Bottom navigation custom SVG icons and active dot indicator | gap | The mockup specifies five custom SVG tab icons and a 4×4 accent dot beneath the active label; the app uses standard Material outlined/filled icons at the same 22×22 size and disables the `NavigationBar` selection indicator, so the dot is absent. |
 | Carbon direction-specific colors | gap | Carbon currently shares Flux `up`/`down` colors and uses a different accent than the mockup CSS specifies. |
 | Light-theme bottom nav | gap | `ScaffoldWithNavBar` uses the dark nav background (`#080b12`) in both themes. |
 | Settings security section | partial | PIN status and biometric availability are shown in the Protection section; sign-out action is not yet implemented. |

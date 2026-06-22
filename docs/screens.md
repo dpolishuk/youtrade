@@ -26,7 +26,7 @@ This document describes every screen, its purpose, data requirements, states, tr
                                           └─────────────┘      └─────────────┘
 ```
 
-Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Options, More.
+Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Options, More. The implementation uses Material icons instead of the mockup's custom SVG tab icons.
 
 Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes require authentication. Compare and Exchange Detail are nested under `/markets`; Options Chain is at `/markets/options/:symbol`. Orders & History is nested under Portfolio at `/orders`. The Trading Terminal route is `/trading?symbol=<symbol>`.
 
