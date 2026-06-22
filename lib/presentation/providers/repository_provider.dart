@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/local/app_database.dart';
 import '../../data/datasources/local/market_cache_data_source.dart';
-import '../../data/datasources/mock/deterministic_market_data_store.dart';
+import '../../data/datasources/mock/demo_market_data_store.dart';
 import '../../data/datasources/remote/binance/binance_rest_client.dart';
 import '../../data/datasources/remote/binance/binance_websocket_client.dart';
 import '../../data/datasources/remote/bybit/bybit_rest_client.dart';
@@ -132,46 +132,51 @@ final marketDataRepositoryProvider = Provider<MarketDataRepository>((ref) {
   final okxRest = ref.watch(_okxRestClientProvider);
   final coinbaseRest = ref.watch(_coinbaseRestClientProvider);
 
-  final repository = MarketDataRepositoryImpl(
+  // Keep websocket clients alive across connectivity changes by watching them
+  // unconditionally. The provider passes an empty venueSources map when offline
+  // so the repository uses the fallback store instead of real-time streams.
+  final binanceWs = ref.watch(binanceWebSocketClientProvider);
+  final bybitWs = ref.watch(bybitWebSocketClientProvider);
+  final okxWs = ref.watch(okxWebSocketClientProvider);
+  final coinbaseWs = ref.watch(coinbaseWebSocketClientProvider);
+
+  final isOnline = ref.watch(connectivityProvider).valueOrNull ?? true;
+
+  return MarketDataRepositoryImpl(
     registry: const _StaticExchangeCapabilityRegistry(),
-    isOnline: ref.read(connectivityProvider).valueOrNull ?? true,
-    mockStore: const DeterministicMarketDataStore(),
+    fallbackStore: DemoMarketDataStore(),
     cache: cache,
-    venueSources: {
-      Venue.binance: VenueSources(
-        ticker: binanceRest,
-        candles: binanceRest,
-        orderBook: binanceRest,
-        trades: binanceRest,
-        stream: ref.watch(binanceWebSocketClientProvider),
-      ),
-      Venue.bybit: VenueSources(
-        ticker: bybitRest,
-        candles: bybitRest,
-        orderBook: bybitRest,
-        trades: bybitRest,
-        stream: ref.watch(bybitWebSocketClientProvider),
-      ),
-      Venue.okx: VenueSources(
-        ticker: okxRest,
-        candles: okxRest,
-        orderBook: okxRest,
-        trades: okxRest,
-        stream: ref.watch(okxWebSocketClientProvider),
-      ),
-      Venue.coinbase: VenueSources(
-        ticker: coinbaseRest,
-        candles: coinbaseRest,
-        orderBook: coinbaseRest,
-        trades: coinbaseRest,
-        stream: ref.watch(coinbaseWebSocketClientProvider),
-      ),
-    },
+    venueSources: isOnline
+        ? {
+            Venue.binance: VenueSources(
+              ticker: binanceRest,
+              candles: binanceRest,
+              orderBook: binanceRest,
+              trades: binanceRest,
+              stream: binanceWs,
+            ),
+            Venue.bybit: VenueSources(
+              ticker: bybitRest,
+              candles: bybitRest,
+              orderBook: bybitRest,
+              trades: bybitRest,
+              stream: bybitWs,
+            ),
+            Venue.okx: VenueSources(
+              ticker: okxRest,
+              candles: okxRest,
+              orderBook: okxRest,
+              trades: okxRest,
+              stream: okxWs,
+            ),
+            Venue.coinbase: VenueSources(
+              ticker: coinbaseRest,
+              candles: coinbaseRest,
+              orderBook: coinbaseRest,
+              trades: coinbaseRest,
+              stream: coinbaseWs,
+            ),
+          }
+        : const {},
   );
-
-  ref.listen(connectivityProvider, (_, next) {
-    repository.isOnline = next.valueOrNull ?? true;
-  });
-
-  return repository;
 });

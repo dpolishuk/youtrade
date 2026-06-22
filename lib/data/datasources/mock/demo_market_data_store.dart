@@ -9,8 +9,8 @@ import '../../../domain/entities/timeframe.dart';
 import '../../../domain/entities/trade.dart';
 import '../../../domain/sources/market_data_store.dart';
 
-final class MockMarketDataStore implements MarketDataStore {
-  MockMarketDataStore({Random? random}) : _random = random ?? Random(42);
+final class DemoMarketDataStore implements MarketDataStore {
+  DemoMarketDataStore({Random? random}) : _random = random ?? Random(42);
 
   final Random _random;
 

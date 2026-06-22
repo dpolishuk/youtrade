@@ -123,7 +123,7 @@ Each venue provides:
 
 ### Connectivity
 
-Online/offline is handled by `connectivityProvider` in `presentation/providers/connectivity_provider.dart`. `marketDataRepositoryProvider` reads the initial value and listens to updates to toggle `MarketDataRepositoryImpl.isOnline` without rebuilding the repository or recreating clients.
+Online/offline is handled by `connectivityProvider` in `presentation/providers/connectivity_provider.dart`. `marketDataRepositoryProvider` watches connectivity and rebuilds with an empty `venueSources` map when offline; the repository then falls back to the injected `MarketDataStore`. WebSocket client providers are watched unconditionally so clients stay alive across connectivity changes.
 
 ## Presentation Layer
 

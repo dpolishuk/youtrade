@@ -29,8 +29,7 @@ final class _DeterministicRepository implements MarketDataRepository {
   _DeterministicRepository()
     : _delegate = MarketDataRepositoryImpl(
         registry: const _FakeRegistry(),
-        isOnline: false,
-        mockStore: const DeterministicMarketDataStore(),
+        fallbackStore: const DeterministicMarketDataStore(),
       );
 
   final MarketDataRepository _delegate;
@@ -344,8 +343,7 @@ final class _TimeframeRecordingRepository implements MarketDataRepository {
   _TimeframeRecordingRepository()
     : _delegate = MarketDataRepositoryImpl(
         registry: const _FakeRegistry(),
-        isOnline: false,
-        mockStore: const DeterministicMarketDataStore(),
+        fallbackStore: const DeterministicMarketDataStore(),
       );
 
   final MarketDataRepository _delegate;

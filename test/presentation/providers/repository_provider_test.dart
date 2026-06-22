@@ -101,51 +101,5 @@ void main() {
         expect(coinbaseWs.closeAllCallCount, 1);
       },
     );
-
-    test('updates repository isOnline when connectivity changes', () async {
-      final controller = StreamController<bool>.broadcast();
-      final container = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(database),
-          connectivityProvider.overrideWith((ref) => controller.stream),
-          binanceWebSocketClientProvider.overrideWith((ref) {
-            final client = _SpyBinanceWebSocketClient();
-            ref.onDispose(client.closeAll);
-            return client;
-          }),
-          bybitWebSocketClientProvider.overrideWith((ref) {
-            final client = _SpyBybitWebSocketClient();
-            ref.onDispose(client.closeAll);
-            return client;
-          }),
-          okxWebSocketClientProvider.overrideWith((ref) {
-            final client = _SpyOkxWebSocketClient();
-            ref.onDispose(client.closeAll);
-            return client;
-          }),
-          coinbaseWebSocketClientProvider.overrideWith((ref) {
-            final client = _SpyCoinbaseWebSocketClient();
-            ref.onDispose(client.closeAll);
-            return client;
-          }),
-        ],
-      );
-      addTearDown(() {
-        controller.close();
-        container.dispose();
-      });
-
-      final repository =
-          container.read(marketDataRepositoryProvider)
-              as MarketDataRepositoryImpl;
-
-      controller.add(false);
-      await container.read(connectivityProvider.future);
-      expect(repository.isOnline, isFalse);
-
-      controller.add(true);
-      await container.read(connectivityProvider.future);
-      expect(repository.isOnline, isTrue);
-    });
   });
 }

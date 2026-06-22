@@ -1,23 +1,23 @@
 import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtrade/data/datasources/mock/mock_market_data_store.dart';
+import 'package:youtrade/data/datasources/mock/demo_market_data_store.dart';
 import 'package:youtrade/domain/entities/symbol.dart';
 import 'package:youtrade/domain/entities/timeframe.dart';
 import 'package:youtrade/domain/entities/trade.dart';
 import 'package:youtrade/domain/entities/venue.dart';
 
 void main() {
-  group('MockMarketDataStore', () {
+  group('DemoMarketDataStore', () {
     final symbol = TradingSymbol(
       base: 'BTC',
       quote: 'USDT',
       venue: Venue.binance,
       rawSymbol: 'BTCUSDT',
     );
-    late MockMarketDataStore store;
+    late DemoMarketDataStore store;
 
-    setUp(() => store = MockMarketDataStore());
+    setUp(() => store = DemoMarketDataStore());
 
     test('returns deterministic ticker for symbol', () async {
       final ticker = await store.getTicker(symbol);

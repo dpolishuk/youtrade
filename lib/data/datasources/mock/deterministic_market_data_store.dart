@@ -19,11 +19,11 @@ import '../../../domain/entities/exchange_detail_snapshot.dart';
 
 import '../../../domain/sources/market_data_store.dart';
 
-/// Deterministic replacement for [MockMarketDataStore].
+/// Deterministic replacement for [DemoMarketDataStore].
 ///
 /// Uses the same Park-Miller PRNG and `series()` algorithm as
 /// `mockups/YouTrade.dc.html` so every returned value matches the mockup
-/// exactly. The public API is identical to [MockMarketDataStore]; existing
+/// exactly. The public API is identical to [DemoMarketDataStore]; existing
 /// tests for that class continue to pass unchanged.
 typedef _ExchangeAsset = ({String symbol, double qty, String glyph});
 

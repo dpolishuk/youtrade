@@ -18,7 +18,7 @@ import '../../domain/sources/order_book_source.dart';
 import '../../domain/sources/ticker_source.dart';
 import '../../domain/sources/trade_source.dart';
 import '../../domain/sources/market_data_store.dart';
-import '../datasources/mock/mock_market_data_store.dart';
+import '../datasources/mock/demo_market_data_store.dart';
 
 final class VenueSources {
   const VenueSources({
@@ -39,18 +39,16 @@ final class VenueSources {
 final class MarketDataRepositoryImpl implements MarketDataRepository {
   MarketDataRepositoryImpl({
     required this.registry,
-    MarketDataStore? mockStore,
+    MarketDataStore? fallbackStore,
     Map<Venue, VenueSources>? venueSources,
     this.cache,
-    this.isOnline = true,
-  }) : _mockStore = mockStore ?? MockMarketDataStore(),
+  }) : _fallbackStore = fallbackStore ?? DemoMarketDataStore(),
        _venueSources = venueSources ?? const {};
 
   final ExchangeCapabilityRegistry registry;
-  final MarketDataStore _mockStore;
+  final MarketDataStore _fallbackStore;
   final Map<Venue, VenueSources> _venueSources;
   final MarketCache? cache;
-  bool isOnline;
 
   static const _tickerTtl = Duration(seconds: 30);
   static const _candlesTtl = Duration(minutes: 5);
@@ -65,10 +63,8 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
     Future<Result<T>> Function() fetch,
     Future<T?> Function() getCached,
     Future<void> Function(T value) save, {
-    required bool isOnline,
     bool Function(T fetched, T cached)? isNewer,
   }) async {
-    if (!isOnline) return;
     try {
       final result = await fetch();
       if (result is Success<T>) {
@@ -88,7 +84,6 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
   Future<Result<T>> _fetchWithCache<T>({
     required String errorContext,
     required VenueSources? sources,
-    required bool isOnline,
     required Future<T?> Function() getCached,
     required bool Function(T cached) isFresh,
     required Future<Result<T>> Function() fetchFromSource,
@@ -98,12 +93,12 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
   }) async {
     final cached = await getCached();
 
-    if (sources == null || !isOnline) {
+    if (sources == null) {
       if (cached != null) return Success(cached);
       try {
         return Success(await fetchMock());
       } on Exception catch (e) {
-        return Err(UnknownFailure('mock fallback failed', error: e));
+        return Err(UnknownFailure('fallback store failed', error: e));
       }
     }
 
@@ -113,7 +108,6 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
           fetchFromSource,
           getCached,
           saveToCache,
-          isOnline: isOnline,
           isNewer: isNewer,
         ),
       );
@@ -133,7 +127,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
         try {
           return Success(await fetchMock());
         } on Exception catch (e) {
-          return Err(UnknownFailure('mock fallback failed', error: e));
+          return Err(UnknownFailure('fallback store failed', error: e));
         }
       }
 
@@ -153,18 +147,16 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       );
     }
     final sources = _venueSources[symbol.venue];
-    final isOnline = this.isOnline;
     return _fetchWithCache(
       errorContext: '${symbol.venue.displayName} REST ticker',
       sources: sources,
-      isOnline: isOnline,
       getCached: () async => cache?.getTicker(symbol),
       isFresh: (ticker) => _isFresh(ticker.timestamp, _tickerTtl),
       fetchFromSource: () => sources!.ticker.fetchTicker(symbol),
       saveToCache: (ticker) async {
         await cache?.saveTicker(ticker);
       },
-      fetchMock: () => _mockStore.getTicker(symbol),
+      fetchMock: () => _fallbackStore.getTicker(symbol),
       isNewer: (fetched, cached) => fetched.timestamp.isAfter(cached.timestamp),
     );
   }
@@ -183,11 +175,9 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       );
     }
     final sources = _venueSources[symbol.venue];
-    final isOnline = this.isOnline;
     return _fetchWithCache(
       errorContext: '${symbol.venue.displayName} REST candles',
       sources: sources,
-      isOnline: isOnline,
       getCached: () async {
         final candles =
             await cache?.getCandles(symbol, timeframe, limit: limit) ?? [];
@@ -211,7 +201,8 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       saveToCache: (candles) async {
         await cache?.saveCandles(symbol, timeframe, candles);
       },
-      fetchMock: () => _mockStore.getCandles(symbol, timeframe, limit: limit),
+      fetchMock: () =>
+          _fallbackStore.getCandles(symbol, timeframe, limit: limit),
       isNewer: (fetched, cached) {
         if (fetched.isEmpty || cached.isEmpty) return true;
         return fetched.last.timestamp.isAfter(cached.last.timestamp);
@@ -232,11 +223,9 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       );
     }
     final sources = _venueSources[symbol.venue];
-    final isOnline = this.isOnline;
     return _fetchWithCache(
       errorContext: '${symbol.venue.displayName} REST order book',
       sources: sources,
-      isOnline: isOnline,
       getCached: () async => cache?.getOrderBook(symbol),
       isFresh: (orderBook) => _isFresh(orderBook.timestamp, _orderBookTtl),
       fetchFromSource: () =>
@@ -244,7 +233,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       saveToCache: (orderBook) async {
         await cache?.saveOrderBook(symbol, orderBook);
       },
-      fetchMock: () => _mockStore.getOrderBook(symbol, depth: depth),
+      fetchMock: () => _fallbackStore.getOrderBook(symbol, depth: depth),
       isNewer: (fetched, cached) => fetched.timestamp.isAfter(cached.timestamp),
     );
   }
@@ -262,11 +251,9 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       );
     }
     final sources = _venueSources[symbol.venue];
-    final isOnline = this.isOnline;
     return _fetchWithCache(
       errorContext: '${symbol.venue.displayName} REST trades',
       sources: sources,
-      isOnline: isOnline,
       getCached: () async => cache?.getTrades(symbol),
       isFresh: (trades) {
         if (trades.isEmpty) return false;
@@ -279,7 +266,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       saveToCache: (trades) async {
         await cache?.saveTrades(symbol, trades);
       },
-      fetchMock: () => _mockStore.getTrades(symbol, limit: limit),
+      fetchMock: () => _fallbackStore.getTrades(symbol, limit: limit),
       isNewer: (fetched, cached) {
         if (fetched.isEmpty) return false;
         final fetchedNewest = fetched.reduce(
@@ -302,7 +289,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
         featureName: 'WS ticker',
         getCached: () async => cache?.getTicker(symbol),
         watchSource: (sources) => sources.stream.watchTicker(symbol),
-        watchMock: () => _mockStore.watchTicker(symbol),
+        watchMock: () => _fallbackStore.watchTicker(symbol),
       );
 
   @override
@@ -313,7 +300,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
         featureName: 'WS order book',
         getCached: () async => cache?.getOrderBook(symbol),
         watchSource: (sources) => sources.stream.watchOrderBook(symbol),
-        watchMock: () => _mockStore.watchOrderBook(symbol),
+        watchMock: () => _fallbackStore.watchOrderBook(symbol),
       );
 
   @override
@@ -324,7 +311,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
         featureName: 'WS trades',
         getCached: () async => cache?.getTrades(symbol),
         watchSource: (sources) => sources.stream.watchTrades(symbol),
-        watchMock: () => _mockStore.watchTrades(symbol),
+        watchMock: () => _fallbackStore.watchTrades(symbol),
       );
 
   Stream<Result<T>> _watchWithFallback<T>({
@@ -346,13 +333,6 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
     final cached = await getCached();
     if (cached != null) {
       yield Success(cached);
-    }
-
-    if (!isOnline) {
-      await for (final value in watchMock()) {
-        yield Success(value);
-      }
-      return;
     }
 
     final sources = _venueSources[symbol.venue];

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtrade/data/datasources/mock/mock_market_data_store.dart';
+import 'package:youtrade/data/datasources/mock/demo_market_data_store.dart';
 import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/core/result.dart';
 import 'package:youtrade/data/repositories/market_data_repository_impl.dart';
@@ -550,11 +550,11 @@ void main() {
     );
 
     test('getTicker returns mock data when offline', () async {
-      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expectedStore = DemoMarketDataStore(random: Random(42));
       final expected = await expectedStore.getTicker(symbol);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: false,
+        fallbackStore: DemoMarketDataStore(random: Random(42)),
       );
 
       final result = await repository.getTicker(symbol);
@@ -564,7 +564,7 @@ void main() {
     });
 
     test('getCandles returns mock data when offline', () async {
-      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expectedStore = DemoMarketDataStore(random: Random(42));
       final expected = await expectedStore.getCandles(
         symbol,
         Timeframe.h1,
@@ -572,7 +572,7 @@ void main() {
       );
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: false,
+        fallbackStore: DemoMarketDataStore(random: Random(42)),
       );
 
       final result = await repository.getCandles(
@@ -586,11 +586,11 @@ void main() {
     });
 
     test('watchTicker emits mock data when offline', () async {
-      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expectedStore = DemoMarketDataStore(random: Random(42));
       final expected = await expectedStore.watchTicker(symbol).first;
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: false,
+        fallbackStore: DemoMarketDataStore(random: Random(42)),
       );
 
       final values = await repository.watchTicker(symbol).take(1).toList();
@@ -601,11 +601,11 @@ void main() {
     });
 
     test('watchOrderBook emits mock data when offline', () async {
-      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expectedStore = DemoMarketDataStore(random: Random(42));
       final expected = await expectedStore.watchOrderBook(symbol).first;
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: false,
+        fallbackStore: DemoMarketDataStore(random: Random(42)),
       );
 
       final values = await repository.watchOrderBook(symbol).take(1).toList();
@@ -619,11 +619,11 @@ void main() {
     });
 
     test('watchTrades emits mock data when offline', () async {
-      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expectedStore = DemoMarketDataStore(random: Random(42));
       final expected = await expectedStore.watchTrades(symbol).first;
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: false,
+        fallbackStore: DemoMarketDataStore(random: Random(42)),
       );
 
       final values = await repository.watchTrades(symbol).take(1).toList();
@@ -658,11 +658,11 @@ void main() {
     });
 
     test('getTicker falls back to mock on network failure', () async {
-      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expectedStore = DemoMarketDataStore(random: Random(42));
       final expected = await expectedStore.getTicker(symbol);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         venueSources: {Venue.binance: failingSources},
       );
 
@@ -673,7 +673,7 @@ void main() {
     });
 
     test('getCandles falls back to mock on network failure', () async {
-      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expectedStore = DemoMarketDataStore(random: Random(42));
       final expected = await expectedStore.getCandles(
         symbol,
         Timeframe.h1,
@@ -681,7 +681,7 @@ void main() {
       );
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         venueSources: {Venue.binance: failingSources},
       );
 
@@ -696,11 +696,11 @@ void main() {
     });
 
     test('getOrderBook falls back to mock on network failure', () async {
-      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expectedStore = DemoMarketDataStore(random: Random(42));
       final expected = await expectedStore.getOrderBook(symbol, depth: 3);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         venueSources: {Venue.binance: failingSources},
       );
 
@@ -711,11 +711,11 @@ void main() {
     });
 
     test('getTrades falls back to mock on network failure', () async {
-      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expectedStore = DemoMarketDataStore(random: Random(42));
       final expected = await expectedStore.getTrades(symbol, limit: 3);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         venueSources: {Venue.binance: failingSources},
       );
 
@@ -861,7 +861,7 @@ void main() {
       final delayedSource = _DelayedTickerSource();
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         cache: cache,
         venueSources: {
           Venue.binance: VenueSources(
@@ -889,7 +889,7 @@ void main() {
       final cache = _FakeMarketCacheDataSource();
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         cache: cache,
         venueSources: {
           Venue.binance: VenueSources(
@@ -913,7 +913,7 @@ void main() {
       final cache = _FakeMarketCacheDataSource()..saveTicker(staleTicker);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         cache: cache,
         venueSources: {Venue.binance: failingSources()},
       );
@@ -928,7 +928,7 @@ void main() {
       final cache = _FakeMarketCacheDataSource()..saveTicker(freshTicker);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: false,
+        fallbackStore: DemoMarketDataStore(random: Random(42)),
         cache: cache,
       );
 
@@ -946,7 +946,7 @@ void main() {
         final delayedSource = _DelayedCandleSource();
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          isOnline: true,
+
           cache: cache,
           venueSources: {
             Venue.binance: VenueSources(
@@ -975,7 +975,7 @@ void main() {
       final cache = _FakeMarketCacheDataSource();
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         cache: cache,
         venueSources: {
           Venue.binance: VenueSources(
@@ -1000,7 +1000,7 @@ void main() {
         ..saveCandles(symbol, Timeframe.h1, staleCandles);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         cache: cache,
         venueSources: {Venue.binance: failingSources()},
       );
@@ -1019,7 +1019,7 @@ void main() {
         final delayedSource = _DelayedOrderBookSource();
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          isOnline: true,
+
           cache: cache,
           venueSources: {
             Venue.binance: VenueSources(
@@ -1048,7 +1048,7 @@ void main() {
       final cache = _FakeMarketCacheDataSource();
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         cache: cache,
         venueSources: {
           Venue.binance: VenueSources(
@@ -1073,7 +1073,7 @@ void main() {
         ..saveOrderBook(symbol, staleOrderBook);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         cache: cache,
         venueSources: {Venue.binance: failingSources()},
       );
@@ -1090,7 +1090,7 @@ void main() {
       final delayedSource = _DelayedTradeSource();
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         cache: cache,
         venueSources: {
           Venue.binance: VenueSources(
@@ -1131,7 +1131,7 @@ void main() {
         final delayedSource = _DelayedTickerSource();
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          isOnline: true,
+
           cache: cache,
           venueSources: {
             Venue.binance: VenueSources(
@@ -1174,7 +1174,7 @@ void main() {
         final delayedSource = _DelayedCandleSource();
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          isOnline: true,
+
           cache: cache,
           venueSources: {
             Venue.binance: VenueSources(
@@ -1215,7 +1215,7 @@ void main() {
         final delayedSource = _DelayedOrderBookSource();
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          isOnline: true,
+
           cache: cache,
           venueSources: {
             Venue.binance: VenueSources(
@@ -1257,7 +1257,7 @@ void main() {
         final delayedSource = _DelayedTradeSource();
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          isOnline: true,
+
           cache: cache,
           venueSources: {
             Venue.binance: VenueSources(
@@ -1286,7 +1286,7 @@ void main() {
       final cache = _FakeMarketCacheDataSource();
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         cache: cache,
         venueSources: {
           Venue.binance: VenueSources(
@@ -1311,7 +1311,7 @@ void main() {
         ..saveTrades(symbol, staleTrades);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         cache: cache,
         venueSources: {Venue.binance: failingSources()},
       );
@@ -1328,7 +1328,7 @@ void main() {
         final cache = _FakeMarketCacheDataSource()..saveTicker(freshTicker);
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          isOnline: true,
+
           cache: cache,
           venueSources: {
             Venue.binance: VenueSources(
@@ -1354,7 +1354,7 @@ void main() {
       final cache = _FakeMarketCacheDataSource()..saveTicker(freshTicker);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         cache: cache,
         venueSources: {
           Venue.binance: VenueSources(
@@ -1385,7 +1385,7 @@ void main() {
           ..saveOrderBook(symbol, freshOrderBook);
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          isOnline: true,
+
           cache: cache,
           venueSources: {
             Venue.binance: VenueSources(
@@ -1415,7 +1415,7 @@ void main() {
         ..saveTrades(symbol, freshTrades);
       final repository = MarketDataRepositoryImpl(
         registry: _FakeRegistry(),
-        isOnline: true,
+
         cache: cache,
         venueSources: {
           Venue.binance: VenueSources(
@@ -1663,11 +1663,11 @@ void main() {
     test(
       'getTicker falls back to mock when venueSources has no entry',
       () async {
-        final expectedStore = MockMarketDataStore(random: Random(42));
+        final expectedStore = DemoMarketDataStore(random: Random(42));
         final expected = await expectedStore.getTicker(symbol);
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          mockStore: MockMarketDataStore(random: Random(42)),
+          fallbackStore: DemoMarketDataStore(random: Random(42)),
         );
 
         final result = await repository.getTicker(symbol);
@@ -1680,7 +1680,7 @@ void main() {
     test(
       'getCandles falls back to mock when venueSources has no entry',
       () async {
-        final expectedStore = MockMarketDataStore(random: Random(42));
+        final expectedStore = DemoMarketDataStore(random: Random(42));
         final expected = await expectedStore.getCandles(
           symbol,
           Timeframe.h1,
@@ -1688,7 +1688,7 @@ void main() {
         );
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          mockStore: MockMarketDataStore(random: Random(42)),
+          fallbackStore: DemoMarketDataStore(random: Random(42)),
         );
 
         final result = await repository.getCandles(
@@ -1705,11 +1705,11 @@ void main() {
     test(
       'getOrderBook falls back to mock when venueSources has no entry',
       () async {
-        final expectedStore = MockMarketDataStore(random: Random(42));
+        final expectedStore = DemoMarketDataStore(random: Random(42));
         final expected = await expectedStore.getOrderBook(symbol, depth: 3);
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          mockStore: MockMarketDataStore(random: Random(42)),
+          fallbackStore: DemoMarketDataStore(random: Random(42)),
         );
 
         final result = await repository.getOrderBook(symbol, depth: 3);
@@ -1722,11 +1722,11 @@ void main() {
     test(
       'getTrades falls back to mock when venueSources has no entry',
       () async {
-        final expectedStore = MockMarketDataStore(random: Random(42));
+        final expectedStore = DemoMarketDataStore(random: Random(42));
         final expected = await expectedStore.getTrades(symbol, limit: 3);
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          mockStore: MockMarketDataStore(random: Random(42)),
+          fallbackStore: DemoMarketDataStore(random: Random(42)),
         );
 
         final result = await repository.getTrades(symbol, limit: 3);
@@ -1838,7 +1838,7 @@ void main() {
     );
   });
 
-  group('MarketDataRepositoryImpl mock fallback failure path', () {
+  group('MarketDataRepositoryImpl fallback store failure path', () {
     final symbol = TradingSymbol(
       base: 'BTC',
       quote: 'USDT',
@@ -1860,7 +1860,7 @@ void main() {
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
           venueSources: {Venue.binance: networkFailingSources()},
-          mockStore: MockMarketDataStore(random: _ThrowingRandom()),
+          fallbackStore: DemoMarketDataStore(random: _ThrowingRandom()),
         );
 
         final result = await repository.getTicker(symbol);
@@ -1870,7 +1870,7 @@ void main() {
           success: (_) => fail('expected failure'),
           failure: (failure) {
             expect(failure, isA<UnknownFailure>());
-            expect(failure.message, 'mock fallback failed');
+            expect(failure.message, 'fallback store failed');
           },
         );
       },
@@ -1882,7 +1882,7 @@ void main() {
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
           venueSources: {Venue.binance: networkFailingSources()},
-          mockStore: MockMarketDataStore(random: _ThrowingRandom()),
+          fallbackStore: DemoMarketDataStore(random: _ThrowingRandom()),
         );
 
         final result = await repository.getCandles(symbol, Timeframe.h1);
@@ -1892,7 +1892,7 @@ void main() {
           success: (_) => fail('expected failure'),
           failure: (failure) {
             expect(failure, isA<UnknownFailure>());
-            expect(failure.message, 'mock fallback failed');
+            expect(failure.message, 'fallback store failed');
           },
         );
       },
@@ -1904,7 +1904,7 @@ void main() {
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
           venueSources: {Venue.binance: networkFailingSources()},
-          mockStore: MockMarketDataStore(random: _ThrowingRandom()),
+          fallbackStore: DemoMarketDataStore(random: _ThrowingRandom()),
         );
 
         final result = await repository.getOrderBook(symbol);
@@ -1914,7 +1914,7 @@ void main() {
           success: (_) => fail('expected failure'),
           failure: (failure) {
             expect(failure, isA<UnknownFailure>());
-            expect(failure.message, 'mock fallback failed');
+            expect(failure.message, 'fallback store failed');
           },
         );
       },
@@ -1926,7 +1926,7 @@ void main() {
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
           venueSources: {Venue.binance: networkFailingSources()},
-          mockStore: MockMarketDataStore(random: _ThrowingRandom()),
+          fallbackStore: DemoMarketDataStore(random: _ThrowingRandom()),
         );
 
         final result = await repository.getTrades(symbol);
@@ -1936,7 +1936,7 @@ void main() {
           success: (_) => fail('expected failure'),
           failure: (failure) {
             expect(failure, isA<UnknownFailure>());
-            expect(failure.message, 'mock fallback failed');
+            expect(failure.message, 'fallback store failed');
           },
         );
       },
@@ -2108,12 +2108,12 @@ void main() {
     test(
       'watchTicker falls back to mock stream when no cache and no stream source',
       () async {
-        final expectedStore = MockMarketDataStore(random: Random(42));
+        final expectedStore = DemoMarketDataStore(random: Random(42));
         final first = await expectedStore.getTicker(symbol);
         final second = await expectedStore.getTicker(symbol);
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          mockStore: MockMarketDataStore(random: Random(42)),
+          fallbackStore: DemoMarketDataStore(random: Random(42)),
         );
 
         final values = await repository.watchTicker(symbol).take(2).toList();
@@ -2129,12 +2129,12 @@ void main() {
     test(
       'watchOrderBook falls back to mock stream when no cache and no stream source',
       () async {
-        final expectedStore = MockMarketDataStore(random: Random(42));
+        final expectedStore = DemoMarketDataStore(random: Random(42));
         final first = await expectedStore.getOrderBook(symbol);
         final second = await expectedStore.getOrderBook(symbol);
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          mockStore: MockMarketDataStore(random: Random(42)),
+          fallbackStore: DemoMarketDataStore(random: Random(42)),
         );
 
         final values = await repository.watchOrderBook(symbol).take(2).toList();
@@ -2150,12 +2150,12 @@ void main() {
     test(
       'watchTrades falls back to mock stream when no cache and no stream source',
       () async {
-        final expectedStore = MockMarketDataStore(random: Random(42));
+        final expectedStore = DemoMarketDataStore(random: Random(42));
         final first = await expectedStore.getTrades(symbol);
         final second = await expectedStore.getTrades(symbol);
         final repository = MarketDataRepositoryImpl(
           registry: _FakeRegistry(),
-          mockStore: MockMarketDataStore(random: Random(42)),
+          fallbackStore: DemoMarketDataStore(random: Random(42)),
         );
 
         final values = await repository.watchTrades(symbol).take(2).toList();
