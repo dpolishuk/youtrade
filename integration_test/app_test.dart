@@ -23,7 +23,7 @@ void main() {
       await tester.ensureVisible(find.text('Orders →'));
       await tester.tap(find.text('Orders →'));
       await tester.pumpAndSettle(const Duration(seconds: 5));
-      expect(find.text('Orders & History'), findsOneWidget);
+      expect(find.text('Orders'), findsOneWidget);
       await binding.takeScreenshot('orders_screen');
 
       await tester.tap(

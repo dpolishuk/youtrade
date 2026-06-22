@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/candle.dart';
 import '../../../domain/entities/options_chain_strike.dart';
+import '../../../domain/entities/order.dart';
 import '../../../domain/entities/order_book.dart';
 import '../../../domain/entities/position.dart';
 import '../../../domain/entities/symbol.dart';
@@ -185,6 +186,100 @@ final class DeterministicMarketDataStore implements MarketDataStore {
       pnl: '+\$680',
       tint: Color(0x28FFC457),
       iconColor: Color(0xFFFFC457),
+    ),
+  ];
+
+  /// Static open orders matching the mockup Orders & History screen.
+  static const List<Order> openOrders = [
+    Order(
+      symbol: 'BTCUSDT',
+      side: 'BUY',
+      type: 'Limit',
+      venue: 'Binance',
+      price: '58,400.0',
+      qty: '0.50',
+      filled: '0%',
+    ),
+    Order(
+      symbol: 'ETHUSDT',
+      side: 'SELL',
+      type: 'Stop',
+      venue: 'Bybit',
+      price: '3,050.00',
+      qty: '8.0',
+      filled: '0%',
+    ),
+    Order(
+      symbol: 'SOLUSDT',
+      side: 'BUY',
+      type: 'Limit',
+      venue: 'OKX',
+      price: '150.00',
+      qty: '120',
+      filled: '34%',
+    ),
+    Order(
+      symbol: 'AAPL',
+      side: 'BUY',
+      type: 'Limit',
+      venue: 'Coinbase',
+      price: '218.00',
+      qty: '50',
+      filled: '0%',
+    ),
+  ];
+
+  /// Static history orders matching the mockup Orders & History screen.
+  static const List<Order> historyOrders = [
+    Order(
+      symbol: 'BTCUSDT',
+      side: 'BUY',
+      type: 'Market',
+      venue: 'Binance',
+      price: '56,820.0',
+      qty: '1.34',
+      time: '09:12',
+      status: 'Filled',
+    ),
+    Order(
+      symbol: 'GC=F',
+      side: 'SELL',
+      type: 'Limit',
+      venue: 'OKX',
+      price: '2,640.0',
+      qty: '4',
+      time: '08:47',
+      status: 'Filled',
+    ),
+    Order(
+      symbol: 'ETHUSDT',
+      side: 'BUY',
+      type: 'Limit',
+      venue: 'Bybit',
+      price: '2,910.00',
+      qty: '14.5',
+      time: '08:30',
+      status: 'Filled',
+    ),
+    Order(
+      symbol: 'NVDA',
+      side: 'SELL',
+      type: 'Market',
+      venue: 'Coinbase',
+      price: '115.20',
+      qty: '40',
+      time: 'Yest',
+      status: 'Filled',
+    ),
+    Order(
+      symbol: 'SOLUSDT',
+      side: 'BUY',
+      type: 'Limit',
+      venue: 'OKX',
+      price: '162.40',
+      qty: '60',
+      time: 'Yest',
+      status: 'Cancelled',
     ),
   ];
 

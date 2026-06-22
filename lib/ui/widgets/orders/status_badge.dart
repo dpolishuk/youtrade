@@ -23,11 +23,12 @@ class StatusBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: foregroundColor,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
+        style: TextStyle(
           fontFamily: 'JetBrains Mono',
+          fontSize: 8,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.06 * 8,
+          color: foregroundColor,
         ),
       ),
     );

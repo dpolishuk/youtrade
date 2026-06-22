@@ -12,13 +12,10 @@ class HistoryOrderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
     final sideColor = order.isBuy ? appColors.bullish : appColors.bearish;
-    final sideTint = order.isBuy
-        ? appColors.bullish.withValues(alpha: 0.16)
-        : appColors.bearish.withValues(alpha: 0.16);
-    final statusColor = _statusColor(order.status, appColors, theme);
+    final sideTint = sideColor.withValues(alpha: 0.16);
+    final statusColor = _statusColor(order.status, appColors);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -36,15 +33,19 @@ class HistoryOrderTile extends StatelessWidget {
               children: [
                 Text(
                   order.symbol,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: TextStyle(
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w600,
+                    color: appColors.foreground,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '${order.type} · ${order.venue} · ${order.time}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: appColors.subtleText,
+                  style: TextStyle(
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 9,
+                    color: appColors.tertiaryText,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -56,17 +57,19 @@ class HistoryOrderTile extends StatelessWidget {
             children: [
               Text(
                 order.price,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+                style: TextStyle(
                   fontFamily: 'JetBrains Mono',
+                  fontSize: 12,
+                  color: appColors.foreground,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 '${order.qty} · ${order.status}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: statusColor,
+                style: TextStyle(
                   fontFamily: 'JetBrains Mono',
+                  fontSize: 9.5,
+                  color: statusColor,
                 ),
               ),
             ],
@@ -76,10 +79,10 @@ class HistoryOrderTile extends StatelessWidget {
     );
   }
 
-  Color _statusColor(String? status, AppColorTheme appColors, ThemeData theme) {
+  Color _statusColor(String? status, AppColorTheme appColors) {
     if (status == null) return appColors.subtleText;
     if (status == 'Filled') return appColors.subtleText;
-    if (status == 'Cancelled') return theme.colorScheme.onSurfaceVariant;
+    if (status == 'Cancelled') return appColors.tertiaryText;
     return appColors.bullish;
   }
 }

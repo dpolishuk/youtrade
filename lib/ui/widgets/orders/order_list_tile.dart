@@ -6,23 +6,21 @@ import 'status_badge.dart';
 
 /// Card-style tile for an open order.
 class OrderListTile extends StatelessWidget {
-  const OrderListTile({required this.order, super.key});
+  const OrderListTile({required this.order, this.onCancel, super.key});
 
   final Order order;
+  final VoidCallback? onCancel;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
     final sideColor = order.isBuy ? appColors.bullish : appColors.bearish;
-    final sideTint = order.isBuy
-        ? appColors.bullish.withValues(alpha: 0.16)
-        : appColors.bearish.withValues(alpha: 0.16);
+    final sideTint = sideColor.withValues(alpha: 0.16);
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: appColors.borderSubtle),
       ),
@@ -39,32 +37,34 @@ class OrderListTile extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 order.symbol,
-                style: theme.textTheme.bodyMedium?.copyWith(
+                style: TextStyle(
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
+                  color: appColors.foreground,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   '${order.type} · ${order.venue}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: appColors.subtleText,
+                  style: TextStyle(
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 10,
+                    color: appColors.tertiaryText,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              TextButton(
-                onPressed: () {},
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+              GestureDetector(
+                onTap: onCancel,
+                behavior: HitTestBehavior.opaque,
                 child: Text(
                   'Cancel',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: appColors.accent,
+                  style: TextStyle(
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
+                    color: appColors.accent,
                   ),
                 ),
               ),
@@ -74,18 +74,26 @@ class OrderListTile extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Price ${order.price}',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: appColors.subtleText,
-                  fontFamily: 'JetBrains Mono',
+              Flexible(
+                child: Text(
+                  'Price ${order.price}',
+                  style: TextStyle(
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 11,
+                    color: appColors.tertiaryText,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Text(
-                'Qty ${order.qty} · ${order.filled} filled',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: appColors.subtleText,
-                  fontFamily: 'JetBrains Mono',
+              Flexible(
+                child: Text(
+                  'Qty ${order.qty} · ${order.filled} filled',
+                  style: TextStyle(
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 11,
+                    color: appColors.subtleText,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

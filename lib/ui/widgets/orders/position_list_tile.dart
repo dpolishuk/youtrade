@@ -6,97 +6,106 @@ import 'status_badge.dart';
 
 /// Row-style tile for an open position.
 class PositionListTile extends StatelessWidget {
-  const PositionListTile({required this.position, super.key});
+  const PositionListTile({required this.position, this.onTap, super.key});
 
   final Position position;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
     final sideColor = position.isLong ? appColors.bullish : appColors.bearish;
-    final sideTint = position.isLong
-        ? appColors.bullish.withValues(alpha: 0.16)
-        : appColors.bearish.withValues(alpha: 0.16);
+    final sideTint = sideColor.withValues(alpha: 0.16);
     final pnlColor = _parsePnl(position.pnl) >= 0
         ? appColors.bullish
         : appColors.bearish;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-      child: Row(
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: position.tint,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              position.sym0,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: position.iconColor,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Space Grotesk',
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        child: Row(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: position.tint,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                position.sym0,
+                style: TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: position.iconColor,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      position.symbol,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        position.symbol,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: appColors.foreground,
+                        ),
                       ),
+                      const SizedBox(width: 6),
+                      StatusBadge(
+                        label: position.side,
+                        backgroundColor: sideTint,
+                        foregroundColor: sideColor,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${position.venue} · ${position.qty}',
+                    style: TextStyle(
+                      fontFamily: 'JetBrains Mono',
+                      fontSize: 9.5,
+                      color: appColors.tertiaryText,
                     ),
-                    const SizedBox(width: 6),
-                    StatusBadge(
-                      label: position.side,
-                      backgroundColor: sideTint,
-                      foregroundColor: sideColor,
-                    ),
-                  ],
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  position.value,
+                  style: TextStyle(
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: appColors.foreground,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${position.venue} · ${position.qty}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: appColors.subtleText,
+                  position.pnl,
+                  style: TextStyle(
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: pnlColor,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                position.value,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'JetBrains Mono',
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                position.pnl,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: pnlColor,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'JetBrains Mono',
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -10,6 +10,7 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
     required this.bullish,
     required this.bearish,
     required this.accent,
+    required this.foreground,
     required this.surfaceGlass,
     required this.subtleText,
     required this.borderSubtle,
@@ -25,6 +26,9 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
 
   /// Directional accent hue (Flux = turquoise, Carbon = cobalt blue).
   final Color accent;
+
+  /// Primary foreground text color (fg in the mockup tokens).
+  final Color foreground;
 
   /// Translucent surface used for overlays and elevated panels.
   final Color surfaceGlass;
@@ -46,6 +50,7 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
     Color? bullish,
     Color? bearish,
     Color? accent,
+    Color? foreground,
     Color? surfaceGlass,
     Color? subtleText,
     Color? borderSubtle,
@@ -56,6 +61,7 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
       bullish: bullish ?? this.bullish,
       bearish: bearish ?? this.bearish,
       accent: accent ?? this.accent,
+      foreground: foreground ?? this.foreground,
       surfaceGlass: surfaceGlass ?? this.surfaceGlass,
       subtleText: subtleText ?? this.subtleText,
       borderSubtle: borderSubtle ?? this.borderSubtle,
@@ -71,6 +77,7 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
       bullish: Color.lerp(bullish, other.bullish, t)!,
       bearish: Color.lerp(bearish, other.bearish, t)!,
       accent: Color.lerp(accent, other.accent, t)!,
+      foreground: Color.lerp(foreground, other.foreground, t)!,
       surfaceGlass: Color.lerp(surfaceGlass, other.surfaceGlass, t)!,
       subtleText: Color.lerp(subtleText, other.subtleText, t)!,
       borderSubtle: Color.lerp(borderSubtle, other.borderSubtle, t)!,
