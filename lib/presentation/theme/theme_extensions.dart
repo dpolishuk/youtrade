@@ -13,6 +13,8 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
     required this.surfaceGlass,
     required this.subtleText,
     required this.borderSubtle,
+    required this.tertiaryText,
+    required this.chip,
   });
 
   /// Positive price movement / long position.
@@ -33,6 +35,12 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
   /// Subtle divider/border color used across cards and inputs.
   final Color borderSubtle;
 
+  /// Tertiary/muted text color (fg3 in the mockup tokens).
+  final Color tertiaryText;
+
+  /// Elevated chip / glyph background color.
+  final Color chip;
+
   @override
   AppColorTheme copyWith({
     Color? bullish,
@@ -41,6 +49,8 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
     Color? surfaceGlass,
     Color? subtleText,
     Color? borderSubtle,
+    Color? tertiaryText,
+    Color? chip,
   }) {
     return AppColorTheme(
       bullish: bullish ?? this.bullish,
@@ -49,6 +59,8 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
       surfaceGlass: surfaceGlass ?? this.surfaceGlass,
       subtleText: subtleText ?? this.subtleText,
       borderSubtle: borderSubtle ?? this.borderSubtle,
+      tertiaryText: tertiaryText ?? this.tertiaryText,
+      chip: chip ?? this.chip,
     );
   }
 
@@ -62,6 +74,8 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
       surfaceGlass: Color.lerp(surfaceGlass, other.surfaceGlass, t)!,
       subtleText: Color.lerp(subtleText, other.subtleText, t)!,
       borderSubtle: Color.lerp(borderSubtle, other.borderSubtle, t)!,
+      tertiaryText: Color.lerp(tertiaryText, other.tertiaryText, t)!,
+      chip: Color.lerp(chip, other.chip, t)!,
     );
   }
 }

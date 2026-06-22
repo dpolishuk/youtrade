@@ -1,95 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/entities/exchange_balance.dart';
 import '../../domain/entities/venue.dart';
+import '../../presentation/providers/exchange_detail_provider.dart';
 import '../../presentation/theme/theme_extensions.dart';
-import '../widgets/exchange_detail/api_status_banner.dart';
 import '../widgets/exchange_detail/asset_balance_tile.dart';
 import '../widgets/exchange_detail/balance_card.dart';
 import '../widgets/exchange_detail/pnl_card.dart';
-import '../widgets/exchange_detail/trade_history_list.dart';
 import '../widgets/exchange_detail/venue_chip_row.dart';
 import '../widgets/exchange_detail/venue_header.dart';
-import '../widgets/exchange_detail/venue_style.dart';
 
-class ExchangeDetailScreen extends StatelessWidget {
+class ExchangeDetailScreen extends ConsumerStatefulWidget {
   const ExchangeDetailScreen({this.exchangeId = 'binance', super.key});
 
   final String exchangeId;
 
-  Venue get _selectedVenue => _resolveVenue(exchangeId);
-  static const _allocationPercent = 45.2;
-  static const _kinds = 'Spot · Perp · Options';
-  static const _balance = '\$312,480.00';
-  static const _pnl = '+\$6,620.00';
-  static const _pnlPercent = '+2.12%';
-  static const _keyStatus = 'Read-only keys active';
+  @override
+  ConsumerState<ExchangeDetailScreen> createState() =>
+      _ExchangeDetailScreenState();
+}
 
-  List<AssetBalance> get _assets => [
-    AssetBalance(
-      symbol: 'BTC',
-      glyph: '₿',
-      value: '\$158,400',
-      share: 0.507,
-      shareColor: venueColor(_selectedVenue),
-    ),
-    AssetBalance(
-      symbol: 'ETH',
-      glyph: 'Ξ',
-      value: '\$37,120',
-      share: 0.119,
-      shareColor: venueColor(_selectedVenue),
-    ),
-    AssetBalance(
-      symbol: 'USDT',
-      glyph: '\$',
-      value: '\$88,420',
-      share: 0.283,
-      shareColor: venueColor(_selectedVenue),
-    ),
-    AssetBalance(
-      symbol: 'SOL',
-      glyph: '◎',
-      value: '\$28,540',
-      share: 0.091,
-      shareColor: venueColor(_selectedVenue),
-    ),
-  ];
+class _ExchangeDetailScreenState extends ConsumerState<ExchangeDetailScreen> {
+  late Venue _selectedVenue;
 
-  static final _trades = [
-    const TradeHistoryItem(
-      side: 'BUY',
-      symbol: 'BTCUSDT',
-      type: 'Limit',
-      venue: 'Binance',
-      time: '09:12',
-      price: '\$58,400.0',
-      quantity: '0.50 BTC',
-    ),
-    const TradeHistoryItem(
-      side: 'SELL',
-      symbol: 'ETHUSDT',
-      type: 'Stop',
-      venue: 'Binance',
-      time: '08:47',
-      price: '\$3,050.00',
-      quantity: '8.0 ETH',
-    ),
-    const TradeHistoryItem(
-      side: 'BUY',
-      symbol: 'SOLUSDT',
-      type: 'Limit',
-      venue: 'Binance',
-      time: '08:30',
-      price: '\$150.00',
-      quantity: '120 SOL',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _selectedVenue = _resolveVenue(widget.exchangeId);
+  }
+
+  @override
+  void didUpdateWidget(covariant ExchangeDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.exchangeId != oldWidget.exchangeId) {
+      setState(() => _selectedVenue = _resolveVenue(widget.exchangeId));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>();
-    final pnlColor = appColors?.bullish ?? Colors.green;
+    final snapshot = ref.watch(exchangeDetailProvider(_selectedVenue));
+    final upColor = appColors?.bullish ?? Colors.green;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -111,32 +65,33 @@ class ExchangeDetailScreen extends StatelessWidget {
                     children: [
                       VenueChipRow(
                         selectedVenue: _selectedVenue,
-                        onVenueSelected: (_) {},
+                        onVenueSelected: (venue) =>
+                            setState(() => _selectedVenue = venue),
                       ),
                       const SizedBox(height: 16),
                       VenueHeader(
                         venue: _selectedVenue,
-                        allocationPercent: _allocationPercent,
-                        kinds: _kinds,
+                        kinds: snapshot.kinds,
+                        accent: appColors?.accent ?? theme.colorScheme.primary,
                       ),
                       const SizedBox(height: 14),
-                      ApiStatusBanner(isLive: true, keyStatus: _keyStatus),
-                      const SizedBox(height: 18),
                       Row(
                         children: [
                           Expanded(
                             child: BalanceCard(
                               label: 'Balance',
-                              value: _balance,
+                              value: snapshot.total,
                             ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: PnlCard(
                               label: '24h P&L',
-                              value: _pnl,
-                              percent: _pnlPercent,
-                              valueColor: pnlColor,
+                              value: snapshot.pnl,
+                              percent: snapshot.pnlPercent,
+                              valueColor: snapshot.pnl.startsWith('-')
+                                  ? appColors?.bearish ?? Colors.red
+                                  : upColor,
                             ),
                           ),
                         ],
@@ -144,11 +99,7 @@ class ExchangeDetailScreen extends StatelessWidget {
                       const SizedBox(height: 18),
                       _buildSectionTitle(context, 'Balances'),
                       const SizedBox(height: 9),
-                      _buildAssetList(context),
-                      const SizedBox(height: 18),
-                      _buildSectionTitle(context, 'Recent Trades'),
-                      const SizedBox(height: 9),
-                      TradeHistoryList(trades: _trades),
+                      _buildAssetList(context, snapshot.assets),
                     ],
                   ),
                 ),
@@ -162,33 +113,28 @@ class ExchangeDetailScreen extends StatelessWidget {
 
   Widget _buildBackButton(BuildContext context) {
     final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>();
+    final fg3 = appColors?.tertiaryText ?? theme.colorScheme.onSurfaceVariant;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: InkWell(
         onTap: () => Navigator.of(context).maybePop(),
         borderRadius: BorderRadius.circular(7),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.arrow_back_ios,
-                size: 13,
-                color: theme.colorScheme.onSurfaceVariant,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.chevron_left, size: 13, color: fg3),
+            const SizedBox(width: 5),
+            Text(
+              'All portfolios',
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontFamily: 'JetBrains Mono',
+                color: fg3,
+                fontSize: 11,
               ),
-              const SizedBox(width: 5),
-              Text(
-                'All portfolios',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontFamily: 'Geist Mono',
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -196,29 +142,33 @@ class ExchangeDetailScreen extends StatelessWidget {
 
   Widget _buildSectionTitle(BuildContext context, String title) {
     final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>();
 
     return Text(
       title,
       style: theme.textTheme.labelSmall?.copyWith(
-        fontFamily: 'Geist Mono',
-        color: theme.colorScheme.onSurfaceVariant,
+        fontFamily: 'JetBrains Mono',
+        color: appColors?.tertiaryText ?? theme.colorScheme.onSurfaceVariant,
         letterSpacing: 0.1 * 9,
         fontSize: 9,
       ),
     );
   }
 
-  Widget _buildAssetList(BuildContext context) {
+  Widget _buildAssetList(BuildContext context, List<ExchangeBalance> assets) {
     final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>();
 
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: theme.dividerColor),
+        border: Border.all(
+          color: appColors?.borderSubtle ?? theme.dividerColor,
+        ),
       ),
       child: Column(
-        children: _assets
+        children: assets
             .map((asset) => AssetBalanceTile(asset: asset))
             .toList(),
       ),
@@ -229,6 +179,6 @@ class ExchangeDetailScreen extends StatelessWidget {
 Venue _resolveVenue(String id) {
   return Venue.values.firstWhere(
     (venue) => venue.id == id,
-    orElse: () => Venue.unknown,
+    orElse: () => Venue.binance,
   );
 }

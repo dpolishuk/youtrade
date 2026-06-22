@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/venue.dart';
+import '../../../presentation/theme/theme_extensions.dart';
 import 'venue_style.dart';
 
 class VenueHeader extends StatelessWidget {
   const VenueHeader({
     required this.venue,
-    required this.allocationPercent,
     required this.kinds,
+    required this.accent,
     super.key,
   });
 
   final Venue venue;
-  final double allocationPercent;
   final String kinds;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = venueColor(venue);
+    final appColors = theme.extension<AppColorTheme>();
+    final fg = theme.colorScheme.onSurface;
+    final fg3 = appColors?.tertiaryText ?? theme.colorScheme.onSurfaceVariant;
+    final upColor = appColors?.bullish ?? Colors.green;
+    final color = venueColor(venue, accent: accent);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,17 +46,38 @@ class VenueHeader extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 letterSpacing: -0.02 * 20,
                 fontSize: 20,
-                color: theme.colorScheme.onSurface,
+                color: fg,
               ),
             ),
             const Spacer(),
-            Text(
-              '${allocationPercent.toStringAsFixed(1)}%',
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontFamily: 'Geist Mono',
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
+            Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: upColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: upColor.withValues(alpha: 0.5),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  'API LIVE',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    color: upColor,
+                    letterSpacing: 0.06 * 9,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -59,7 +85,8 @@ class VenueHeader extends StatelessWidget {
         Text(
           kinds,
           style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+            fontFamily: 'JetBrains Mono',
+            color: fg3,
             letterSpacing: 0.06 * 9,
             fontSize: 9,
           ),

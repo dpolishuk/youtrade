@@ -67,6 +67,8 @@ abstract final class AppTheme {
         surfaceGlass: _white8,
         subtleText: _white55,
         borderSubtle: _white6,
+        tertiaryText: const Color(0x57FFFFFF),
+        chip: const Color(0xFF10151F),
       ),
     );
   }
@@ -108,6 +110,8 @@ abstract final class AppTheme {
         surfaceGlass: _carbon8,
         subtleText: _carbon60,
         borderSubtle: _carbon8,
+        tertiaryText: const Color(0x61020D23),
+        chip: _lightSurface,
       ),
     );
   }

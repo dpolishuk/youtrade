@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../presentation/theme/theme_extensions.dart';
+
 class PnlCard extends StatelessWidget {
   const PnlCard({
     required this.label,
@@ -17,13 +19,18 @@ class PnlCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>();
+    final labelColor =
+        appColors?.tertiaryText ?? theme.colorScheme.onSurfaceVariant;
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.dividerColor),
+        border: Border.all(
+          color: appColors?.borderSubtle ?? theme.dividerColor,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,7 +38,7 @@ class PnlCard extends StatelessWidget {
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: labelColor,
               letterSpacing: 0.07 * 9,
             ),
           ),
@@ -54,7 +61,7 @@ class PnlCard extends StatelessWidget {
           Text(
             percent,
             style: theme.textTheme.labelSmall?.copyWith(
-              fontFamily: 'Geist Mono',
+              fontFamily: 'JetBrains Mono',
               color: valueColor,
               fontWeight: FontWeight.w600,
             ),

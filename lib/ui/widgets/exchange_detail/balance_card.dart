@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../presentation/theme/theme_extensions.dart';
+
 class BalanceCard extends StatelessWidget {
   const BalanceCard({required this.label, required this.value, super.key});
 
@@ -9,13 +11,19 @@ class BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>();
+    final labelColor =
+        appColors?.tertiaryText ?? theme.colorScheme.onSurfaceVariant;
+    final valueColor = theme.colorScheme.onSurface;
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.dividerColor),
+        border: Border.all(
+          color: appColors?.borderSubtle ?? theme.dividerColor,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -23,7 +31,7 @@ class BalanceCard extends StatelessWidget {
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: labelColor,
               letterSpacing: 0.07 * 9,
             ),
           ),
@@ -38,7 +46,7 @@ class BalanceCard extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 letterSpacing: -0.03 * 24,
                 fontSize: 24,
-                color: theme.colorScheme.onSurface,
+                color: valueColor,
               ),
             ),
           ),

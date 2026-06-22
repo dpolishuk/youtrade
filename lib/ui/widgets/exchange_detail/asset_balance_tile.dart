@@ -1,32 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../../../domain/entities/exchange_balance.dart';
 import '../../../presentation/theme/theme_extensions.dart';
-
-class AssetBalance {
-  const AssetBalance({
-    required this.symbol,
-    required this.glyph,
-    required this.value,
-    required this.share,
-    required this.shareColor,
-  });
-
-  final String symbol;
-  final String glyph;
-  final String value;
-  final double share;
-  final Color shareColor;
-}
 
 class AssetBalanceTile extends StatelessWidget {
   const AssetBalanceTile({required this.asset, super.key});
 
-  final AssetBalance asset;
+  final ExchangeBalance asset;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>();
+    final fg = theme.colorScheme.onSurface;
+    final fg3 = appColors?.tertiaryText ?? theme.colorScheme.onSurfaceVariant;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -36,9 +23,12 @@ class AssetBalanceTile extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
+              color:
+                  appColors?.chip ?? theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: theme.dividerColor),
+              border: Border.all(
+                color: appColors?.borderSubtle ?? theme.dividerColor,
+              ),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -47,7 +37,7 @@ class AssetBalanceTile extends StatelessWidget {
                 fontFamily: 'Space Grotesk',
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
-                color: theme.colorScheme.onSurface,
+                color: fg,
               ),
             ),
           ),
@@ -62,15 +52,17 @@ class AssetBalanceTile extends StatelessWidget {
                       asset.symbol,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
+                        fontSize: 13,
+                        color: fg,
                       ),
                     ),
                     Text(
-                      asset.value,
+                      asset.valueFormatted,
                       style: theme.textTheme.titleSmall?.copyWith(
-                        fontFamily: 'Geist Mono',
+                        fontFamily: 'JetBrains Mono',
                         fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onSurface,
+                        fontSize: 13,
+                        color: fg,
                       ),
                     ),
                   ],
@@ -82,12 +74,15 @@ class AssetBalanceTile extends StatelessWidget {
                       child: Container(
                         height: 4,
                         decoration: BoxDecoration(
-                          color: appColors?.surfaceGlass,
+                          color:
+                              appColors?.chip ??
+                              theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(2),
                         ),
+                        clipBehavior: Clip.hardEdge,
                         child: FractionallySizedBox(
                           alignment: Alignment.centerLeft,
-                          widthFactor: asset.share.clamp(0, 1),
+                          widthFactor: asset.sharePercent / 100,
                           child: Container(
                             decoration: BoxDecoration(
                               color: asset.shareColor,
@@ -101,11 +96,11 @@ class AssetBalanceTile extends StatelessWidget {
                     SizedBox(
                       width: 28,
                       child: Text(
-                        '${asset.share.toStringAsFixed(0)}%',
+                        '${asset.sharePercent}%',
                         textAlign: TextAlign.right,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          fontFamily: 'Geist Mono',
-                          color: theme.colorScheme.onSurfaceVariant,
+                          fontFamily: 'JetBrains Mono',
+                          color: fg3,
                           fontSize: 9,
                         ),
                       ),

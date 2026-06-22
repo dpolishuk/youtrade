@@ -11,6 +11,8 @@ import '../../../domain/entities/ticker.dart';
 import '../../../domain/entities/timeframe.dart';
 import '../../../domain/entities/trade.dart';
 import '../../../domain/entities/venue.dart';
+import '../../../domain/entities/exchange_balance.dart';
+import '../../../domain/entities/exchange_detail_snapshot.dart';
 
 import '../../../domain/sources/market_data_store.dart';
 
@@ -20,6 +22,8 @@ import '../../../domain/sources/market_data_store.dart';
 /// `mockups/YouTrade.dc.html` so every returned value matches the mockup
 /// exactly. The public API is identical to [MockMarketDataStore]; existing
 /// tests for that class continue to pass unchanged.
+typedef _ExchangeAsset = ({String symbol, double qty, String glyph});
+
 final class DeterministicMarketDataStore implements MarketDataStore {
   const DeterministicMarketDataStore();
 
@@ -186,6 +190,142 @@ final class DeterministicMarketDataStore implements MarketDataStore {
   /// Asset class mix label shown above the allocation bar.
   static const String portfolioAssetMix =
       'Spot 41 · Perp 38 · Eq 12 · Fut 6 · Opt 3';
+
+  static const Map<
+    Venue,
+    ({double total, double pnl, String kinds, List<_ExchangeAsset> assets})
+  >
+  _exchangeDetails = {
+    Venue.binance: (
+      total: 312480.0,
+      pnl: 6620.0,
+      kinds: 'Spot · Perp · Options',
+      assets: <_ExchangeAsset>[
+        (symbol: 'BTC', qty: 1.84, glyph: '฿'),
+        (symbol: 'ETH', qty: 12.4, glyph: 'Ξ'),
+        (symbol: 'USDT', qty: 88420.0, glyph: r'$'),
+        (symbol: 'SOL', qty: 210.0, glyph: '◎'),
+      ],
+    ),
+    Venue.bybit: (
+      total: 198320.0,
+      pnl: -1710.0,
+      kinds: 'Perp · Spot',
+      assets: <_ExchangeAsset>[
+        (symbol: 'ETH', qty: 22.5, glyph: 'Ξ'),
+        (symbol: 'USDT', qty: 64200.0, glyph: r'$'),
+        (symbol: 'BTC', qty: 0.9, glyph: '฿'),
+      ],
+    ),
+    Venue.okx: (
+      total: 146900.0,
+      pnl: 2080.0,
+      kinds: 'Spot · Perp · Options',
+      assets: <_ExchangeAsset>[
+        (symbol: 'XAU', qty: 12.0, glyph: 'Au'),
+        (symbol: 'USDT', qty: 98300.0, glyph: r'$'),
+        (symbol: 'SOL', qty: 420.0, glyph: '◎'),
+      ],
+    ),
+    Venue.coinbase: (
+      total: 88540.0,
+      pnl: 270.0,
+      kinds: 'Spot · Stocks',
+      assets: <_ExchangeAsset>[
+        (symbol: 'AAPL', qty: 120.0, glyph: 'A'),
+        (symbol: 'NVDA', qty: 80.0, glyph: 'N'),
+        (symbol: 'USD', qty: 32100.0, glyph: r'$'),
+      ],
+    ),
+  };
+
+  static const Map<Venue, Color> _exchangeColors = {
+    Venue.binance: Color(0xFFF0B90B),
+    Venue.bybit: Color(0xFFF7A600),
+    Venue.coinbase: Color(0xFF0052FF),
+  };
+
+  /// Returns the deterministic exchange-detail snapshot for [venue].
+  ///
+  /// OKX is rendered with the current [accent] color because the mockup ties
+  /// OKX to the directional accent token.
+  static ExchangeDetailSnapshot exchangeDetailFor(
+    Venue venue, {
+    required Color accent,
+  }) {
+    final data = _exchangeDetails[venue] ?? _exchangeDetails[Venue.binance]!;
+    final total = data.total;
+    final pnl = data.pnl;
+    final color = venue == Venue.okx
+        ? accent
+        : _exchangeColors[venue] ?? accent;
+
+    final assets = data.assets.map((asset) {
+      final value = _assetValue(asset);
+      final share = (value / total * 100).round().clamp(0, 100);
+      return ExchangeBalance(
+        symbol: asset.symbol,
+        glyph: asset.glyph,
+        valueFormatted: _formatMoney(value, decimals: 0),
+        sharePercent: share,
+        shareColor: color,
+      );
+    }).toList();
+
+    final pnlPercent = pnl / total * 100;
+
+    return ExchangeDetailSnapshot(
+      total: _formatMoney(total, decimals: 0),
+      pnl: '${pnl >= 0 ? '+' : ''}${_formatMoney(pnl, decimals: 0)}',
+      pnlPercent:
+          '${pnlPercent >= 0 ? '+' : ''}${pnlPercent.toStringAsFixed(2)}%',
+      kinds: data.kinds,
+      color: color,
+      assets: assets,
+    );
+  }
+
+  static double _assetValue(_ExchangeAsset asset) {
+    if (asset.symbol == 'USDT' || asset.symbol == 'USD') {
+      return asset.qty;
+    }
+    if (asset.symbol == 'BTC') {
+      return asset.qty * btcLastPrice;
+    }
+    if (asset.symbol == 'XAU') {
+      return asset.qty * _candles['GC=F']!.last.close;
+    }
+    if (asset.symbol == 'AAPL') {
+      return asset.qty * _candles['AAPL']!.last.close;
+    }
+    final pair = '${asset.symbol}USDT';
+    if (_candles.containsKey(pair)) {
+      return asset.qty * _candles[pair]!.last.close;
+    }
+    return asset.qty * 200.0;
+  }
+
+  static String _formatMoney(double value, {required int decimals}) {
+    final isNegative = value < 0;
+    final abs = value.abs();
+    final whole = abs.truncate();
+    final wholeFormatted = _addCommas(whole);
+    if (decimals == 0) {
+      return '${isNegative ? '-' : ''}\$$wholeFormatted';
+    }
+    final frac = ((abs - whole) * pow(10, decimals)).round().toString().padLeft(
+      decimals,
+      '0',
+    );
+    return '${isNegative ? '-' : ''}\$$wholeFormatted.$frac';
+  }
+
+  static String _addCommas(int value) {
+    return value.toString().replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (match) => ',',
+    );
+  }
 
   /// Last BTC price from the deterministic series.
   static double get btcLastPrice => _candles['BTCUSDT']!.last.close;
