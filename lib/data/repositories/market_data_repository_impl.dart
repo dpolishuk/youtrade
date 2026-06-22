@@ -50,10 +50,6 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
   final Map<Venue, VenueSources> _venueSources;
   final MarketCache? cache;
 
-  Map<Venue, VenueSources> get venueSources => _venueSources;
-
-  MarketDataStore get fallbackStore => _fallbackStore;
-
   static const _tickerTtl = Duration(seconds: 30);
   static const _candlesTtl = Duration(minutes: 5);
   static const _orderBookTtl = Duration(seconds: 30);

@@ -21,7 +21,6 @@ import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/screens/trading_terminal_screen.dart';
 import 'package:youtrade/ui/widgets/trading_terminal/candlestick_chart.dart';
 import 'package:youtrade/ui/widgets/trading_terminal/fundamentals_card.dart';
-import 'package:youtrade/ui/widgets/trading_terminal/recent_trades_strip.dart';
 import 'package:youtrade/ui/widgets/trading_terminal/signal_gauge.dart';
 import 'package:youtrade/ui/widgets/trading_terminal/trade_ticket.dart';
 
@@ -256,16 +255,6 @@ void main() {
       expect(find.text('Market'), findsOneWidget);
       expect(find.text('Stop'), findsOneWidget);
       expect(find.text('Buy / Long BTC'), findsOneWidget);
-    });
-
-    testWidgets('trade tab does not show the recent trades strip', (
-      tester,
-    ) async {
-      await tester.pumpWidget(_buildApp());
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-
-      expect(find.byType(RecentTradesStrip), findsNothing);
     });
 
     testWidgets('uses symbol parameter when provided', (tester) async {

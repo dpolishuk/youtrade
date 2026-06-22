@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:youtrade/presentation/theme/app_theme.dart';
+import 'package:youtrade/presentation/theme/theme_extensions.dart';
+import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/presentation/theme/theme_provider.dart';
 import 'package:youtrade/ui/screens/portfolio_screen.dart';
 import 'package:youtrade/ui/widgets/portfolio/allocation_bar.dart';
@@ -10,6 +13,10 @@ import 'package:youtrade/ui/widgets/portfolio/position_tile.dart';
 
 void main() {
   group('PortfolioScreen', () {
+    final appColors = AppTheme.dark(
+      AppVisualDirection.flux,
+    ).extension<AppColorTheme>()!;
+
     GoRouter buildRouter() {
       return GoRouter(
         initialLocation: '/',
@@ -155,6 +162,40 @@ void main() {
       expect(find.text('CARBON'), findsOneWidget);
       expect(find.text('Carbon Terminal'), findsOneWidget);
       expect(find.text('FLUX'), findsNothing);
+    });
+
+    testWidgets('header uses exact foreground and chip colors', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      final title = tester.widget<Text>(find.text('YouTrade'));
+      expect(title.style?.color, appColors.foreground);
+
+      final tag = tester.widget<Text>(find.text('Flux Terminal'));
+      expect(tag.style?.color, appColors.tertiaryText);
+
+      final iconContainer = tester.widget<Container>(
+        find
+            .ancestor(
+              of: find.byIcon(Icons.dark_mode),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      final iconDecoration = iconContainer.decoration! as BoxDecoration;
+      expect(iconDecoration.color, appColors.chip);
+
+      final icon = tester.widget<Icon>(find.byIcon(Icons.dark_mode));
+      expect(icon.color, appColors.subtleText);
+
+      final directionContainer = tester.widget<Container>(
+        find
+            .ancestor(of: find.text('FLUX'), matching: find.byType(Container))
+            .first,
+      );
+      final directionDecoration =
+          directionContainer.decoration! as BoxDecoration;
+      expect(directionDecoration.color, appColors.chip);
     });
 
     testWidgets('toggles theme mode when theme button tapped', (tester) async {
