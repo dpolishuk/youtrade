@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/datasources/mock/deterministic_market_data_store.dart';
+import '../../domain/entities/options_chain_strike.dart';
 import '../../presentation/theme/theme_extensions.dart';
 import '../widgets/options_chain/chain_column_headers.dart';
 import '../widgets/options_chain/expiry_selector.dart';
@@ -18,7 +19,9 @@ class OptionsChainScreen extends StatefulWidget {
 
 class _OptionsChainScreenState extends State<OptionsChainScreen> {
   static final _expiries = DeterministicMarketDataStore.btcOptionExpiries;
-  static final _rows = DeterministicMarketDataStore.btcOptionsChain;
+
+  List<OptionChainStrike> get _rows =>
+      DeterministicMarketDataStore.btcOptionsChain;
 
   int _selectedExpiryIndex = 0;
 

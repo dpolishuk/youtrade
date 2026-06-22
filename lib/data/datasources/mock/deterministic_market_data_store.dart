@@ -143,7 +143,7 @@ final class DeterministicMarketDataStore implements MarketDataStore {
   };
 
   /// Static position data matching the mockup Portfolio screen.
-  static const List<Position> portfolioPositions = [
+  static List<Position> portfolioPositions = const [
     Position(
       symbol: 'BTCUSDT',
       sym0: '฿',
@@ -423,7 +423,9 @@ final class DeterministicMarketDataStore implements MarketDataStore {
   ];
 
   /// Deterministic BTC options chain rows matching the mockup exactly.
-  static List<OptionChainStrike> get btcOptionsChain {
+  static List<OptionChainStrike> btcOptionsChain = _buildBtcOptionsChain();
+
+  static List<OptionChainStrike> _buildBtcOptionsChain() {
     final spot = btcLastPrice;
     final base = btcOptionsAtmStrike;
     final strikes = <double>[];

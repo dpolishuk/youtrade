@@ -6,13 +6,19 @@ import '../../domain/auth/pin_auth_service.dart';
 import 'auth_state.dart';
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier(this._localAuthService, this._pinAuthService)
-    : super(const AuthUnknown());
+  AuthNotifier(
+    this._localAuthService,
+    this._pinAuthService, {
+    DateTime Function()? clock,
+  }) : _clock = clock ?? _defaultClock,
+       super(const AuthUnknown());
 
   static final _pinRegex = RegExp(r'^\d{4}$');
+  static DateTime _defaultClock() => DateTime.now().toUtc();
 
   final LocalAuthService _localAuthService;
   final PinAuthService _pinAuthService;
+  final DateTime Function() _clock;
 
   bool _pinSet = false;
   bool _isBiometricAvailable = false;
@@ -33,7 +39,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   static const Duration _initTimeout = Duration(seconds: 3);
 
   Future<void> initialize() async {
-    if (_isInitializing) return;
+    if (_isInitializing || state is AuthAuthenticated) return;
     _isInitializing = true;
     try {
       _pinSet = await _pinAuthService.isPinSet().timeout(
@@ -148,14 +154,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   int get _lockoutRemainingSeconds {
     final end = _pinLockoutEnd;
     if (end == null) return 0;
-    final remaining = end.difference(DateTime.now().toUtc()).inSeconds;
+    final remaining = end.difference(_clock()).inSeconds;
     return remaining > 0 ? remaining : 0;
   }
 
   void _recordFailedPinAttempt() {
     _failedPinAttempts++;
     if (_failedPinAttempts >= _maxPinAttempts) {
-      _pinLockoutEnd = DateTime.now().toUtc().add(_pinLockoutDuration);
+      _pinLockoutEnd = _clock().add(_pinLockoutDuration);
     }
   }
 

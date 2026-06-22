@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:youtrade/data/datasources/mock/deterministic_market_data_store.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/screens/options_chain_screen.dart';
@@ -71,6 +72,19 @@ void main() {
       expect(find.text('29 AUG'), findsOneWidget);
       expect(find.text('26 SEP'), findsOneWidget);
       expect(find.text('ATM strike 106,000 · highlighted'), findsOneWidget);
+    });
+
+    testWidgets('empty chain shows no strikes message', (tester) async {
+      final originalChain = DeterministicMarketDataStore.btcOptionsChain;
+      DeterministicMarketDataStore.btcOptionsChain = [];
+      addTearDown(() {
+        DeterministicMarketDataStore.btcOptionsChain = originalChain;
+      });
+
+      await tester.pumpWidget(buildScreen(symbol: 'BTC'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No strikes available'), findsOneWidget);
     });
 
     testWidgets('uses default BTC chain when no symbol is provided', (

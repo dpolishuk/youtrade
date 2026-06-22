@@ -110,6 +110,20 @@ void main() {
       expect(find.text(r'$32,100'), findsOneWidget);
     });
 
+    testWidgets('renders Binance fallback for unknown exchange id', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildScreen(exchangeId: 'unknown'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Binance'), findsWidgets);
+      expect(find.text('Spot · Perp · Options'), findsOneWidget);
+      expect(find.text(r'$312,480'), findsOneWidget);
+      expect(find.text('Bybit'), findsOneWidget);
+      expect(find.text('OKX'), findsOneWidget);
+      expect(find.text('Coinbase'), findsOneWidget);
+    });
+
     testWidgets('back button pops the route', (tester) async {
       final navigatorKey = GlobalKey<NavigatorState>();
       await tester.pumpWidget(

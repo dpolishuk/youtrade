@@ -5,6 +5,7 @@ import 'package:youtrade/presentation/theme/app_theme.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/screens/orders_history_screen.dart';
 import 'package:youtrade/ui/widgets/orders/order_list_tile.dart';
+import 'package:youtrade/ui/widgets/orders/position_list_tile.dart';
 
 void main() {
   group('OrdersHistoryScreen', () {
@@ -219,6 +220,22 @@ void main() {
       expect(pnl.style?.fontSize, 10.5);
       expect(pnl.style?.fontWeight, FontWeight.w600);
       expect(pnl.style?.color, const Color(0xFF2EE6A6));
+    });
+
+    testWidgets('empty Positions tab renders without items', (tester) async {
+      final originalPositions = DeterministicMarketDataStore.portfolioPositions;
+      DeterministicMarketDataStore.portfolioPositions = [];
+      addTearDown(() {
+        DeterministicMarketDataStore.portfolioPositions = originalPositions;
+      });
+
+      await pumpScreen(tester);
+
+      await tester.tap(find.text('Positions'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PositionListTile), findsNothing);
+      expect(find.byType(OrdersHistoryScreen), findsOneWidget);
     });
 
     testWidgets('screen does not overflow on iPhone 17 frame', (tester) async {

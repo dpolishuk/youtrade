@@ -8,6 +8,7 @@ import '../../domain/entities/venue.dart';
 import '../../presentation/providers/market_data_providers.dart';
 import '../../presentation/providers/selected_symbol_provider.dart';
 import '../../presentation/providers/trading_terminal_provider.dart';
+import '../../presentation/theme/theme_extensions.dart';
 import '../widgets/trading_terminal/candlestick_chart.dart';
 import '../widgets/trading_terminal/fundamentals_card.dart';
 import '../widgets/trading_terminal/lower_tabs.dart';
@@ -142,6 +143,17 @@ class _TradingTerminalScreenState extends ConsumerState<TradingTerminalScreen> {
     );
     final tab = terminalState.selectedTab;
 
+    if (tickerAsync.hasError || candlesAsync.hasError) {
+      return _ErrorBody(
+        onRetry: () {
+          ref.invalidate(tickerStreamProvider(selectedSymbol));
+          ref.invalidate(
+            candlesProvider((selectedSymbol, terminalState.selectedTimeframe)),
+          );
+        },
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -233,6 +245,58 @@ class _TradeTab extends StatelessWidget {
         const SizedBox(height: 16),
         RecentTradesStrip(symbol: symbol),
       ],
+    );
+  }
+}
+
+class _ErrorBody extends StatelessWidget {
+  const _ErrorBody({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>();
+
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                color: theme.colorScheme.error,
+                size: 40,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Failed to load market data',
+                style: TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: appColors?.foreground ?? theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: onRetry,
+                child: Text(
+                  'Retry',
+                  style: TextStyle(
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: appColors?.accent ?? theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -144,6 +144,74 @@ void main() {
   }
 
   group('AppRouter', () {
+    testWidgets(
+      'redirects unauthenticated deep link to /orders to auth with from',
+      (tester) async {
+        when(
+          () => mockService.canCheckBiometrics(),
+        ).thenAnswer((_) async => false);
+
+        final container = createContainer();
+        final router = container.read(appRouterProvider);
+        router.go('/orders');
+
+        await tester.pumpWidget(
+          buildRouter(router: router, container: container),
+        );
+        await pumpFrames(tester);
+
+        expect(router.state.uri.path, '/auth');
+        expect(router.state.uri.queryParameters['from'], '/orders');
+        expect(find.text('YouTrade is locked'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'redirects authenticated user from /auth without from to home',
+      (tester) async {
+        when(
+          () => mockService.canCheckBiometrics(),
+        ).thenAnswer((_) async => false);
+
+        final container = createContainer();
+        final router = container.read(appRouterProvider);
+
+        container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('1234');
+        router.go('/auth');
+
+        await tester.pumpWidget(
+          buildRouter(router: router, container: container),
+        );
+        await pumpFrames(tester);
+
+        expect(router.state.uri.path, '/');
+        expect(find.byType(PortfolioScreen), findsOneWidget);
+      },
+    );
+
+    testWidgets('public route /markets/compare preserves query parameters', (
+      tester,
+    ) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = createContainer();
+      final router = container.read(appRouterProvider);
+      router.go('/markets/compare?foo=bar');
+
+      await tester.pumpWidget(
+        buildRouter(router: router, container: container),
+      );
+      await pumpFrames(tester);
+
+      expect(router.state.uri.path, '/markets/compare');
+      expect(router.state.uri.queryParameters['foo'], 'bar');
+      expect(find.byType(CompareScreen), findsOneWidget);
+    });
+
     testWidgets('redirects unauthenticated users to /auth', (tester) async {
       when(
         () => mockService.canCheckBiometrics(),

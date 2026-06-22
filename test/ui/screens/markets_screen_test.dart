@@ -139,6 +139,32 @@ void main() {
       expect(find.text('TSLA'), findsOneWidget);
     });
 
+    testWidgets('empty state when no markets match unicode or special chars', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildApp());
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const ValueKey('markets_search_field')),
+        '🚀',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('No markets found'), findsOneWidget);
+      expect(find.byType(MarketListTile), findsNothing);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('markets_search_field')),
+        '; DROP',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('No markets found'), findsOneWidget);
+      expect(find.byType(MarketListTile), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('shows empty state when no markets match', (tester) async {
       await tester.pumpWidget(buildApp());
       await tester.pumpAndSettle();

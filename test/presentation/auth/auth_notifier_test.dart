@@ -10,6 +10,7 @@ import 'package:youtrade/domain/auth/auth_failure.dart';
 import 'package:youtrade/domain/auth/local_auth_service.dart';
 import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/presentation/auth/auth_guard_provider.dart';
+import 'package:youtrade/presentation/auth/auth_notifier.dart';
 import 'package:youtrade/presentation/auth/auth_state.dart';
 
 import '../../fakes/fake_pin_auth_service.dart';
@@ -68,6 +69,25 @@ class _ThrowingWriteStorage extends _FakeSecureStorage {
   Future<void> write({
     required String key,
     required String? value,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    throw exception;
+  }
+}
+
+class _ThrowingReadStorage extends _FakeSecureStorage {
+  _ThrowingReadStorage(this.exception);
+
+  final Exception exception;
+
+  @override
+  Future<String?> read({
+    required String key,
     IOSOptions? iOptions,
     AndroidOptions? aOptions,
     LinuxOptions? lOptions,
@@ -800,6 +820,95 @@ void main() {
       expect(failure.remainingSeconds, lessThanOrEqualTo(15 * 60));
       expect(container.read(authNotifierProvider), isA<AuthError>());
     });
+
+    test('lockout expires and allows retry with correct PIN', () async {
+      fakePinAuth.setStoredPin('1234');
+      when(
+        () => mockLocalAuth.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final startTime = DateTime.utc(2026, 1, 1, 12, 0, 0);
+      var currentTime = startTime;
+      final container = ProviderContainer(
+        overrides: [
+          localAuthServiceProvider.overrideWithValue(mockLocalAuth),
+          pinAuthServiceProvider.overrideWithValue(fakePinAuth),
+          authNotifierProvider.overrideWith(
+            (ref) => AuthNotifier(
+              mockLocalAuth,
+              fakePinAuth,
+              clock: () => currentTime,
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final states = <AuthState>[];
+      container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+      await container.read(authNotifierProvider.notifier).initialize();
+      states.clear();
+
+      for (var i = 0; i < 5; i++) {
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('0000');
+      }
+
+      expect(container.read(authNotifierProvider), isA<AuthError>());
+
+      currentTime = startTime.add(const Duration(minutes: 15, seconds: 1));
+      states.clear();
+      await container
+          .read(authNotifierProvider.notifier)
+          .authenticateWithPin('1234');
+
+      expect(states, [isA<AuthAuthenticated>()]);
+      expect(container.read(authNotifierProvider), isA<AuthAuthenticated>());
+    });
+
+    test('initialize treats storage read error as no PIN configured', () async {
+      final throwingStorage = _ThrowingReadStorage(
+        Exception('secure storage read failed'),
+      );
+      final securePinAuth = SecurePinAuthService(storage: throwingStorage);
+      final container = ProviderContainer(
+        overrides: [
+          localAuthServiceProvider.overrideWithValue(mockLocalAuth),
+          pinAuthServiceProvider.overrideWithValue(securePinAuth),
+        ],
+      );
+      addTearDown(container.dispose);
+      final states = <AuthState>[];
+      container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+      await container.read(authNotifierProvider.notifier).initialize();
+
+      expect(states, [isA<AuthUnauthenticated>()]);
+      final unauthenticated = states.single as AuthUnauthenticated;
+      expect(unauthenticated.pinSet, isFalse);
+      expect(container.read(authNotifierProvider.notifier).isPinSet, isFalse);
+    });
+
+    test(
+      'authenticateWithPin empty string emits PinValidationFailure when no PIN is set',
+      () async {
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('');
+
+        expect(states, [isA<AuthError>()]);
+        final error = states.single as AuthError;
+        expect(error.failure, isA<PinValidationFailure>());
+        expect(error.failure.message, 'PIN must be exactly 4 digits');
+        expect(container.read(authNotifierProvider.notifier).isPinSet, isFalse);
+      },
+    );
 
     test('successful PIN entry resets failed attempt lockout', () async {
       fakePinAuth.setStoredPin('1234');

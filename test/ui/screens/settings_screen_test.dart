@@ -202,6 +202,22 @@ void main() {
       expect(footer.style?.letterSpacing, closeTo(0.54, 0.001));
     });
 
+    testWidgets(
+      'biometric available without PIN shows setup and no biometric unlock',
+      (tester) async {
+        fakePinAuth = FakePinAuthService();
+        when(
+          () => mockService.canCheckBiometrics(),
+        ).thenAnswer((_) async => true);
+
+        await tester.pumpWidget(buildScreen());
+        await tester.pumpAndSettle();
+
+        expect(find.text('Set up PIN'), findsOneWidget);
+        expect(find.text('Unlock with biometrics'), findsNothing);
+      },
+    );
+
     testWidgets('does not show security section from old layout', (
       tester,
     ) async {

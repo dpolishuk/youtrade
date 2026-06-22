@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/core/result.dart';
 import 'package:youtrade/data/datasources/mock/deterministic_market_data_store.dart';
 import 'package:youtrade/data/repositories/market_data_repository_impl.dart';
@@ -90,6 +91,45 @@ final class _FakeRegistry implements ExchangeCapabilityRegistry {
   );
 }
 
+final class _ErrorRepository implements MarketDataRepository {
+  const _ErrorRepository();
+
+  @override
+  Future<Result<Ticker>> getTicker(TradingSymbol symbol) async =>
+      const Err<Ticker>(UnknownFailure('Repository error'));
+
+  @override
+  Future<Result<List<Candle>>> getCandles(
+    TradingSymbol symbol,
+    Timeframe timeframe, {
+    int? limit,
+  }) async => const Err<List<Candle>>(UnknownFailure('Repository error'));
+
+  @override
+  Future<Result<OrderBook>> getOrderBook(
+    TradingSymbol symbol, {
+    int? depth,
+  }) async => const Err<OrderBook>(UnknownFailure('Repository error'));
+
+  @override
+  Future<Result<List<Trade>>> getTrades(
+    TradingSymbol symbol, {
+    int? limit,
+  }) async => const Err<List<Trade>>(UnknownFailure('Repository error'));
+
+  @override
+  Stream<Result<Ticker>> watchTicker(TradingSymbol symbol) =>
+      Stream.value(const Err<Ticker>(UnknownFailure('Repository error')));
+
+  @override
+  Stream<Result<OrderBook>> watchOrderBook(TradingSymbol symbol) =>
+      Stream.value(const Err<OrderBook>(UnknownFailure('Repository error')));
+
+  @override
+  Stream<Result<List<Trade>>> watchTrades(TradingSymbol symbol) =>
+      Stream.value(const Err<List<Trade>>(UnknownFailure('Repository error')));
+}
+
 Widget _buildApp({String? symbol}) {
   return ProviderScope(
     overrides: [
@@ -116,6 +156,36 @@ Widget _buildApp({String? symbol}) {
 
 void main() {
   group('TradingTerminalScreen', () {
+    testWidgets('repository error shows error UI with retry button', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            marketDataRepositoryProvider.overrideWithValue(
+              const _ErrorRepository(),
+            ),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.dark(AppVisualDirection.flux),
+            routerConfig: GoRouter(
+              routes: [
+                GoRoute(
+                  path: '/',
+                  builder: (context, state) => const TradingTerminalScreen(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Failed to load market data'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+    });
+
     testWidgets('renders BTC terminal with deterministic values', (
       tester,
     ) async {
