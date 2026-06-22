@@ -18,10 +18,12 @@ class SecurePinAuthService implements PinAuthService {
 
   static const String _pinHashKey = 'pin_hash';
   static const String _pinSaltKey = 'pin_salt';
-  static const int _minPinLength = 4;
-  static const int _pbkdf2Iterations = 100000;
+  static const String _failedPinAttemptsKey = 'failed_pin_attempts';
+  static const String _pinLockoutEndKey = 'pin_lockout_end';
+  static const int _pinLength = 4;
+  static const int pbkdf2Iterations = 600000;
   static const int _derivedKeyLength = 32;
-  static final RegExp _pinRegex = RegExp(r'^\d+$');
+  static final RegExp _pinRegex = RegExp(r'^\d{4}$');
 
   @override
   Future<bool> isPinSet() async {
@@ -35,7 +37,7 @@ class SecurePinAuthService implements PinAuthService {
 
   @override
   Future<bool> authenticatePin(String pin) async {
-    if (pin.length < _minPinLength) return false;
+    if (pin.length != _pinLength || !_pinRegex.hasMatch(pin)) return false;
 
     try {
       final storedHash = await _storage.read(key: _pinHashKey);
@@ -56,9 +58,9 @@ class SecurePinAuthService implements PinAuthService {
 
   @override
   Future<Result<void>> setPin(String pin) async {
-    if (pin.length < _minPinLength) {
+    if (pin.length != _pinLength) {
       return const Err<void>(
-        PinValidationFailure('PIN must be at least 4 digits.'),
+        PinValidationFailure('PIN must be exactly 4 digits.'),
       );
     }
 
@@ -91,9 +93,61 @@ class SecurePinAuthService implements PinAuthService {
 
       final hash = _hashPin(pin, salt);
       await _storage.write(key: _pinHashKey, value: hash);
+      await _storage.write(key: _failedPinAttemptsKey, value: '0');
+      await _storage.delete(key: _pinLockoutEndKey);
       return const Success<void>(null);
     } on Object catch (e) {
       return Err<void>(UnknownFailure('Failed to store PIN.', error: e));
+    }
+  }
+
+  @override
+  Future<int> getFailedPinAttempts() async {
+    try {
+      final value = await _storage.read(key: _failedPinAttemptsKey);
+      if (value == null || value.isEmpty) return 0;
+      return int.tryParse(value) ?? 0;
+    } on Object {
+      return 0;
+    }
+  }
+
+  @override
+  Future<void> setFailedPinAttempts(int attempts) async {
+    try {
+      await _storage.write(
+        key: _failedPinAttemptsKey,
+        value: attempts.toString(),
+      );
+    } on Object {
+      // Ignore storage write failures for lockout metadata.
+    }
+  }
+
+  @override
+  Future<DateTime?> getPinLockoutEnd() async {
+    try {
+      final value = await _storage.read(key: _pinLockoutEndKey);
+      if (value == null || value.isEmpty) return null;
+      return DateTime.tryParse(value)?.toUtc();
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> setPinLockoutEnd(DateTime? end) async {
+    try {
+      if (end == null) {
+        await _storage.delete(key: _pinLockoutEndKey);
+      } else {
+        await _storage.write(
+          key: _pinLockoutEndKey,
+          value: end.toUtc().toIso8601String(),
+        );
+      }
+    } on Object {
+      // Ignore storage write failures for lockout metadata.
     }
   }
 
@@ -108,7 +162,7 @@ class SecurePinAuthService implements PinAuthService {
     final pinBytes = Uint8List.fromList(utf8.encode(pin));
     final params = Pbkdf2Parameters(
       Uint8List.fromList(saltBytes),
-      _pbkdf2Iterations,
+      pbkdf2Iterations,
       _derivedKeyLength,
     );
     final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64));

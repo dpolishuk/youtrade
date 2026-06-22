@@ -96,6 +96,12 @@ void main() {
       service = SecurePinAuthService(storage: storage);
     });
 
+    group('security configuration', () {
+      test('uses OWASP minimum PBKDF2 iterations', () {
+        expect(SecurePinAuthService.pbkdf2Iterations, equals(600000));
+      });
+    });
+
     group('isPinSet', () {
       test('returns false when no PIN hash is stored', () async {
         expect(await service.isPinSet(), isFalse);
@@ -139,7 +145,7 @@ void main() {
 
         expect(result, isA<Err<void>>());
         final failure = (result as Err<void>).failure as PinValidationFailure;
-        expect(failure.message, 'PIN must be at least 4 digits.');
+        expect(failure.message, 'PIN must be exactly 4 digits.');
       });
 
       test('rejects empty PIN', () async {
@@ -147,7 +153,15 @@ void main() {
 
         expect(result, isA<Err<void>>());
         final failure = (result as Err<void>).failure as PinValidationFailure;
-        expect(failure.message, 'PIN must be at least 4 digits.');
+        expect(failure.message, 'PIN must be exactly 4 digits.');
+      });
+
+      test('rejects PINs longer than 4 digits', () async {
+        final result = await service.setPin('12345');
+
+        expect(result, isA<Err<void>>());
+        final failure = (result as Err<void>).failure as PinValidationFailure;
+        expect(failure.message, 'PIN must be exactly 4 digits.');
       });
 
       test('reuses existing salt when updating PIN', () async {
@@ -161,11 +175,12 @@ void main() {
         expect(secondSalt, equals(firstSalt));
       });
 
-      test('accepts PINs longer than 4 digits', () async {
+      test('rejects PINs longer than 4 digits', () async {
         final result = await service.setPin('123456');
 
-        expect(result, isA<Success<void>>());
-        expect(await service.authenticatePin('123456'), isTrue);
+        expect(result, isA<Err<void>>());
+        final failure = (result as Err<void>).failure as PinValidationFailure;
+        expect(failure.message, 'PIN must be exactly 4 digits.');
       });
 
       test('concurrent setPin calls produce deterministic final PIN', () async {
@@ -256,6 +271,12 @@ void main() {
         await service.setPin('1234');
 
         expect(await service.authenticatePin('12'), isFalse);
+      });
+
+      test('returns false for PIN longer than 4 digits', () async {
+        await service.setPin('1234');
+
+        expect(await service.authenticatePin('12345'), isFalse);
       });
 
       test('returns false for short PIN when none is set', () async {
