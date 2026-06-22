@@ -197,6 +197,27 @@ final class DeterministicMarketDataStore {
     return (spot / 2000).round() * 2000.0;
   }
 
+  /// Synchronous last price and 24h change for the screener.
+  static ({double last, double change24hPercent}) screenerTicker(
+    String rawSymbol,
+  ) {
+    final data = _candles[rawSymbol] ?? _candles['BTCUSDT']!;
+    final last = data.last.close;
+    final first24 = data.length >= 24
+        ? data[data.length - 24].close
+        : data.first.close;
+    final change = last - first24;
+    final changePct = first24 != 0 ? change / first24 * 100 : 0.0;
+    return (last: last, change24hPercent: changePct);
+  }
+
+  /// Synchronous sparkline closes for the screener.
+  static List<double> screenerSparkline(String rawSymbol, {int periods = 30}) {
+    final data = _candles[rawSymbol] ?? _candles['BTCUSDT']!;
+    final start = max(0, data.length - periods);
+    return data.sublist(start).map((c) => c.close).toList();
+  }
+
   List<_RawCandle> _rawCandlesFor(TradingSymbol symbol) {
     final key = symbol.rawSymbol;
     return _candles[key] ?? _candles['BTCUSDT']!;

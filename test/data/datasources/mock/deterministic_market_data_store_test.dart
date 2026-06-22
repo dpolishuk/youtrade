@@ -117,5 +117,27 @@ void main() {
       expect(ticker.lastPrice, isNot(closeTo(105154.04697406417, 1e-3)));
       expect(ticker.lastPrice, closeTo(2887.8860130257644, 1e-6));
     });
+
+    test('screenerTicker returns deterministic last price and 24h change', () {
+      final btc = DeterministicMarketDataStore.screenerTicker('BTCUSDT');
+
+      expect(btc.last, closeTo(105154.04697406417, 1e-9));
+      expect(btc.change24hPercent, closeTo(6.423290746323324, 1e-9));
+    });
+
+    test('screenerSparkline returns last 30 closes', () {
+      final spark = DeterministicMarketDataStore.screenerSparkline('BTCUSDT');
+
+      expect(spark.length, 30);
+      expect(spark.last, closeTo(105154.04697406417, 1e-9));
+    });
+
+    test('screener helpers fall back to BTC when symbol is unknown', () {
+      final fallback = DeterministicMarketDataStore.screenerTicker('UNKNOWN');
+      final spark = DeterministicMarketDataStore.screenerSparkline('UNKNOWN');
+
+      expect(fallback.last, closeTo(105154.04697406417, 1e-9));
+      expect(spark.last, closeTo(105154.04697406417, 1e-9));
+    });
   });
 }

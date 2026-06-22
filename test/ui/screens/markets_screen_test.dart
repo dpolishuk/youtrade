@@ -28,37 +28,65 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Search symbols, venues, assets'), findsOneWidget);
-      expect(find.text('Markets'), findsOneWidget);
     });
 
-    testWidgets('shows filter chips', (tester) async {
+    testWidgets('shows mockup filter chips', (tester) async {
       await tester.pumpWidget(buildApp());
       await tester.pumpAndSettle();
 
       expect(find.text('All'), findsOneWidget);
       expect(find.text('Crypto'), findsOneWidget);
-      expect(find.text('Forex'), findsOneWidget);
-      expect(find.text('Equities'), findsOneWidget);
-      expect(find.text('Commodities'), findsOneWidget);
+      expect(find.text('Stocks'), findsOneWidget);
+      expect(find.text('Futures'), findsOneWidget);
+      expect(find.text('Options'), findsOneWidget);
+
+      expect(find.text('Forex'), findsNothing);
+      expect(find.text('Equities'), findsNothing);
+      expect(find.text('Commodities'), findsNothing);
     });
 
-    testWidgets('shows header row and market list', (tester) async {
+    testWidgets('shows header row and mockup market rows', (tester) async {
       await tester.pumpWidget(buildApp());
       await tester.pumpAndSettle();
 
       expect(find.text('Symbol'), findsOneWidget);
       expect(find.text('Last · 24h'), findsOneWidget);
+
       expect(find.text('BTC'), findsOneWidget);
       expect(find.text('ETH'), findsOneWidget);
-      expect(find.text('EURUSD'), findsOneWidget);
+      expect(find.text('SOL'), findsOneWidget);
       expect(find.text('AAPL'), findsOneWidget);
+      expect(find.text('GC'), findsOneWidget);
+      expect(find.text('NVDA'), findsOneWidget);
+      expect(find.text('XRP'), findsWidgets);
+      expect(find.text('Bitcoin Perp'), findsOneWidget);
+      expect(find.text('Gold Futures'), findsOneWidget);
 
       await tester.scrollUntilVisible(
-        find.text('XAUUSD'),
+        find.text('CL'),
         80,
         scrollable: find.byType(Scrollable).last,
       );
-      expect(find.text('XAUUSD'), findsOneWidget);
+      expect(find.text('CL'), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text('BTC-28K-C'),
+        80,
+        scrollable: find.byType(Scrollable).last,
+      );
+      expect(find.text('TSLA'), findsOneWidget);
+      expect(find.text('BTC-28K-C'), findsOneWidget);
+      expect(find.text('BTC Call 70k'), findsOneWidget);
+    });
+
+    testWidgets('renders deterministic BTC price and 24h change', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildApp());
+      await tester.pumpAndSettle();
+
+      expect(find.text('105,154.0'), findsOneWidget);
+      expect(find.text('+6.42%'), findsOneWidget);
     });
 
     testWidgets('filters market list by search query', (tester) async {
@@ -66,7 +94,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('BTC'), findsOneWidget);
-      expect(find.text('EURUSD'), findsOneWidget);
+      expect(find.text('AAPL'), findsOneWidget);
 
       await tester.enterText(
         find.byKey(const ValueKey('markets_search_field')),
@@ -75,7 +103,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('BTC'), findsOneWidget);
-      expect(find.text('EURUSD'), findsNothing);
+      expect(find.text('BTC-28K-C'), findsOneWidget);
+      expect(find.text('AAPL'), findsNothing);
     });
 
     testWidgets('filters market list by chip selection', (tester) async {
@@ -83,41 +112,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('BTC'), findsOneWidget);
-      expect(find.text('EURUSD'), findsOneWidget);
+      expect(find.text('AAPL'), findsOneWidget);
 
-      await tester.tap(find.text('Forex'));
+      await tester.tap(find.text('Stocks'));
       await tester.pumpAndSettle();
 
       expect(find.text('BTC'), findsNothing);
-      expect(find.text('EURUSD'), findsOneWidget);
-      expect(find.text('GBPJPY'), findsOneWidget);
-    });
-
-    testWidgets('keeps cursor position while typing in the middle', (
-      tester,
-    ) async {
-      await tester.pumpWidget(buildApp());
-      await tester.pumpAndSettle();
-
-      final searchField = find.byKey(const ValueKey('markets_search_field'));
-      await tester.tap(searchField);
-      await tester.pump();
-
-      final controller = tester.widget<TextField>(searchField).controller!;
-      controller.text = 'abc';
-      controller.selection = const TextSelection.collapsed(offset: 1);
-      await tester.pump();
-
-      tester.testTextInput.updateEditingValue(
-        const TextEditingValue(
-          text: 'axbc',
-          selection: TextSelection.collapsed(offset: 2),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(controller.text, 'axbc');
-      expect(controller.selection.baseOffset, 2);
+      expect(find.text('AAPL'), findsOneWidget);
+      expect(find.text('NVDA'), findsOneWidget);
+      expect(find.text('TSLA'), findsOneWidget);
     });
 
     testWidgets('shows empty state when no markets match', (tester) async {

@@ -18,6 +18,7 @@ class MarketListTile extends StatelessWidget {
         ? appColors.bullish
         : appColors.bearish;
     final changeSign = market.change24hPercent >= 0 ? '+' : '';
+    final badgeColor = _badgeColor(context, appColors);
 
     return InkWell(
       onTap: () => _onTap(context),
@@ -36,20 +37,23 @@ class MarketListTile extends StatelessWidget {
                 children: [
                   Text(
                     market.symbol,
-                    style: theme.textTheme.labelLarge?.copyWith(
+                    style: const TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface,
-                      letterSpacing: -0.01 * 14,
+                      color: Colors.white,
+                      letterSpacing: -0.01 * 13,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    market.assetClass.label.toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
+                    market.assetClass.badge,
+                    style: TextStyle(
+                      fontFamily: 'JetBrains Mono',
                       fontSize: 7.5,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.06 * 7.5,
-                      color: appColors.subtleText,
+                      color: badgeColor,
                     ),
                   ),
                 ],
@@ -64,28 +68,34 @@ class MarketListTile extends StatelessWidget {
                     market.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: TextStyle(
+                      fontFamily: 'Geist',
                       fontSize: 11.5,
-                      color: theme.colorScheme.onSurfaceVariant,
+                      color: appColors.subtleText,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    market.venue.displayName,
-                    style: theme.textTheme.labelSmall?.copyWith(
+                    market.venue.shortCode,
+                    style: TextStyle(
+                      fontFamily: 'JetBrains Mono',
                       fontSize: 8.5,
-                      color: appColors.subtleText,
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.34,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(
-              width: 46,
-              height: 24,
-              child: SparklineChart(data: market.sparkline),
-            ),
-            const SizedBox(width: 11),
+            if (market.sparkline.isNotEmpty) ...[
+              SizedBox(
+                width: 46,
+                height: 24,
+                child: SparklineChart(data: market.sparkline),
+              ),
+              const SizedBox(width: 11),
+            ],
             SizedBox(
               width: 78,
               child: Column(
@@ -93,23 +103,23 @@ class MarketListTile extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _formatPrice(market.price),
-                    style: theme.textTheme.labelLarge?.copyWith(
+                    _formatPrice(market.price, market.priceDecimals),
+                    style: TextStyle(
+                      fontFamily: 'JetBrains Mono',
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: theme.colorScheme.onSurface,
-                      fontFamily: 'Geist',
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '$changeSign${_formatPercent(market.change24hPercent)}%',
-                    style: theme.textTheme.labelSmall?.copyWith(
+                    style: TextStyle(
+                      fontFamily: 'JetBrains Mono',
                       fontSize: 10.5,
                       fontWeight: FontWeight.w600,
                       color: changeColor,
-                      fontFamily: 'Geist',
                     ),
                   ),
                 ],
@@ -121,15 +131,35 @@ class MarketListTile extends StatelessWidget {
     );
   }
 
-  String _formatPrice(double price) {
-    if (price >= 10000) {
-      return price.toStringAsFixed(2);
-    } else if (price >= 100) {
-      return price.toStringAsFixed(2);
-    } else if (price >= 1) {
-      return price.toStringAsFixed(2);
+  Color _badgeColor(BuildContext context, AppColorTheme appColors) {
+    switch (market.assetClass) {
+      case AssetClass.perp:
+        return appColors.accent;
+      case AssetClass.spot:
+        return appColors.bullish;
+      case AssetClass.stock:
+        return const Color(0xFF8B9CF0);
+      case AssetClass.fut:
+        return const Color(0xFFFFC457);
+      case AssetClass.opt:
+        return const Color(0xFFC9A6FF);
     }
-    return price.toStringAsFixed(4);
+  }
+
+  String _formatPrice(double price, int decimals) {
+    final s = price.toStringAsFixed(decimals);
+    final parts = s.split('.');
+    final whole = parts[0];
+    final fractional = parts.length > 1 ? '.${parts[1]}' : '';
+    final reversed = whole.split('').reversed.join();
+    final withCommas = <String>[];
+    for (var i = 0; i < reversed.length; i++) {
+      if (i > 0 && i % 3 == 0) {
+        withCommas.add(',');
+      }
+      withCommas.add(reversed[i]);
+    }
+    return withCommas.reversed.join() + fractional;
   }
 
   String _formatPercent(double value) {
@@ -137,10 +167,10 @@ class MarketListTile extends StatelessWidget {
   }
 
   void _onTap(BuildContext context) {
-    if (market.assetClass == AssetClass.options) {
-      context.go('/markets/options/${market.symbol}');
+    if (market.assetClass == AssetClass.opt) {
+      context.go('/markets/options/${market.rawSymbol}');
     } else {
-      context.go('/trading?symbol=${market.symbol}');
+      context.go('/trading?symbol=${market.rawSymbol}');
     }
   }
 }

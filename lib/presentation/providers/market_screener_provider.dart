@@ -1,36 +1,52 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/datasources/mock/deterministic_market_data_store.dart';
 import '../../domain/entities/venue.dart';
 
-enum AssetClass {
+enum MarketCategory {
   crypto('Crypto'),
-  forex('Forex'),
-  equities('Equities'),
-  commodities('Commodities'),
+  stocks('Stocks'),
+  futures('Futures'),
   options('Options');
 
-  const AssetClass(this.label);
-
+  const MarketCategory(this.label);
   final String label;
+}
+
+enum AssetClass {
+  perp('PERP', MarketCategory.crypto),
+  spot('SPOT', MarketCategory.crypto),
+  stock('STOCK', MarketCategory.stocks),
+  fut('FUT', MarketCategory.futures),
+  opt('OPT', MarketCategory.options);
+
+  const AssetClass(this.badge, this.category);
+
+  final String badge;
+  final MarketCategory category;
 }
 
 final class MarketScreenerItem {
   const MarketScreenerItem({
     required this.symbol,
+    required this.rawSymbol,
     required this.name,
     required this.venue,
     required this.assetClass,
     required this.price,
     required this.change24hPercent,
-    required this.sparkline,
+    required this.priceDecimals,
+    this.sparkline = const [],
   });
 
   final String symbol;
+  final String rawSymbol;
   final String name;
   final Venue venue;
   final AssetClass assetClass;
   final double price;
   final double change24hPercent;
+  final int priceDecimals;
   final List<double> sparkline;
 }
 
@@ -50,156 +66,136 @@ final filteredMarketScreenerItemsProvider = Provider<List<MarketScreenerItem>>((
   final markets = ref.watch(marketScreenerItemsProvider);
 
   return markets.where((market) {
-    final matchesFilter = filter == 'All' || market.assetClass.label == filter;
+    final matchesFilter =
+        filter == 'All' || market.assetClass.category.label == filter;
     final matchesSearch =
         query.isEmpty ||
         market.symbol.toLowerCase().contains(query) ||
+        market.rawSymbol.toLowerCase().contains(query) ||
         market.name.toLowerCase().contains(query) ||
-        market.venue.displayName.toLowerCase().contains(query);
+        market.venue.displayName.toLowerCase().contains(query) ||
+        market.venue.shortCode.toLowerCase().contains(query);
     return matchesFilter && matchesSearch;
   }).toList();
 });
 
+String _displaySymbol(String rawSymbol) {
+  return rawSymbol.replaceAll('USDT', '').replaceAll('=F', '');
+}
+
+List<double> _sparkline(String rawSymbol) {
+  return DeterministicMarketDataStore.screenerSparkline(rawSymbol);
+}
+
+MarketScreenerItem _row({
+  required String rawSymbol,
+  required String name,
+  required Venue venue,
+  required AssetClass assetClass,
+  required int decimals,
+  double? price,
+  double? change24hPercent,
+}) {
+  final ticker = price == null
+      ? DeterministicMarketDataStore.screenerTicker(rawSymbol)
+      : null;
+  return MarketScreenerItem(
+    symbol: _displaySymbol(rawSymbol),
+    rawSymbol: rawSymbol,
+    name: name,
+    venue: venue,
+    assetClass: assetClass,
+    price: price ?? ticker!.last,
+    change24hPercent: change24hPercent ?? ticker!.change24hPercent,
+    priceDecimals: decimals,
+    sparkline: _sparkline(rawSymbol),
+  );
+}
+
 final _mockMarkets = <MarketScreenerItem>[
-  MarketScreenerItem(
-    symbol: 'BTC',
-    name: 'Bitcoin / USD',
+  _row(
+    rawSymbol: 'BTCUSDT',
+    name: 'Bitcoin Perp',
     venue: Venue.binance,
-    assetClass: AssetClass.crypto,
-    price: 68421.35,
-    change24hPercent: 2.34,
-    sparkline: const [
-      66200,
-      66800,
-      67100,
-      66900,
-      67500,
-      67900,
-      67700,
-      68100,
-      68421,
-    ],
+    assetClass: AssetClass.perp,
+    decimals: 1,
   ),
-  MarketScreenerItem(
-    symbol: 'ETH',
-    name: 'Ethereum / USD',
+  _row(
+    rawSymbol: 'ETHUSDT',
+    name: 'Ethereum Perp',
     venue: Venue.bybit,
-    assetClass: AssetClass.crypto,
-    price: 3520.12,
-    change24hPercent: -1.12,
-    sparkline: const [3550, 3540, 3530, 3560, 3545, 3520, 3510, 3530, 3520],
+    assetClass: AssetClass.perp,
+    decimals: 2,
   ),
-  MarketScreenerItem(
-    symbol: 'SOL',
-    name: 'Solana / USD',
-    venue: Venue.binance,
-    assetClass: AssetClass.crypto,
-    price: 145.67,
-    change24hPercent: 5.78,
-    sparkline: const [136, 138, 137, 140, 142, 141, 143, 144, 145],
-  ),
-  MarketScreenerItem(
-    symbol: 'EURUSD',
-    name: 'Euro / US Dollar',
+  _row(
+    rawSymbol: 'SOLUSDT',
+    name: 'Solana',
     venue: Venue.okx,
-    assetClass: AssetClass.forex,
-    price: 1.0845,
-    change24hPercent: 0.21,
-    sparkline: const [
-      1.0820,
-      1.0830,
-      1.0825,
-      1.0835,
-      1.0840,
-      1.0838,
-      1.0842,
-      1.0845,
-      1.0845,
-    ],
+    assetClass: AssetClass.spot,
+    decimals: 2,
   ),
-  MarketScreenerItem(
-    symbol: 'GBPJPY',
-    name: 'British Pound / Japanese Yen',
-    venue: Venue.okx,
-    assetClass: AssetClass.forex,
-    price: 198.42,
-    change24hPercent: -0.45,
-    sparkline: const [
-      199.0,
-      198.8,
-      198.6,
-      198.7,
-      198.5,
-      198.4,
-      198.3,
-      198.4,
-      198.42,
-    ],
-  ),
-  MarketScreenerItem(
-    symbol: 'AAPL',
+  _row(
+    rawSymbol: 'AAPL',
     name: 'Apple Inc.',
     venue: Venue.coinbase,
-    assetClass: AssetClass.equities,
-    price: 189.52,
-    change24hPercent: 0.87,
-    sparkline: const [
-      186.0,
-      187.0,
-      186.5,
-      188.0,
-      188.5,
-      189.0,
-      188.8,
-      189.2,
-      189.52,
-    ],
+    assetClass: AssetClass.stock,
+    decimals: 2,
+  ),
+  _row(
+    rawSymbol: 'GC=F',
+    name: 'Gold Futures',
+    venue: Venue.okx,
+    assetClass: AssetClass.fut,
+    decimals: 1,
+  ),
+  MarketScreenerItem(
+    symbol: 'NVDA',
+    rawSymbol: 'NVDA',
+    name: 'NVIDIA Corp',
+    venue: Venue.coinbase,
+    assetClass: AssetClass.stock,
+    price: 118.42,
+    change24hPercent: 3.21,
+    priceDecimals: 2,
+  ),
+  MarketScreenerItem(
+    symbol: 'XRP',
+    rawSymbol: 'XRPUSDT',
+    name: 'XRP',
+    venue: Venue.binance,
+    assetClass: AssetClass.spot,
+    price: 0.6284,
+    change24hPercent: -1.42,
+    priceDecimals: 4,
+  ),
+  MarketScreenerItem(
+    symbol: 'CL',
+    rawSymbol: 'CL=F',
+    name: 'Crude Oil WTI',
+    venue: Venue.okx,
+    assetClass: AssetClass.fut,
+    price: 71.84,
+    change24hPercent: -0.86,
+    priceDecimals: 2,
   ),
   MarketScreenerItem(
     symbol: 'TSLA',
-    name: 'Tesla, Inc.',
+    rawSymbol: 'TSLA',
+    name: 'Tesla Inc.',
     venue: Venue.coinbase,
-    assetClass: AssetClass.equities,
-    price: 172.18,
-    change24hPercent: -2.34,
-    sparkline: const [
-      176.0,
-      175.0,
-      174.0,
-      173.5,
-      173.0,
-      172.5,
-      172.0,
-      171.5,
-      172.18,
-    ],
+    assetClass: AssetClass.stock,
+    price: 248.91,
+    change24hPercent: 1.94,
+    priceDecimals: 2,
   ),
   MarketScreenerItem(
-    symbol: 'XAUUSD',
-    name: 'Gold / US Dollar',
+    symbol: 'BTC-28K-C',
+    rawSymbol: 'BTC-28K-C',
+    name: 'BTC Call 70k',
     venue: Venue.bybit,
-    assetClass: AssetClass.commodities,
-    price: 2324.60,
-    change24hPercent: 0.12,
-    sparkline: const [2315, 2318, 2317, 2320, 2322, 2321, 2323, 2324, 2324.6],
-  ),
-  MarketScreenerItem(
-    symbol: 'XAGUSD',
-    name: 'Silver / US Dollar',
-    venue: Venue.bybit,
-    assetClass: AssetClass.commodities,
-    price: 29.45,
-    change24hPercent: -0.78,
-    sparkline: const [
-      29.7,
-      29.65,
-      29.6,
-      29.55,
-      29.5,
-      29.48,
-      29.46,
-      29.47,
-      29.45,
-    ],
+    assetClass: AssetClass.opt,
+    price: 0.0421,
+    change24hPercent: 8.12,
+    priceDecimals: 4,
   ),
 ];

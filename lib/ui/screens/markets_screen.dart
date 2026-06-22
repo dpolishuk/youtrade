@@ -27,9 +27,10 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>()!;
     final markets = ref.watch(filteredMarketScreenerItemsProvider);
+    final mutedColor = theme.colorScheme.onSurface.withValues(alpha: 0.34);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Markets'), centerTitle: false),
+      backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -40,13 +41,13 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                 height: 38,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
+                  color: theme.cardColor,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: appColors.borderSubtle),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.search, size: 15, color: appColors.subtleText),
+                    Icon(Icons.search, size: 15, color: mutedColor),
                     const SizedBox(width: 8),
                     Expanded(
                       child: TextField(
@@ -54,16 +55,19 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                         controller: _searchController,
                         decoration: InputDecoration(
                           hintText: 'Search symbols, venues, assets',
-                          hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                          hintStyle: TextStyle(
+                            fontFamily: 'Geist',
                             fontSize: 13,
-                            color: appColors.subtleText,
+                            color: mutedColor,
                           ),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: TextStyle(
+                          fontFamily: 'Geist',
                           fontSize: 13,
+                          color: theme.colorScheme.onSurface,
                         ),
                         onChanged: (value) {
                           ref
@@ -80,26 +84,28 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
               const FilterChips(),
               const SizedBox(height: 12),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Symbol',
-                      style: theme.textTheme.labelSmall?.copyWith(
+                      style: TextStyle(
+                        fontFamily: 'JetBrains Mono',
                         fontSize: 8.5,
                         letterSpacing: 0.08 * 8.5,
-                        color: appColors.subtleText,
-                        fontFamily: 'Geist',
+                        color: mutedColor,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       'Last · 24h',
-                      style: theme.textTheme.labelSmall?.copyWith(
+                      style: TextStyle(
+                        fontFamily: 'JetBrains Mono',
                         fontSize: 8.5,
                         letterSpacing: 0.08 * 8.5,
-                        color: appColors.subtleText,
-                        fontFamily: 'Geist',
+                        color: mutedColor,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -108,7 +114,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(11),
                     border: Border.all(color: appColors.borderSubtle),
                   ),

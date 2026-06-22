@@ -10,9 +10,9 @@ class FilterChips extends ConsumerWidget {
   static const _filters = <String>[
     'All',
     'Crypto',
-    'Forex',
-    'Equities',
-    'Commodities',
+    'Stocks',
+    'Futures',
+    'Options',
   ];
 
   @override
@@ -62,12 +62,10 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isSelected ? theme.colorScheme.primary : appColors.surfaceGlass;
-    final fg = isSelected
-        ? theme.colorScheme.onPrimary
-        : theme.colorScheme.onSurface;
+    final bg = isSelected ? theme.colorScheme.onSurface : Colors.transparent;
+    final fg = isSelected ? theme.colorScheme.surface : appColors.subtleText;
     final border = isSelected
-        ? theme.colorScheme.primary
+        ? theme.colorScheme.onSurface
         : appColors.borderSubtle;
 
     return GestureDetector(
@@ -83,8 +81,9 @@ class _FilterChip extends StatelessWidget {
           label,
           style: theme.textTheme.labelMedium?.copyWith(
             color: fg,
-            fontFamily: 'Geist',
+            fontFamily: 'JetBrains Mono',
             fontWeight: FontWeight.w600,
+            fontSize: 11,
           ),
         ),
       ),

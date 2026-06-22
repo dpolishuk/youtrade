@@ -10,22 +10,35 @@ import 'package:youtrade/ui/widgets/markets/market_list_tile.dart';
 void main() {
   const cryptoMarket = MarketScreenerItem(
     symbol: 'BTC',
-    name: 'Bitcoin / USD',
+    rawSymbol: 'BTCUSDT',
+    name: 'Bitcoin Perp',
     venue: Venue.binance,
-    assetClass: AssetClass.crypto,
-    price: 68421.35,
-    change24hPercent: 2.34,
-    sparkline: [66200, 66800, 67100, 66900, 67500, 67900, 67700, 68100, 68421],
+    assetClass: AssetClass.perp,
+    price: 105154.04697406417,
+    change24hPercent: 6.42,
+    priceDecimals: 1,
+    sparkline: [
+      101991.92,
+      102500.0,
+      103000.0,
+      103500.0,
+      104000.0,
+      104500.0,
+      105000.0,
+      105154.04697406417,
+    ],
   );
 
   const optionsMarket = MarketScreenerItem(
-    symbol: 'BTCOPT',
-    name: 'Bitcoin Options',
-    venue: Venue.binance,
-    assetClass: AssetClass.options,
-    price: 0.0,
-    change24hPercent: 0.0,
-    sparkline: [0.1, 0.2, 0.15, 0.18, 0.12, 0.14, 0.16, 0.13, 0.15],
+    symbol: 'BTC-28K-C',
+    rawSymbol: 'BTC-28K-C',
+    name: 'BTC Call 70k',
+    venue: Venue.bybit,
+    assetClass: AssetClass.opt,
+    price: 0.0421,
+    change24hPercent: 8.12,
+    priceDecimals: 4,
+    sparkline: [],
   );
 
   Widget buildTile(MarketScreenerItem market, GoRouter router) {
@@ -36,7 +49,32 @@ void main() {
   }
 
   group('MarketListTile', () {
-    testWidgets('navigates to /trading?symbol=BTC for regular market', (
+    testWidgets('renders symbol, badge, name, venue, price and change', (
+      tester,
+    ) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) =>
+                Scaffold(body: MarketListTile(market: cryptoMarket)),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(buildTile(cryptoMarket, router));
+      await tester.pumpAndSettle();
+
+      expect(find.text('BTC'), findsOneWidget);
+      expect(find.text('PERP'), findsOneWidget);
+      expect(find.text('Bitcoin Perp'), findsOneWidget);
+      expect(find.text('BIN'), findsOneWidget);
+      expect(find.text('105,154.0'), findsOneWidget);
+      expect(find.text('+6.42%'), findsOneWidget);
+    });
+
+    testWidgets('navigates to /trading?symbol=BTCUSDT for regular market', (
       tester,
     ) async {
       final router = GoRouter(
@@ -65,10 +103,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(router.state.uri.path, '/trading');
-      expect(router.state.uri.queryParameters['symbol'], 'BTC');
+      expect(router.state.uri.queryParameters['symbol'], 'BTCUSDT');
     });
 
-    testWidgets('navigates to /markets/options/BTCOPT for options market', (
+    testWidgets('navigates to /markets/options/BTC-28K-C for options market', (
       tester,
     ) async {
       final router = GoRouter(
@@ -96,8 +134,8 @@ void main() {
       await tester.tap(find.byType(MarketListTile));
       await tester.pumpAndSettle();
 
-      expect(router.state.uri.path, '/markets/options/BTCOPT');
-      expect(router.state.pathParameters['symbol'], 'BTCOPT');
+      expect(router.state.uri.path, '/markets/options/BTC-28K-C');
+      expect(router.state.pathParameters['symbol'], 'BTC-28K-C');
     });
   });
 }
