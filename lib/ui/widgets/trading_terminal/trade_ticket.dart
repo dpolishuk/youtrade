@@ -81,9 +81,9 @@ class TradeTicket extends ConsumerWidget {
           height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFF10151F),
+            color: appColors.chip,
             borderRadius: BorderRadius.circular(7),
-            border: Border.all(color: const Color(0x12FFFFFF)),
+            border: Border.all(color: appColors.borderSubtle),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -91,7 +91,7 @@ class TradeTicket extends ConsumerWidget {
               Text(
                 'Price',
                 style: themeBodySmall(context)?.copyWith(
-                  color: const Color(0x57FFFFFF),
+                  color: appColors.tertiaryText,
                   fontSize: 10,
                   letterSpacing: 0.06,
                 ),
@@ -99,7 +99,7 @@ class TradeTicket extends ConsumerWidget {
               Text(
                 formatFixedPrice(price, meta.decimals),
                 style: AppTheme.mono(
-                  color: const Color(0xFFF2F5FA),
+                  color: appColors.foreground,
                   fontSize: 14,
                 ).copyWith(fontWeight: FontWeight.w500),
               ),
@@ -111,9 +111,9 @@ class TradeTicket extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF10151F),
+              color: appColors.chip,
               borderRadius: BorderRadius.circular(7),
-              border: Border.all(color: const Color(0x12FFFFFF)),
+              border: Border.all(color: appColors.borderSubtle),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +124,7 @@ class TradeTicket extends ConsumerWidget {
                     Text(
                       'Leverage',
                       style: themeBodySmall(context)?.copyWith(
-                        color: const Color(0x57FFFFFF),
+                        color: appColors.tertiaryText,
                         fontSize: 10,
                         letterSpacing: 0.06,
                       ),
@@ -145,7 +145,7 @@ class TradeTicket extends ConsumerWidget {
                   max: 100,
                   divisions: 99,
                   activeColor: appColors.accent,
-                  inactiveColor: const Color(0x12FFFFFF),
+                  inactiveColor: appColors.borderSubtle,
                   onChanged: (value) => notifier.setLeverage(value.round()),
                 ),
               ],
@@ -178,16 +178,13 @@ class TradeTicket extends ConsumerWidget {
               Text(
                 'Order size',
                 style: AppTheme.mono(
-                  color: const Color(0x57FFFFFF),
+                  color: appColors.tertiaryText,
                   fontSize: 11,
                 ),
               ),
               Text(
                 '${sizeQty.toStringAsFixed(3)} ${meta.base} · \$${orderCost.toStringAsFixed(0)}',
-                style: AppTheme.mono(
-                  color: const Color(0xFFF2F5FA),
-                  fontSize: 11,
-                ),
+                style: AppTheme.mono(color: appColors.foreground, fontSize: 11),
               ),
             ],
           ),
@@ -244,36 +241,40 @@ class TradeTicket extends ConsumerWidget {
   ) {
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF0E131F),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(11),
-          side: const BorderSide(color: Color(0x12FFFFFF)),
-        ),
-        title: Text(
-          'Demo ${isBuy ? 'Buy' : 'Sell'}',
-          style: AppTheme.display(
-            color: const Color(0xFFF2F5FA),
-            fontSize: 18,
-          ).copyWith(fontWeight: FontWeight.w600),
-        ),
-        content: Text(
-          '${isBuy ? 'Buy' : 'Sell'} ${sizeQty.toStringAsFixed(3)} ${meta.base} @ ${formatFixedPrice(price, meta.decimals)}\n\nNo real order will be placed.',
-          style: AppTheme.mono(color: const Color(0x8CFFFFFF), fontSize: 12),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'OK',
-              style: AppTheme.mono(
-                color: Theme.of(context).extension<AppColorTheme>()!.accent,
-                fontSize: 12,
-              ).copyWith(fontWeight: FontWeight.w600),
-            ),
+      builder: (context) {
+        final dialogTheme = Theme.of(context);
+        final dialogColors = dialogTheme.extension<AppColorTheme>()!;
+        return AlertDialog(
+          backgroundColor: dialogTheme.cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(11),
+            side: BorderSide(color: dialogColors.borderSubtle),
           ),
-        ],
-      ),
+          title: Text(
+            'Demo ${isBuy ? 'Buy' : 'Sell'}',
+            style: AppTheme.display(
+              color: dialogColors.foreground,
+              fontSize: 18,
+            ).copyWith(fontWeight: FontWeight.w600),
+          ),
+          content: Text(
+            '${isBuy ? 'Buy' : 'Sell'} ${sizeQty.toStringAsFixed(3)} ${meta.base} @ ${formatFixedPrice(price, meta.decimals)}\n\nNo real order will be placed.',
+            style: AppTheme.mono(color: dialogColors.subtleText, fontSize: 12),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'OK',
+                style: AppTheme.mono(
+                  color: dialogColors.accent,
+                  fontSize: 12,
+                ).copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -296,6 +297,7 @@ class _SideButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
     return Material(
       color: isActive ? color.withValues(alpha: 0.18) : Colors.transparent,
       borderRadius: BorderRadius.circular(7),
@@ -309,14 +311,14 @@ class _SideButton extends StatelessWidget {
             border: Border.all(
               color: isActive
                   ? color.withValues(alpha: 0.6)
-                  : const Color(0x12FFFFFF),
+                  : appColors.borderSubtle,
             ),
           ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: AppTheme.display(
-              color: isActive ? color : const Color(0x8CFFFFFF),
+              color: isActive ? color : appColors.subtleText,
               fontSize: 14,
             ).copyWith(fontWeight: FontWeight.w600),
           ),
@@ -339,8 +341,11 @@ class _OrderTypeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>()!;
+
     return Material(
-      color: isSelected ? const Color(0xFFF2F5FA) : Colors.transparent,
+      color: isSelected ? appColors.foreground : Colors.transparent,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onTap,
@@ -352,8 +357,8 @@ class _OrderTypeChip extends StatelessWidget {
             label,
             style: AppTheme.mono(
               color: isSelected
-                  ? const Color(0xFF06080F)
-                  : const Color(0x8CFFFFFF),
+                  ? theme.colorScheme.surface
+                  : appColors.subtleText,
               fontSize: 11,
             ).copyWith(fontWeight: FontWeight.w600),
           ),
@@ -378,10 +383,9 @@ class _SizePercentChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
     return Material(
-      color: isSelected
-          ? accent.withValues(alpha: 0.15)
-          : const Color(0xFF10151F),
+      color: isSelected ? accent.withValues(alpha: 0.15) : appColors.chip,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onTap,
@@ -394,13 +398,13 @@ class _SizePercentChip extends StatelessWidget {
             border: Border.all(
               color: isSelected
                   ? accent.withValues(alpha: 0.4)
-                  : const Color(0x12FFFFFF),
+                  : appColors.borderSubtle,
             ),
           ),
           child: Text(
             label,
             style: AppTheme.mono(
-              color: isSelected ? accent : const Color(0x8CFFFFFF),
+              color: isSelected ? accent : appColors.subtleText,
               fontSize: 10.5,
             ).copyWith(fontWeight: FontWeight.w600),
           ),

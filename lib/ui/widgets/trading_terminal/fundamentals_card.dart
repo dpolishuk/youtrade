@@ -20,7 +20,8 @@ class FundamentalsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appColors = Theme.of(context).extension<AppColorTheme>()!;
+    final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>()!;
     final fund = _fundamentals(
       symbol.rawSymbol,
       ticker?.lastPrice ?? 0,
@@ -44,7 +45,7 @@ class FundamentalsCard extends StatelessWidget {
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0x12FFFFFF),
+            color: appColors.borderSubtle,
             borderRadius: BorderRadius.circular(8),
           ),
           clipBehavior: Clip.antiAlias,
@@ -60,7 +61,7 @@ class FundamentalsCard extends StatelessWidget {
                     left: i % 2 == 0 ? 0 : 1,
                     top: i < 2 ? 0 : 1,
                   ),
-                  color: const Color(0xFF0E131F),
+                  color: theme.cardColor,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 10,
@@ -71,14 +72,14 @@ class FundamentalsCard extends StatelessWidget {
                       Text(
                         fund.stats[i].label,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: const Color(0x57FFFFFF),
+                          color: appColors.tertiaryText,
                           fontSize: 11,
                         ),
                       ),
                       Text(
                         fund.stats[i].value,
                         style: AppTheme.mono(
-                          color: const Color(0xFFF2F5FA),
+                          color: appColors.foreground,
                           fontSize: 12,
                         ).copyWith(fontWeight: FontWeight.w500),
                       ),
@@ -92,7 +93,7 @@ class FundamentalsCard extends StatelessWidget {
         Text(
           'About',
           style: AppTheme.mono(
-            color: const Color(0x57FFFFFF),
+            color: appColors.tertiaryText,
             fontSize: 9,
           ).copyWith(letterSpacing: 0.1),
         ),
@@ -100,7 +101,7 @@ class FundamentalsCard extends StatelessWidget {
         Text(
           fund.about,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: const Color(0x8CFFFFFF),
+            color: appColors.subtleText,
             fontSize: 12.5,
             height: 1.55,
           ),
@@ -121,11 +122,7 @@ class FundamentalsCard extends StatelessWidget {
             'Apple designs and sells consumer electronics, software and services worldwide. Mega-cap equity, NASDAQ listed.',
         tags: [
           _Tag(label: 'Analyst', value: 'Buy', valueColor: t.bullish),
-          _Tag(
-            label: 'Target',
-            value: '\$258',
-            valueColor: const Color(0xFFF2F5FA),
-          ),
+          _Tag(label: 'Target', value: '\$258', valueColor: t.foreground),
         ],
         stats: const [
           _Stat(label: 'Market cap', value: '\$3.42T'),
@@ -169,11 +166,7 @@ class FundamentalsCard extends StatelessWidget {
               : 'Solana'} perpetual swap. Funding settles every 8h; no expiry. Index across Binance, Bybit, OKX, Coinbase.',
       tags: [
         _Tag(label: 'Sentiment', value: 'Greed 72', valueColor: t.bullish),
-        _Tag(
-          label: 'Volatility',
-          value: 'Med',
-          valueColor: const Color(0xFFF2F5FA),
-        ),
+        _Tag(label: 'Volatility', value: 'Med', valueColor: t.foreground),
       ],
       stats: [
         _Stat(
@@ -251,12 +244,14 @@ class _TagCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>()!;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0E131F),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0x12FFFFFF)),
+        border: Border.all(color: appColors.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,7 +259,7 @@ class _TagCard extends StatelessWidget {
           Text(
             tag.label,
             style: AppTheme.mono(
-              color: const Color(0x57FFFFFF),
+              color: appColors.tertiaryText,
               fontSize: 9,
             ).copyWith(letterSpacing: 0.07),
           ),
@@ -272,7 +267,7 @@ class _TagCard extends StatelessWidget {
           Text(
             tag.value,
             style: AppTheme.mono(
-              color: tag.valueColor ?? const Color(0xFFF2F5FA),
+              color: tag.valueColor ?? appColors.foreground,
               fontSize: 15,
             ).copyWith(fontWeight: FontWeight.w600),
           ),

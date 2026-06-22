@@ -26,12 +26,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Compare'), findsOneWidget);
-      expect(find.text('2/4 · normalized %'), findsOneWidget);
+      expect(find.text('3/4 · normalized %'), findsOneWidget);
       expect(find.byType(CompareChart), findsOneWidget);
       expect(find.byType(SymbolSelector), findsOneWidget);
       expect(find.byType(CompareStatsTable), findsOneWidget);
       expect(find.text('BTC'), findsWidgets);
       expect(find.text('ETH'), findsWidgets);
+      expect(find.text('SOL'), findsWidgets);
 
       await tester.binding.setSurfaceSize(null);
     });
@@ -64,12 +65,12 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(find.text('2/4 · normalized %'), findsOneWidget);
+      expect(find.text('3/4 · normalized %'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('symbol_chip_SOL')));
       await tester.pumpAndSettle();
 
-      expect(find.text('3/4 · normalized %'), findsOneWidget);
+      expect(find.text('2/4 · normalized %'), findsOneWidget);
     });
 
     testWidgets('uses mockup title and count typography', (tester) async {
@@ -82,7 +83,7 @@ void main() {
       expect(title.style?.fontWeight, FontWeight.w600);
       expect(title.style?.letterSpacing, closeTo(-0.02 * 18, 0.01));
 
-      final count = tester.widget<Text>(find.text('2/4 · normalized %'));
+      final count = tester.widget<Text>(find.text('3/4 · normalized %'));
       expect(count.style?.fontFamily, 'JetBrains Mono');
       expect(count.style?.fontSize, 9);
     });
@@ -93,8 +94,6 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('symbol_chip_SOL')));
-      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('symbol_chip_AAPL')));
       await tester.pumpAndSettle();
 
@@ -122,9 +121,17 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('symbol_chip_ETH')));
       await tester.pumpAndSettle();
 
-      // Only one symbol remains selected; trying to remove it does nothing.
+      // Only SOL remains selected; trying to remove it does nothing.
       expect(find.text('1/4 · normalized %'), findsOneWidget);
-      expect(find.text('BTC'), findsWidgets);
+
+      await tester.tap(find.byKey(const ValueKey('symbol_chip_SOL')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1/4 · normalized %'), findsOneWidget);
+      final solChip = tester.widget<Material>(
+        find.byKey(const ValueKey('symbol_chip_SOL')),
+      );
+      expect(solChip.color, compareSymbols[2].color);
     });
 
     testWidgets('renders line chart inside a surface-colored container', (

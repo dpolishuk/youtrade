@@ -15,14 +15,14 @@ abstract final class AppTheme {
   static const _titanium = Color(0xFFF7F4F3); // --color-titanium
 
   // Brand accents (from the CSS triads)
-  static const _cobaltVivid = Color(0xFF0355F3); // --color-cobalt-vivid
   static const _carbonAccent = Color(0xFF3F73FF); // dark+carbon accent
+  static const _carbonLightAccent = Color(0xFF1634EF); // light+carbon accent
   static const _turquoiseVivid = Color(0xFF00E6D2); // dark+flux accent
   static const _turquoiseBold = Color(0xFF0094A8); // light+flux accent
   static const _emeraldVivid = Color(0xFF2EE6A6); // dark+flux up
-  static const _emeraldLight = Color(0xFF00936B); // light up
+  static const _emeraldLight = Color(0xFF00936B); // light+flux up
   static const _rose = Color(0xFFFF5D77); // dark+flux down
-  static const _roseLight = Color(0xFFD22A47); // light down
+  static const _roseLight = Color(0xFFD22A47); // light+flux down
 
   // Carbon direction tokens
   static const _carbonSurface = Color(0xFF06080F);
@@ -73,7 +73,7 @@ abstract final class AppTheme {
         subtleText: _white55,
         borderSubtle: _white6,
         tertiaryText: const Color(0x57FFFFFF),
-        chip: card,
+        chip: const Color(0xFF10151F),
         line: const Color(0x12FFFFFF),
       ),
     );
@@ -82,10 +82,10 @@ abstract final class AppTheme {
   /// Builds a light theme for the given visual direction.
   static ThemeData light(AppVisualDirection direction) {
     final isCarbon = direction == AppVisualDirection.carbon;
-    final primary = isCarbon ? _cobaltVivid : _turquoiseBold;
-    final accent = isCarbon ? _cobaltVivid : _turquoiseBold;
-    final surface = isCarbon ? _lightSurface : _titanium;
-    final card = _lightSurface;
+    final primary = isCarbon ? _carbonLightAccent : _turquoiseBold;
+    final accent = isCarbon ? _carbonLightAccent : _turquoiseBold;
+    const surface = Color(0xFFF1EFEE);
+    const card = _lightSurface;
     final bullish = isCarbon ? _carbonUp : _emeraldLight;
     final bearish = isCarbon ? _carbonDown : _roseLight;
 
@@ -115,7 +115,7 @@ abstract final class AppTheme {
         subtleText: _carbon60,
         borderSubtle: _carbon8,
         tertiaryText: const Color(0x61020D23),
-        chip: _lightSurface,
+        chip: const Color(0xFF10151F),
         line: const Color(0x17020D23),
       ),
     );

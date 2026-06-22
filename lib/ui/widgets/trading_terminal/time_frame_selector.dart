@@ -42,7 +42,7 @@ class TimeFrameSelector extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           Material(
-            color: const Color(0xFF10151F),
+            color: appColors.chip,
             borderRadius: BorderRadius.circular(6),
             child: InkWell(
               onTap: () => context.go('/markets/compare'),
@@ -52,7 +52,7 @@ class TimeFrameSelector extends ConsumerWidget {
                 height: 26,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0x12FFFFFF)),
+                  border: Border.all(color: appColors.borderSubtle),
                 ),
                 child: Icon(Icons.stacked_line_chart, size: 15, color: accent),
               ),
@@ -79,11 +79,12 @@ class _TimeFrameChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
     final bg = isSelected ? accent.withValues(alpha: 0.15) : Colors.transparent;
     final border = isSelected
         ? accent.withValues(alpha: 0.4)
         : Colors.transparent;
-    final fg = isSelected ? accent : const Color(0x57FFFFFF);
+    final fg = isSelected ? accent : appColors.tertiaryText;
 
     return Material(
       color: bg,

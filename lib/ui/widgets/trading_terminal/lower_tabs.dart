@@ -12,6 +12,7 @@ class LowerTabs extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(tradingTerminalProvider);
     final notifier = ref.read(tradingTerminalProvider.notifier);
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
 
     const tabs = [
       _TabData(label: 'Trade', value: TerminalTab.trade),
@@ -22,8 +23,8 @@ class LowerTabs extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0x12FFFFFF))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: appColors.borderSubtle)),
       ),
       child: Row(
         children: [
@@ -79,9 +80,7 @@ class _TabButton extends StatelessWidget {
         child: Text(
           label,
           style: AppTheme.mono(
-            color: isSelected
-                ? const Color(0xFFF2F5FA)
-                : const Color(0x57FFFFFF),
+            color: isSelected ? appColors.foreground : appColors.tertiaryText,
             fontSize: 11,
           ).copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.03),
         ),

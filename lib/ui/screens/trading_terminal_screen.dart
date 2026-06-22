@@ -13,7 +13,6 @@ import '../widgets/trading_terminal/candlestick_chart.dart';
 import '../widgets/trading_terminal/fundamentals_card.dart';
 import '../widgets/trading_terminal/lower_tabs.dart';
 import '../widgets/trading_terminal/order_book_panel.dart';
-import '../widgets/trading_terminal/recent_trades_strip.dart';
 import '../widgets/trading_terminal/signal_gauge.dart';
 import '../widgets/trading_terminal/symbol_chip_row.dart';
 import '../widgets/trading_terminal/symbol_header.dart';
@@ -238,14 +237,7 @@ class _TradeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TradeTicket(symbol: symbol, tickerAsync: tickerAsync),
-        const SizedBox(height: 16),
-        RecentTradesStrip(symbol: symbol),
-      ],
-    );
+    return TradeTicket(symbol: symbol, tickerAsync: tickerAsync);
   }
 }
 

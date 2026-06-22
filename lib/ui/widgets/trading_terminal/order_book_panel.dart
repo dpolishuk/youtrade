@@ -96,14 +96,14 @@ class _BookContent extends StatelessWidget {
               Text(
                 'Price',
                 style: AppTheme.mono(
-                  color: const Color(0x57FFFFFF),
+                  color: appColors.tertiaryText,
                   fontSize: 8.5,
                 ).copyWith(letterSpacing: 0.08),
               ),
               Text(
                 'Size (${meta.base})',
                 style: AppTheme.mono(
-                  color: const Color(0x57FFFFFF),
+                  color: appColors.tertiaryText,
                   fontSize: 8.5,
                 ).copyWith(letterSpacing: 0.08),
               ),
@@ -121,10 +121,10 @@ class _BookContent extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
           margin: const EdgeInsets.symmetric(vertical: 4),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: Color(0x12FFFFFF)),
-              bottom: BorderSide(color: Color(0x12FFFFFF)),
+              top: BorderSide(color: appColors.borderSubtle),
+              bottom: BorderSide(color: appColors.borderSubtle),
             ),
           ),
           child: Row(
@@ -140,7 +140,7 @@ class _BookContent extends StatelessWidget {
               Text(
                 'spread ${formatFixedPrice(spread, meta.decimals)} · ${formatPercent(spreadPct)}',
                 style: AppTheme.mono(
-                  color: const Color(0x57FFFFFF),
+                  color: appColors.tertiaryText,
                   fontSize: 10,
                 ),
               ),
@@ -220,6 +220,7 @@ class _LevelRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final depth = dmax > 0 ? cumulative / dmax : 0.0;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
@@ -244,10 +245,7 @@ class _LevelRow extends StatelessWidget {
               ),
               Text(
                 level.amount.toStringAsFixed(3),
-                style: AppTheme.mono(
-                  color: const Color(0x8CFFFFFF),
-                  fontSize: 11,
-                ),
+                style: AppTheme.mono(color: appColors.subtleText, fontSize: 11),
               ),
             ],
           ),

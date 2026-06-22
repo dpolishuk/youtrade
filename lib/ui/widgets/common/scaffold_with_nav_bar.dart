@@ -39,6 +39,34 @@ class ScaffoldWithNavBar extends StatelessWidget {
         ? _darkBorderColor
         : (appColors?.borderSubtle ?? const Color(0x14020D23));
 
+    final items = [
+      _NavItemData(
+        label: 'Portfolio',
+        icon: Icons.pie_chart_outline,
+        activeIcon: Icons.pie_chart,
+      ),
+      _NavItemData(
+        label: 'Markets',
+        icon: Icons.show_chart,
+        activeIcon: Icons.show_chart,
+      ),
+      _NavItemData(
+        label: 'Trade',
+        icon: Icons.candlestick_chart_outlined,
+        activeIcon: Icons.candlestick_chart,
+      ),
+      _NavItemData(
+        label: 'Options',
+        icon: Icons.view_list_outlined,
+        activeIcon: Icons.view_list,
+      ),
+      _NavItemData(
+        label: 'More',
+        icon: Icons.grid_view_outlined,
+        activeIcon: Icons.grid_view,
+      ),
+    ];
+
     return Scaffold(
       body: Column(
         children: [
@@ -47,76 +75,97 @@ class ScaffoldWithNavBar extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: Container(
+        key: const Key('bottom-nav'),
+        height: 74,
         decoration: BoxDecoration(
+          color: backgroundColor,
           border: Border(top: BorderSide(color: borderColor)),
         ),
-        child: NavigationBar(
-          backgroundColor: backgroundColor,
-          indicatorColor: Colors.transparent,
-          elevation: 0,
-          height: 74,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          labelTextStyle: WidgetStateProperty.resolveWith((states) {
-            final isSelected = states.contains(WidgetState.selected);
-            return TextStyle(
-              fontFamily: 'JetBrains Mono',
-              fontSize: 8.5,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.04 * 8.5,
-              color: isSelected ? activeColor : inactiveColor,
-            );
-          }),
-          selectedIndex: navigationShell.currentIndex,
-          onDestinationSelected: _goBranch,
-          destinations: [
-            NavigationDestination(
-              icon: Icon(
-                Icons.pie_chart_outline,
-                color: inactiveColor,
-                size: 22,
+        child: Row(
+          children: [
+            for (var i = 0; i < items.length; i++)
+              _NavItem(
+                key: Key('bottom-nav-item-$i'),
+                index: i,
+                selected: i == navigationShell.currentIndex,
+                activeColor: activeColor,
+                inactiveColor: inactiveColor,
+                data: items[i],
+                onTap: () => _goBranch(i),
               ),
-              selectedIcon: Icon(Icons.pie_chart, color: activeColor, size: 22),
-              label: 'Portfolio',
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItemData {
+  const _NavItemData({
+    required this.label,
+    required this.icon,
+    required this.activeIcon,
+  });
+
+  final String label;
+  final IconData icon;
+  final IconData activeIcon;
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.index,
+    required this.selected,
+    required this.activeColor,
+    required this.inactiveColor,
+    required this.data,
+    required this.onTap,
+    super.key,
+  });
+
+  final int index;
+  final bool selected;
+  final Color activeColor;
+  final Color inactiveColor;
+  final _NavItemData data;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              selected ? data.activeIcon : data.icon,
+              color: selected ? activeColor : inactiveColor,
+              size: 22,
             ),
-            NavigationDestination(
-              icon: Icon(Icons.show_chart, color: inactiveColor, size: 22),
-              selectedIcon: Icon(
-                Icons.show_chart,
-                color: activeColor,
-                size: 22,
+            const SizedBox(height: 2),
+            Text(
+              data.label,
+              style: TextStyle(
+                fontFamily: 'JetBrains Mono',
+                fontSize: 8.5,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.04 * 8.5,
+                color: selected ? activeColor : inactiveColor,
               ),
-              label: 'Markets',
             ),
-            NavigationDestination(
-              icon: Icon(
-                Icons.candlestick_chart_outlined,
-                color: inactiveColor,
-                size: 22,
+            const SizedBox(height: 2),
+            Opacity(
+              key: Key('bottom-nav-dot-$index'),
+              opacity: selected ? 1.0 : 0.0,
+              child: Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: activeColor,
+                  shape: BoxShape.circle,
+                ),
               ),
-              selectedIcon: Icon(
-                Icons.candlestick_chart,
-                color: activeColor,
-                size: 22,
-              ),
-              label: 'Trade',
-            ),
-            NavigationDestination(
-              icon: Icon(
-                Icons.view_list_outlined,
-                color: inactiveColor,
-                size: 22,
-              ),
-              selectedIcon: Icon(Icons.view_list, color: activeColor, size: 22),
-              label: 'Options',
-            ),
-            NavigationDestination(
-              icon: Icon(
-                Icons.grid_view_outlined,
-                color: inactiveColor,
-                size: 22,
-              ),
-              selectedIcon: Icon(Icons.grid_view, color: activeColor, size: 22),
-              label: 'More',
             ),
           ],
         ),

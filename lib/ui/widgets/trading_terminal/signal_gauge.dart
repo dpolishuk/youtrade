@@ -48,7 +48,7 @@ class SignalGauge extends StatelessWidget {
         ? appColors.bullish
         : gauge < 46
         ? appColors.bearish
-        : const Color(0x8CFFFFFF);
+        : appColors.subtleText;
 
     final oscillators = _buildOscillators(chg, chgP, rsi, appColors);
     final movingAverages = _buildMovingAverages(
@@ -97,7 +97,7 @@ class SignalGauge extends StatelessWidget {
                   Text(
                     '$buyCount buy · $sellCount sell signals',
                     style: AppTheme.mono(
-                      color: const Color(0x57FFFFFF),
+                      color: appColors.tertiaryText,
                       fontSize: 11,
                     ),
                   ),
@@ -105,7 +105,7 @@ class SignalGauge extends StatelessWidget {
                   Text(
                     'Oscillator score ${gauge.round()}/100',
                     style: AppTheme.mono(
-                      color: const Color(0x8CFFFFFF),
+                      color: appColors.subtleText,
                       fontSize: 11,
                     ),
                   ),
@@ -157,7 +157,7 @@ class SignalGauge extends StatelessWidget {
             ? appColors.bearish
             : rsi < 35
             ? appColors.bullish
-            : const Color(0x8CFFFFFF),
+            : appColors.subtleText,
       ),
       _SignalRow(
         'MACD (12,26)',
@@ -169,7 +169,7 @@ class SignalGauge extends StatelessWidget {
         'Stoch %K',
         (rsi - 4).toStringAsFixed(1),
         'Neutral',
-        const Color(0x8CFFFFFF),
+        appColors.subtleText,
       ),
       _SignalRow(
         'CCI (20)',
@@ -295,12 +295,12 @@ class _GaugeArcPainter extends CustomPainter {
       center,
       needleEnd,
       Paint()
-        ..color = const Color(0xFFF2F5FA)
+        ..color = appColors.foreground
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round,
     );
 
-    canvas.drawCircle(center, 4.5, Paint()..color = const Color(0xFFF2F5FA));
+    canvas.drawCircle(center, 4.5, Paint()..color = appColors.foreground);
   }
 
   @override
@@ -314,12 +314,13 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 7),
       child: Text(
         title,
         style: AppTheme.mono(
-          color: const Color(0x57FFFFFF),
+          color: appColors.tertiaryText,
           fontSize: 9,
         ).copyWith(letterSpacing: 0.1),
       ),
@@ -344,9 +345,12 @@ class _SignalTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>()!;
+
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0x12FFFFFF)),
+        border: Border.all(color: appColors.borderSubtle),
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -356,10 +360,10 @@ class _SignalTable extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
-                color: const Color(0xFF0E131F),
+                color: theme.cardColor,
                 border: Border(
                   bottom: i < rows.length - 1
-                      ? const BorderSide(color: Color(0x12FFFFFF))
+                      ? BorderSide(color: appColors.borderSubtle)
                       : BorderSide.none,
                 ),
               ),
@@ -369,7 +373,7 @@ class _SignalTable extends StatelessWidget {
                   Text(
                     rows[i].name,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0x8CFFFFFF),
+                      color: appColors.subtleText,
                       fontSize: 12,
                     ),
                   ),
@@ -378,7 +382,7 @@ class _SignalTable extends StatelessWidget {
                       Text(
                         rows[i].value,
                         style: AppTheme.mono(
-                          color: const Color(0xFFF2F5FA),
+                          color: appColors.foreground,
                           fontSize: 12,
                         ).copyWith(fontWeight: FontWeight.w500),
                       ),
@@ -420,9 +424,12 @@ class _PivotGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>()!;
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0x12FFFFFF),
+        color: appColors.borderSubtle,
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -432,14 +439,14 @@ class _PivotGrid extends StatelessWidget {
             Expanded(
               child: Container(
                 margin: EdgeInsets.only(left: i == 0 ? 0 : 1),
-                color: const Color(0xFF0E131F),
+                color: theme.cardColor,
                 padding: const EdgeInsets.symmetric(vertical: 9),
                 child: Column(
                   children: [
                     Text(
                       pivots[i].label,
                       style: AppTheme.mono(
-                        color: const Color(0x57FFFFFF),
+                        color: appColors.tertiaryText,
                         fontSize: 9,
                       ),
                     ),
@@ -447,7 +454,7 @@ class _PivotGrid extends StatelessWidget {
                     Text(
                       formatFixedPrice(pivots[i].value, pivots[i].decimals),
                       style: AppTheme.mono(
-                        color: const Color(0xFFF2F5FA),
+                        color: appColors.foreground,
                         fontSize: 10,
                       ).copyWith(fontWeight: FontWeight.w500),
                     ),

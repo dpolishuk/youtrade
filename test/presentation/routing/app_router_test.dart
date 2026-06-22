@@ -143,6 +143,16 @@ void main() {
     );
   }
 
+  int selectedBottomNavIndex(WidgetTester tester) {
+    for (var i = 0; i < 5; i++) {
+      final opacity = tester.widget<Opacity>(
+        find.byKey(Key('bottom-nav-dot-$i')),
+      );
+      if (opacity.opacity == 1.0) return i;
+    }
+    return -1;
+  }
+
   group('AppRouter', () {
     testWidgets(
       'redirects unauthenticated deep link to /orders to auth with from',
@@ -342,39 +352,27 @@ void main() {
       await pumpFrames(tester);
 
       expect(router.state.uri.path, '/');
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byKey(const Key('bottom-nav')), findsOneWidget);
 
       await tester.tap(find.text('Markets'));
       await pumpFrames(tester);
       expect(router.state.uri.path, '/markets');
-      expect(
-        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-        1,
-      );
+      expect(selectedBottomNavIndex(tester), 1);
 
       await tester.tap(find.text('Trade'));
       await pumpFrames(tester);
       expect(router.state.uri.path, '/trading');
-      expect(
-        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-        2,
-      );
+      expect(selectedBottomNavIndex(tester), 2);
 
       await tester.tap(find.text('Options'));
       await pumpFrames(tester);
       expect(router.state.uri.path, '/markets/options/BTC');
-      expect(
-        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-        3,
-      );
+      expect(selectedBottomNavIndex(tester), 3);
 
       await tester.tap(find.text('More'));
       await pumpFrames(tester);
       expect(router.state.uri.path, '/account');
-      expect(
-        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-        4,
-      );
+      expect(selectedBottomNavIndex(tester), 4);
     });
 
     testWidgets(
@@ -651,25 +649,15 @@ void main() {
         await pumpFrames(tester);
 
         expect(router.state.uri.path, '/markets');
-        expect(find.byType(NavigationBar), findsOneWidget);
-        expect(
-          tester
-              .widget<NavigationBar>(find.byType(NavigationBar))
-              .selectedIndex,
-          1,
-        );
+        expect(find.byKey(const Key('bottom-nav')), findsOneWidget);
+        expect(selectedBottomNavIndex(tester), 1);
 
         router.go('/markets/exchange/binance');
         await pumpFrames(tester);
 
         expect(router.state.uri.path, '/markets/exchange/binance');
         expect(find.byType(ExchangeDetailScreen), findsOneWidget);
-        expect(
-          tester
-              .widget<NavigationBar>(find.byType(NavigationBar))
-              .selectedIndex,
-          1,
-        );
+        expect(selectedBottomNavIndex(tester), 1);
       },
     );
   });

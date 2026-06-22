@@ -14,9 +14,9 @@ void main() {
       final state = container.read(tradingTerminalProvider);
       expect(state.selectedTab, TerminalTab.trade);
       expect(state.orderSide, OrderSide.buy);
-      expect(state.orderType, OrderType.market);
-      expect(state.leverage, 1);
-      expect(state.selectedSizePercent, 0);
+      expect(state.orderType, OrderType.limit);
+      expect(state.leverage, 10);
+      expect(state.selectedSizePercent, 25);
       expect(state.selectedTimeframe, Timeframe.h1);
     });
 

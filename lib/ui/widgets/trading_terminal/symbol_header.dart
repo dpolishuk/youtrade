@@ -82,7 +82,7 @@ class SymbolHeader extends ConsumerWidget {
                   Text(
                     '${meta.name} · ${meta.venue.displayName}',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: const Color(0x57FFFFFF),
+                      color: appColors.tertiaryText,
                       fontSize: 11,
                       height: 1.0,
                     ),
@@ -136,17 +136,18 @@ class _ClassTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: const Color(0xFF10151F),
+        color: appColors.chip,
         borderRadius: BorderRadius.circular(3),
-        border: Border.all(color: const Color(0x12FFFFFF)),
+        border: Border.all(color: appColors.borderSubtle),
       ),
       child: Text(
         label,
         style: AppTheme.mono(
-          color: const Color(0x8CFFFFFF),
+          color: appColors.subtleText,
           fontSize: 8,
         ).copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.08),
       ),
@@ -183,9 +184,11 @@ class _StatStrip extends StatelessWidget {
         _Stat(label: 'Funding', value: funding, valueColor: appColors.bullish),
     ];
 
+    final theme = Theme.of(context);
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0x12FFFFFF),
+        color: appColors.borderSubtle,
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -198,7 +201,7 @@ class _StatStrip extends StatelessWidget {
                   horizontal: 10,
                   vertical: 8,
                 ),
-                color: const Color(0xFF0E131F),
+                color: theme.cardColor,
                 margin: EdgeInsets.only(left: i == 0 ? 0 : 1),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,7 +209,7 @@ class _StatStrip extends StatelessWidget {
                     Text(
                       items[i].label,
                       style: AppTheme.mono(
-                        color: const Color(0x57FFFFFF),
+                        color: appColors.tertiaryText,
                         fontSize: 8.5,
                       ).copyWith(letterSpacing: 0.08),
                     ),

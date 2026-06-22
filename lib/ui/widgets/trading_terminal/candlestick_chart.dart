@@ -14,16 +14,17 @@ class CandlestickChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appColors = Theme.of(context).extension<AppColorTheme>()!;
+    final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>()!;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Container(
         height: 248,
         decoration: BoxDecoration(
-          color: const Color(0xFF0E131F),
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0x12FFFFFF)),
+          border: Border.all(color: appColors.borderSubtle),
           boxShadow: [
             BoxShadow(
               color: appColors.accent.withValues(alpha: 0.12),
@@ -44,6 +45,7 @@ class CandlestickChart extends StatelessWidget {
                         painter: _CandlestickPainter(
                           candles: candles,
                           appColors: appColors,
+                          surfaceColor: theme.colorScheme.surface,
                         ),
                       ),
                       Positioned(
@@ -91,10 +93,15 @@ class _MaLabel extends StatelessWidget {
 }
 
 class _CandlestickPainter extends CustomPainter {
-  _CandlestickPainter({required this.candles, required this.appColors});
+  _CandlestickPainter({
+    required this.candles,
+    required this.appColors,
+    required this.surfaceColor,
+  });
 
   final List<Candle> candles;
   final AppColorTheme appColors;
+  final Color surfaceColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -161,7 +168,7 @@ class _CandlestickPainter extends CustomPainter {
     double Function(double) y,
   ) {
     final gridPaint = Paint()
-      ..color = appColors.borderSubtle.withValues(alpha: 0.65)
+      ..color = appColors.line
       ..strokeWidth = 1;
 
     for (var g = 0; g <= 4; g++) {
@@ -172,7 +179,7 @@ class _CandlestickPainter extends CustomPainter {
         canvas,
         formatAxisNumber(p),
         Offset(plotW + 6, py),
-        AppTheme.mono(color: const Color(0x57FFFFFF), fontSize: 9),
+        AppTheme.mono(color: appColors.tertiaryText, fontSize: 9),
         centerVertical: true,
       );
     }
@@ -296,7 +303,7 @@ class _CandlestickPainter extends CustomPainter {
     final cc = view[ci];
 
     final dashedPaint = Paint()
-      ..color = const Color(0x40FFFFFF)
+      ..color = appColors.borderSubtle
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 
@@ -313,14 +320,14 @@ class _CandlestickPainter extends CustomPainter {
 
     canvas.drawRect(
       Rect.fromLTWH(plotW, cyl - 8, 52, 16),
-      Paint()..color = const Color(0x8CFFFFFF),
+      Paint()..color = appColors.subtleText,
     );
 
     _drawText(
       canvas,
       formatAxisNumber(cc.high),
       Offset(plotW + 5, cyl),
-      AppTheme.mono(color: const Color(0xFF06080F), fontSize: 9),
+      AppTheme.mono(color: surfaceColor, fontSize: 9),
       centerVertical: true,
     );
   }

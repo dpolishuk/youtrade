@@ -89,13 +89,11 @@ class _SymbolChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = appColors.accent;
-    final bg = isSelected
-        ? accent.withValues(alpha: 0.15)
-        : const Color(0xFF10151F);
+    final bg = isSelected ? accent.withValues(alpha: 0.15) : appColors.chip;
     final border = isSelected
         ? accent.withValues(alpha: 0.4)
-        : const Color(0x12FFFFFF);
-    final fg = isSelected ? accent : const Color(0x8CFFFFFF);
+        : appColors.borderSubtle;
+    final fg = isSelected ? accent : appColors.subtleText;
 
     return Material(
       color: bg,

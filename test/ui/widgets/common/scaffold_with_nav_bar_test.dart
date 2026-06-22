@@ -157,16 +157,20 @@ void main() {
       );
       await pumpFrames(tester);
 
-      final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-      final labels = navBar.destinations
-          .whereType<NavigationDestination>()
-          .map((d) => d.label)
+      final labels = tester
+          .widgetList<Text>(
+            find.descendant(
+              of: find.byKey(const Key('bottom-nav')),
+              matching: find.byType(Text),
+            ),
+          )
+          .map((t) => t.data)
           .toList();
 
       expect(labels, ['Portfolio', 'Markets', 'Trade', 'Options', 'More']);
     });
 
-    testWidgets('uses mockup background and indicator colors', (tester) async {
+    testWidgets('uses mockup background color', (tester) async {
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => false);
@@ -182,9 +186,11 @@ void main() {
       );
       await pumpFrames(tester);
 
-      final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-      expect(navBar.backgroundColor, const Color(0xFF080B12));
-      expect(navBar.indicatorColor, Colors.transparent);
+      final navContainer = tester.widget<Container>(
+        find.byKey(const Key('bottom-nav')),
+      );
+      final decoration = navContainer.decoration! as BoxDecoration;
+      expect(decoration.color, const Color(0xFF080B12));
     });
 
     testWidgets('uses white background in light mode', (tester) async {
@@ -209,8 +215,62 @@ void main() {
       );
       await pumpFrames(tester);
 
-      final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-      expect(navBar.backgroundColor, const Color(0xFFFFFFFF));
+      final navContainer = tester.widget<Container>(
+        find.byKey(const Key('bottom-nav')),
+      );
+      final decoration = navContainer.decoration! as BoxDecoration;
+      expect(decoration.color, const Color(0xFFFFFFFF));
+    });
+
+    testWidgets('shows active dot only on selected tab', (tester) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = createContainer();
+      final router = container.read(appRouterProvider);
+
+      container.read(authNotifierProvider.notifier).authenticateWithPin('1234');
+      router.go('/');
+
+      await tester.pumpWidget(
+        buildRouter(router: router, container: container),
+      );
+      await pumpFrames(tester);
+
+      for (var i = 0; i < 5; i++) {
+        final opacity = tester.widget<Opacity>(
+          find.byKey(Key('bottom-nav-dot-$i')),
+        );
+        expect(opacity.opacity, i == 0 ? 1.0 : 0.0);
+      }
+    });
+
+    testWidgets('updates active dot when tab changes', (tester) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = createContainer();
+      final router = container.read(appRouterProvider);
+
+      container.read(authNotifierProvider.notifier).authenticateWithPin('1234');
+      router.go('/');
+
+      await tester.pumpWidget(
+        buildRouter(router: router, container: container),
+      );
+      await pumpFrames(tester);
+
+      await tester.tap(find.byKey(const Key('bottom-nav-item-2')));
+      await pumpFrames(tester);
+
+      for (var i = 0; i < 5; i++) {
+        final opacity = tester.widget<Opacity>(
+          find.byKey(Key('bottom-nav-dot-$i')),
+        );
+        expect(opacity.opacity, i == 2 ? 1.0 : 0.0);
+      }
     });
   });
 }

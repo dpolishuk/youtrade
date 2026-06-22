@@ -37,11 +37,11 @@ class MarketListTile extends StatelessWidget {
                 children: [
                   Text(
                     market.symbol,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Space Grotesk',
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: theme.colorScheme.onSurface,
                       letterSpacing: -0.01 * 13,
                     ),
                   ),

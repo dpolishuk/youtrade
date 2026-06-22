@@ -72,6 +72,10 @@ void main() {
       expect(find.text('BIN'), findsOneWidget);
       expect(find.text('105,154.0'), findsOneWidget);
       expect(find.text('+6.42%'), findsOneWidget);
+
+      final theme = Theme.of(tester.element(find.byType(MarketListTile)));
+      final symbolText = tester.widget<Text>(find.text('BTC'));
+      expect(symbolText.style?.color, theme.colorScheme.onSurface);
     });
 
     testWidgets('navigates to /trading?symbol=BTCUSDT for regular market', (

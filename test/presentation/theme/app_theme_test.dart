@@ -78,8 +78,27 @@ void main() {
       final theme = AppTheme.light(AppVisualDirection.carbon);
       final appColors = theme.extension<AppColorTheme>()!;
 
-      expect(appColors.bullish, const Color(0xFF16D196));
-      expect(appColors.bearish, const Color(0xFFFF4D63));
+      expect(appColors.accent, const Color(0xFF1634EF));
+      expect(appColors.bullish, const Color(0xFF1D683F));
+      expect(appColors.bearish, const Color(0xFFC0392B));
+    });
+
+    test('light theme uses a warm neutral background for both directions', () {
+      final flux = AppTheme.light(AppVisualDirection.flux);
+      final carbon = AppTheme.light(AppVisualDirection.carbon);
+
+      expect(flux.colorScheme.surface, const Color(0xFFF1EFEE));
+      expect(carbon.colorScheme.surface, const Color(0xFFF1EFEE));
+      expect(flux.scaffoldBackgroundColor, const Color(0xFFF1EFEE));
+      expect(carbon.scaffoldBackgroundColor, const Color(0xFFF1EFEE));
+    });
+
+    test('dark theme uses updated chip and border subtle colors', () {
+      final theme = AppTheme.dark(AppVisualDirection.carbon);
+      final appColors = theme.extension<AppColorTheme>()!;
+
+      expect(appColors.chip, const Color(0xFF10151F));
+      expect(appColors.borderSubtle, const Color(0x12FFFFFF));
     });
 
     test('Flux and Carbon use different bullish/bearish colors', () {

@@ -38,9 +38,9 @@ class CompareChart extends StatelessWidget {
               horizontalInterval: _gridInterval,
               getDrawingHorizontalLine: (value) {
                 if (value == 0) {
-                  return FlLine(color: const Color(0x80FFFFFF), strokeWidth: 1);
+                  return FlLine(color: appColors.subtleText, strokeWidth: 1);
                 }
-                return FlLine(color: const Color(0x0BFFFFFF), strokeWidth: 1);
+                return FlLine(color: appColors.line, strokeWidth: 1);
               },
             ),
             borderData: FlBorderData(show: false),
@@ -53,7 +53,7 @@ class CompareChart extends StatelessWidget {
                     for (var i = 0; i < s.normalized.length; i++)
                       FlSpot(i.toDouble(), s.normalized[i]),
                   ],
-                  isCurved: true,
+                  isCurved: false,
                   color: s.symbol.color,
                   barWidth: 1.8,
                   isStrokeCapRound: true,
