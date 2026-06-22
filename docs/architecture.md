@@ -214,7 +214,7 @@ Theme is implemented via `AppColorTheme` (`ThemeExtension`) and `AppTheme` facto
 ## Offline / Demo Mode
 
 - Detect connectivity with `connectivity_plus`.
-- Offline fallback to `DemoMarketDataStore`.
+- Offline fallback to `DeterministicMarketDataStore`.
 - Persistent "Demo data" banner when mock data is shown.
 - Disabled actions: submit order, cancel order, refresh real data.
 
