@@ -19,15 +19,16 @@ void main() {
         expect(find.text('BTC'), findsWidgets);
         expect(find.text('OPTIONS'), findsOneWidget);
         expect(find.text('105,154'), findsOneWidget);
+        expect(find.text('SPOT'), findsOneWidget);
 
         expect(find.text('26 JUN'), findsOneWidget);
         expect(find.text('25 JUL'), findsOneWidget);
         expect(find.text('29 AUG'), findsOneWidget);
         expect(find.text('26 SEP'), findsOneWidget);
 
-        expect(find.text('Calls'), findsOneWidget);
-        expect(find.text('Strike'), findsOneWidget);
-        expect(find.text('Puts'), findsOneWidget);
+        expect(find.text('CALLS'), findsOneWidget);
+        expect(find.text('STRIKE'), findsOneWidget);
+        expect(find.text('PUTS'), findsOneWidget);
 
         expect(find.text('ATM strike 106,000 · highlighted'), findsOneWidget);
 

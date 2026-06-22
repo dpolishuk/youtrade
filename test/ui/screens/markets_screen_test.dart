@@ -65,8 +65,8 @@ void main() {
       await tester.pumpWidget(buildApp());
       await tester.pumpAndSettle();
 
-      expect(find.text('Symbol'), findsOneWidget);
-      expect(find.text('Last · 24h'), findsOneWidget);
+      expect(find.text('SYMBOL'), findsOneWidget);
+      expect(find.text('LAST · 24H'), findsOneWidget);
 
       expect(find.text('BTC'), findsOneWidget);
       expect(find.text('ETH'), findsOneWidget);

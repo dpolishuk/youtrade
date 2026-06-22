@@ -55,7 +55,7 @@ class OptionsHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'Spot',
+                'SPOT',
                 style: TextStyle(
                   fontFamily: 'JetBrains Mono',
                   fontSize: 8.5,

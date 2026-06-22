@@ -117,8 +117,8 @@ class PortfolioScreen extends ConsumerWidget {
               const SizedBox(height: 3),
               Text(
                 settings.visualDirection == AppVisualDirection.flux
-                    ? 'Flux Terminal'
-                    : 'Carbon Terminal',
+                    ? 'FLUX TERMINAL'
+                    : 'CARBON TERMINAL',
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontFamily: 'JetBrains Mono',
                   color: appColors.tertiaryText,
@@ -151,7 +151,7 @@ class PortfolioScreen extends ConsumerWidget {
 
   Widget _buildNetWorthLabel(BuildContext context, int venueCount) {
     return Text(
-      'Aggregated net worth · $venueCount venues',
+      'Aggregated net worth · $venueCount venues'.toUpperCase(),
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
         fontFamily: 'JetBrains Mono',
         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -250,7 +250,7 @@ class PortfolioScreen extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Allocation by venue',
+          'ALLOCATION BY VENUE',
           style: theme.textTheme.labelSmall?.copyWith(
             fontFamily: 'JetBrains Mono',
             color: theme.colorScheme.onSurfaceVariant,
@@ -324,7 +324,7 @@ class PortfolioScreen extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Open positions',
+          'OPEN POSITIONS',
           style: theme.textTheme.labelSmall?.copyWith(
             fontFamily: 'JetBrains Mono',
             color: theme.colorScheme.onSurfaceVariant,

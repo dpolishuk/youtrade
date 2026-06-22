@@ -70,7 +70,7 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(find.text('Aggregated net worth · 4 venues'), findsOneWidget);
+      expect(find.text('AGGREGATED NET WORTH · 4 VENUES'), findsOneWidget);
       expect(find.textContaining(r'$746,240.00'), findsOneWidget);
       expect(find.text(r'+$14,820.00'), findsOneWidget);
       expect(find.text('+2.04%'), findsOneWidget);
@@ -86,7 +86,7 @@ void main() {
       expect(find.byType(AllocationBar), findsOneWidget);
       expect(find.byType(ExchangeCard), findsNWidgets(4));
 
-      expect(find.text('Allocation by venue'), findsOneWidget);
+      expect(find.text('ALLOCATION BY VENUE'), findsOneWidget);
       expect(
         find.text('Spot 41 · Perp 38 · Eq 12 · Fut 6 · Opt 3'),
         findsOneWidget,
@@ -118,7 +118,7 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(find.text('Open positions'), findsOneWidget);
+      expect(find.text('OPEN POSITIONS'), findsOneWidget);
       expect(find.text('Orders →'), findsOneWidget);
       expect(find.byType(PositionTile), findsNWidgets(4));
 
@@ -153,14 +153,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('FLUX'), findsOneWidget);
-      expect(find.text('Flux Terminal'), findsOneWidget);
+      expect(find.text('FLUX TERMINAL'), findsOneWidget);
       expect(find.text('CARBON'), findsNothing);
 
       await tester.tap(find.text('FLUX'));
       await tester.pumpAndSettle();
 
       expect(find.text('CARBON'), findsOneWidget);
-      expect(find.text('Carbon Terminal'), findsOneWidget);
+      expect(find.text('CARBON TERMINAL'), findsOneWidget);
       expect(find.text('FLUX'), findsNothing);
     });
 
@@ -171,7 +171,7 @@ void main() {
       final title = tester.widget<Text>(find.text('YouTrade'));
       expect(title.style?.color, appColors.foreground);
 
-      final tag = tester.widget<Text>(find.text('Flux Terminal'));
+      final tag = tester.widget<Text>(find.text('FLUX TERMINAL'));
       expect(tag.style?.color, appColors.tertiaryText);
 
       final iconContainer = tester.widget<Container>(

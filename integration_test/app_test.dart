@@ -13,7 +13,7 @@ void main() {
     ) async {
       await pumpAuthenticatedApp(tester);
 
-      expect(find.text('Aggregated net worth · 4 venues'), findsOneWidget);
+      expect(find.text('AGGREGATED NET WORTH · 4 VENUES'), findsOneWidget);
       expect(find.textContaining(r'$746,240'), findsOneWidget);
       expect(find.text('+2.04%'), findsOneWidget);
       expect(find.text('Binance'), findsOneWidget);

@@ -89,7 +89,7 @@ class TradeTicket extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Price',
+                'PRICE',
                 style: themeBodySmall(context)?.copyWith(
                   color: appColors.tertiaryText,
                   fontSize: 10,
@@ -122,7 +122,7 @@ class TradeTicket extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Leverage',
+                      'LEVERAGE',
                       style: themeBodySmall(context)?.copyWith(
                         color: appColors.tertiaryText,
                         fontSize: 10,
@@ -176,7 +176,7 @@ class TradeTicket extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Order size',
+                'ORDER SIZE',
                 style: AppTheme.mono(
                   color: appColors.tertiaryText,
                   fontSize: 11,

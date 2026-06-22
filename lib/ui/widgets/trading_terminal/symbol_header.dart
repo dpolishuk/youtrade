@@ -175,11 +175,11 @@ class _StatStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = <_Stat>[
-      _Stat(label: '24h High', value: formatPrice(high, maxDecimals: 2)),
-      _Stat(label: '24h Low', value: formatPrice(low, maxDecimals: 2)),
-      _Stat(label: 'Vol', value: volume),
+      _Stat(label: '24H HIGH', value: formatPrice(high, maxDecimals: 2)),
+      _Stat(label: '24H LOW', value: formatPrice(low, maxDecimals: 2)),
+      _Stat(label: 'VOL', value: volume),
       if (showFunding)
-        _Stat(label: 'Funding', value: funding, valueColor: appColors.bullish),
+        _Stat(label: 'FUNDING', value: funding, valueColor: appColors.bullish),
     ];
 
     final theme = Theme.of(context);

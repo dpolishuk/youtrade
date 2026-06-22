@@ -31,20 +31,20 @@ class ChainColumnHeaders extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Calls',
+                  'CALLS',
                   style: headerStyle.copyWith(color: appColors.bullish),
                 ),
               ),
               Expanded(
                 child: Text(
-                  'Strike',
+                  'STRIKE',
                   textAlign: TextAlign.center,
                   style: headerStyle,
                 ),
               ),
               Expanded(
                 child: Text(
-                  'Puts',
+                  'PUTS',
                   textAlign: TextAlign.right,
                   style: headerStyle.copyWith(color: appColors.bearish),
                 ),
@@ -60,13 +60,13 @@ class ChainColumnHeaders extends StatelessWidget {
               Expanded(child: Text('Δ', style: subHeaderStyle)),
               Expanded(
                 child: Text(
-                  'Mark',
+                  'MARK',
                   textAlign: TextAlign.right,
                   style: subHeaderStyle,
                 ),
               ),
               Expanded(child: const SizedBox.shrink()),
-              Expanded(child: Text('Mark', style: subHeaderStyle)),
+              Expanded(child: Text('MARK', style: subHeaderStyle)),
               Expanded(
                 child: Text(
                   'Δ',

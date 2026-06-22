@@ -89,7 +89,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Symbol',
+                      'SYMBOL',
                       style: TextStyle(
                         fontFamily: 'JetBrains Mono',
                         fontSize: 8.5,
@@ -99,7 +99,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                       ),
                     ),
                     Text(
-                      'Last · 24h',
+                      'LAST · 24H',
                       style: TextStyle(
                         fontFamily: 'JetBrains Mono',
                         fontSize: 8.5,

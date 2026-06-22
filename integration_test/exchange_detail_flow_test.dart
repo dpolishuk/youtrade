@@ -13,7 +13,7 @@ void main() {
       (tester) async {
         await pumpAuthenticatedApp(tester);
 
-        expect(find.text('Aggregated net worth · 4 venues'), findsOneWidget);
+        expect(find.text('AGGREGATED NET WORTH · 4 VENUES'), findsOneWidget);
 
         await tester.tap(find.text(r'$312,480'));
         await tester.pumpAndSettle(const Duration(seconds: 5));
@@ -36,7 +36,7 @@ void main() {
         await tester.tap(find.text('All portfolios'));
         await tester.pumpAndSettle(const Duration(seconds: 3));
 
-        expect(find.text('Aggregated net worth · 4 venues'), findsOneWidget);
+        expect(find.text('AGGREGATED NET WORTH · 4 VENUES'), findsOneWidget);
       },
     );
   });

@@ -46,7 +46,7 @@ class CompareStatsTable extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              'Symbol',
+              'SYMBOL',
               style: AppTheme.mono(color: appColors.tertiaryText, fontSize: 8.5)
                   .copyWith(
                     letterSpacing: 0.06 * 8.5,
@@ -56,7 +56,7 @@ class CompareStatsTable extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              'Return',
+              'RETURN',
               textAlign: TextAlign.right,
               style: AppTheme.mono(color: appColors.tertiaryText, fontSize: 8.5)
                   .copyWith(
@@ -67,7 +67,7 @@ class CompareStatsTable extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              'Volatility',
+              'VOLATILITY',
               textAlign: TextAlign.right,
               style: AppTheme.mono(color: appColors.tertiaryText, fontSize: 8.5)
                   .copyWith(

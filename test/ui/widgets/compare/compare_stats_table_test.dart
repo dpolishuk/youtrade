@@ -20,9 +20,9 @@ void main() {
       await tester.pumpWidget(buildTable(series));
       await tester.pumpAndSettle();
 
-      expect(find.text('Symbol'), findsOneWidget);
-      expect(find.text('Return'), findsOneWidget);
-      expect(find.text('Volatility'), findsOneWidget);
+      expect(find.text('SYMBOL'), findsOneWidget);
+      expect(find.text('RETURN'), findsOneWidget);
+      expect(find.text('VOLATILITY'), findsOneWidget);
     });
 
     testWidgets('renders one row per series', (tester) async {

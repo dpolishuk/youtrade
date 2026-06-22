@@ -373,7 +373,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('Price'), findsOneWidget);
+      expect(find.text('PRICE'), findsOneWidget);
+      expect(find.text('SIZE (BTC)'), findsOneWidget);
       expect(find.textContaining('spread'), findsOneWidget);
     });
 
@@ -389,11 +390,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byType(FundamentalsCard), findsOneWidget);
-      expect(find.text('Market cap'), findsOneWidget);
+      expect(find.text('MARKET CAP'), findsOneWidget);
       expect(find.text('\$1.14T'), findsOneWidget);
-      expect(find.text('24h volume'), findsOneWidget);
+      expect(find.text('24H VOLUME'), findsOneWidget);
       expect(find.text('\$38.2B'), findsOneWidget);
-      expect(find.text('About'), findsOneWidget);
+      expect(find.text('ABOUT'), findsOneWidget);
     });
 
     testWidgets('switches to Signals tab and shows SignalGauge', (
@@ -408,9 +409,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byType(SignalGauge), findsOneWidget);
-      expect(find.text('Oscillators'), findsOneWidget);
-      expect(find.text('Moving averages'), findsOneWidget);
-      expect(find.text('Pivot levels'), findsOneWidget);
+      expect(find.text('OSCILLATORS'), findsOneWidget);
+      expect(find.text('MOVING AVERAGES'), findsOneWidget);
+      expect(find.text('PIVOT LEVELS'), findsOneWidget);
     });
 
     testWidgets('compare button navigates to /markets/compare', (tester) async {

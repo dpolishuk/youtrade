@@ -94,14 +94,14 @@ class _BookContent extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Price',
+                'PRICE',
                 style: AppTheme.mono(
                   color: appColors.tertiaryText,
                   fontSize: 8.5,
                 ).copyWith(letterSpacing: 0.08),
               ),
               Text(
-                'Size (${meta.base})',
+                'SIZE (${meta.base})'.toUpperCase(),
                 style: AppTheme.mono(
                   color: appColors.tertiaryText,
                   fontSize: 8.5,

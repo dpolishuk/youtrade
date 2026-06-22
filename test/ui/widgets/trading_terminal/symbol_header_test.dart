@@ -59,6 +59,16 @@ void main() {
       );
     }
 
+    testWidgets('renders uppercase stat strip labels', (tester) async {
+      await tester.pumpWidget(buildHeader());
+      await tester.pumpAndSettle();
+
+      expect(find.text('24H HIGH'), findsOneWidget);
+      expect(find.text('24H LOW'), findsOneWidget);
+      expect(find.text('VOL'), findsOneWidget);
+      expect(find.text('FUNDING'), findsOneWidget);
+    });
+
     testWidgets('symbol text uses exact foreground color', (tester) async {
       await tester.pumpWidget(buildHeader());
       await tester.pumpAndSettle();

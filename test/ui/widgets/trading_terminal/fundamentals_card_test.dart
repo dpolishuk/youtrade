@@ -70,9 +70,9 @@ void main() {
       await tester.pumpWidget(_buildCard());
       await tester.pumpAndSettle();
 
-      expect(find.text('Sentiment'), findsOneWidget);
+      expect(find.text('SENTIMENT'), findsOneWidget);
       expect(find.text('Greed 72'), findsOneWidget);
-      expect(find.text('Volatility'), findsOneWidget);
+      expect(find.text('VOLATILITY'), findsOneWidget);
       expect(find.text('Med'), findsOneWidget);
     });
 
@@ -82,21 +82,21 @@ void main() {
       await tester.pumpWidget(_buildCard());
       await tester.pumpAndSettle();
 
-      expect(find.text('Market cap'), findsOneWidget);
+      expect(find.text('MARKET CAP'), findsOneWidget);
       expect(find.text('\$1.14T'), findsOneWidget);
-      expect(find.text('24h volume'), findsOneWidget);
+      expect(find.text('24H VOLUME'), findsOneWidget);
       expect(find.text('\$38.2B'), findsOneWidget);
-      expect(find.text('Funding 8h'), findsOneWidget);
+      expect(find.text('FUNDING 8H'), findsOneWidget);
       expect(find.text('+0.0102%'), findsOneWidget);
-      expect(find.text('Open interest'), findsOneWidget);
+      expect(find.text('OPEN INTEREST'), findsOneWidget);
       expect(find.text('\$18.4B'), findsOneWidget);
-      expect(find.text('Circ. supply'), findsOneWidget);
+      expect(find.text('CIRC. SUPPLY'), findsOneWidget);
       expect(find.text('19.8M'), findsOneWidget);
-      expect(find.text('Dominance'), findsOneWidget);
+      expect(find.text('DOMINANCE'), findsOneWidget);
       expect(find.text('54.2%'), findsOneWidget);
-      expect(find.text('Long/Short'), findsOneWidget);
+      expect(find.text('LONG/SHORT'), findsOneWidget);
       expect(find.text('1.34'), findsOneWidget);
-      expect(find.text('Liq. 24h'), findsOneWidget);
+      expect(find.text('LIQ. 24H'), findsOneWidget);
       expect(find.text('\$142M'), findsOneWidget);
     });
 
@@ -104,7 +104,7 @@ void main() {
       await tester.pumpWidget(_buildCard());
       await tester.pumpAndSettle();
 
-      expect(find.text('About'), findsOneWidget);
+      expect(find.text('ABOUT'), findsOneWidget);
       expect(
         find.text(
           'Bitcoin perpetual swap. Funding settles every 8h; no expiry. '

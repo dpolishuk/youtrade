@@ -165,7 +165,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final priceLabel = find.text('Price');
+        final priceLabel = find.text('PRICE');
         final container = tester.widget<Container>(
           find.ancestor(of: priceLabel, matching: find.byType(Container)).first,
         );

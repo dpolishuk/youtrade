@@ -91,7 +91,7 @@ class FundamentalsCard extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          'About',
+          'ABOUT',
           style: AppTheme.mono(
             color: appColors.tertiaryText,
             fontSize: 9,
@@ -121,18 +121,18 @@ class FundamentalsCard extends StatelessWidget {
         about:
             'Apple designs and sells consumer electronics, software and services worldwide. Mega-cap equity, NASDAQ listed.',
         tags: [
-          _Tag(label: 'Analyst', value: 'Buy', valueColor: t.bullish),
-          _Tag(label: 'Target', value: '\$258', valueColor: t.foreground),
+          _Tag(label: 'ANALYST', value: 'Buy', valueColor: t.bullish),
+          _Tag(label: 'TARGET', value: '\$258', valueColor: t.foreground),
         ],
         stats: const [
-          _Stat(label: 'Market cap', value: '\$3.42T'),
+          _Stat(label: 'MARKET CAP', value: '\$3.42T'),
           _Stat(label: 'P/E (TTM)', value: '34.8'),
           _Stat(label: 'EPS', value: '\$6.43'),
-          _Stat(label: 'Div yield', value: '0.44%'),
-          _Stat(label: '52w range', value: '164 – 237'),
-          _Stat(label: 'Beta', value: '1.18'),
-          _Stat(label: 'Avg vol', value: '54.2M'),
-          _Stat(label: 'Next earnings', value: 'Apr 30'),
+          _Stat(label: 'DIV YIELD', value: '0.44%'),
+          _Stat(label: '52W RANGE', value: '164 – 237'),
+          _Stat(label: 'BETA', value: '1.18'),
+          _Stat(label: 'AVG VOL', value: '54.2M'),
+          _Stat(label: 'NEXT EARNINGS', value: 'Apr 30'),
         ],
       );
     }
@@ -141,18 +141,18 @@ class FundamentalsCard extends StatelessWidget {
         about:
             'COMEX gold futures (Dec). Safe-haven commodity, USD-denominated, 100 troy oz per contract.',
         tags: [
-          _Tag(label: 'Trend', value: 'Bullish', valueColor: t.bullish),
-          _Tag(label: 'COT net', value: 'Long', valueColor: t.bullish),
+          _Tag(label: 'TREND', value: 'Bullish', valueColor: t.bullish),
+          _Tag(label: 'COT NET', value: 'Long', valueColor: t.bullish),
         ],
         stats: const [
-          _Stat(label: 'Contract', value: '100 oz'),
-          _Stat(label: 'Open interest', value: '418k'),
-          _Stat(label: 'Settlement', value: 'Physical'),
-          _Stat(label: 'Margin', value: '\$11,150'),
-          _Stat(label: '52w range', value: '2,290 – 2,790'),
-          _Stat(label: 'Roll date', value: 'Nov 26'),
-          _Stat(label: 'Basis', value: '+4.20'),
-          _Stat(label: 'Real yield', value: '1.92%'),
+          _Stat(label: 'CONTRACT', value: '100 oz'),
+          _Stat(label: 'OPEN INTEREST', value: '418k'),
+          _Stat(label: 'SETTLEMENT', value: 'Physical'),
+          _Stat(label: 'MARGIN', value: '\$11,150'),
+          _Stat(label: '52W RANGE', value: '2,290 – 2,790'),
+          _Stat(label: 'ROLL DATE', value: 'Nov 26'),
+          _Stat(label: 'BASIS', value: '+4.20'),
+          _Stat(label: 'REAL YIELD', value: '1.92%'),
         ],
       );
     }
@@ -165,12 +165,12 @@ class FundamentalsCard extends StatelessWidget {
               ? 'Ethereum'
               : 'Solana'} perpetual swap. Funding settles every 8h; no expiry. Index across Binance, Bybit, OKX, Coinbase.',
       tags: [
-        _Tag(label: 'Sentiment', value: 'Greed 72', valueColor: t.bullish),
-        _Tag(label: 'Volatility', value: 'Med', valueColor: t.foreground),
+        _Tag(label: 'SENTIMENT', value: 'Greed 72', valueColor: t.bullish),
+        _Tag(label: 'VOLATILITY', value: 'Med', valueColor: t.foreground),
       ],
       stats: [
         _Stat(
-          label: 'Market cap',
+          label: 'MARKET CAP',
           value: isBtc
               ? '\$1.14T'
               : rawSymbol == 'ETHUSDT'
@@ -178,16 +178,16 @@ class FundamentalsCard extends StatelessWidget {
               : '\$78B',
         ),
         _Stat(
-          label: '24h volume',
+          label: '24H VOLUME',
           value: isBtc
               ? '\$38.2B'
               : rawSymbol == 'ETHUSDT'
               ? '\$14.6B'
               : '\$5.1B',
         ),
-        const _Stat(label: 'Funding 8h', value: '+0.0102%'),
+        const _Stat(label: 'FUNDING 8H', value: '+0.0102%'),
         _Stat(
-          label: 'Open interest',
+          label: 'OPEN INTEREST',
           value: isBtc
               ? '\$18.4B'
               : rawSymbol == 'ETHUSDT'
@@ -195,16 +195,16 @@ class FundamentalsCard extends StatelessWidget {
               : '\$1.4B',
         ),
         _Stat(
-          label: 'Circ. supply',
+          label: 'CIRC. SUPPLY',
           value: isBtc
               ? '19.8M'
               : rawSymbol == 'ETHUSDT'
               ? '120.4M'
               : '486.6M',
         ),
-        _Stat(label: 'Dominance', value: isBtc ? '54.2%' : '17.1%'),
-        const _Stat(label: 'Long/Short', value: '1.34'),
-        const _Stat(label: 'Liq. 24h', value: '\$142M'),
+        _Stat(label: 'DOMINANCE', value: isBtc ? '54.2%' : '17.1%'),
+        const _Stat(label: 'LONG/SHORT', value: '1.34'),
+        const _Stat(label: 'LIQ. 24H', value: '\$142M'),
       ],
     );
   }

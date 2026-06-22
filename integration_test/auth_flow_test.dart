@@ -38,7 +38,7 @@ void main() {
 
       await enterPin(tester, '1234');
 
-      expect(find.text('Aggregated net worth · 4 venues'), findsOneWidget);
+      expect(find.text('AGGREGATED NET WORTH · 4 VENUES'), findsOneWidget);
       await binding.takeScreenshot('auth_biometric_cancelled_fallback');
     });
   });

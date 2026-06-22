@@ -142,9 +142,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Oscillators'), findsOneWidget);
-      expect(find.text('Moving averages'), findsOneWidget);
-      expect(find.text('Pivot levels'), findsOneWidget);
+      expect(find.text('OSCILLATORS'), findsOneWidget);
+      expect(find.text('MOVING AVERAGES'), findsOneWidget);
+      expect(find.text('PIVOT LEVELS'), findsOneWidget);
       expect(find.text('R2'), findsNothing);
       expect(find.text('S2'), findsNothing);
     });
@@ -157,9 +157,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Oscillators'), findsOneWidget);
-      expect(find.text('Moving averages'), findsOneWidget);
-      expect(find.text('Pivot levels'), findsOneWidget);
+      expect(find.text('OSCILLATORS'), findsOneWidget);
+      expect(find.text('MOVING AVERAGES'), findsOneWidget);
+      expect(find.text('PIVOT LEVELS'), findsOneWidget);
       expect(find.text('RSI (14)'), findsOneWidget);
       expect(find.text('MACD (12,26)'), findsOneWidget);
       expect(find.text('Stoch %K'), findsOneWidget);
