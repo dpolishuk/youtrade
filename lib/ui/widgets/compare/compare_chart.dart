@@ -13,15 +13,21 @@ class CompareChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final appColors = theme.extension<AppColorTheme>()!;
 
     return Container(
       height: 220,
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: appColors.borderSubtle),
+        boxShadow: [
+          BoxShadow(
+            color: appColors.accentGlow,
+            blurRadius: 22,
+            spreadRadius: -10,
+          ),
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(

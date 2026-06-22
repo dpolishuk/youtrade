@@ -140,7 +140,7 @@ void main() {
       expect(solChip.color, compareSymbols[2].color);
     });
 
-    testWidgets('renders line chart inside a surface-colored container', (
+    testWidgets('renders line chart inside a card-colored container', (
       tester,
     ) async {
       await tester.pumpWidget(buildScreen());
@@ -159,8 +159,9 @@ void main() {
       );
       final decoration = container.decoration! as BoxDecoration;
       final theme = Theme.of(tester.element(find.byType(CompareChart)));
-      expect(decoration.color, theme.colorScheme.surface);
+      expect(decoration.color, theme.cardColor);
       expect(decoration.border, isA<Border>());
+      expect(decoration.boxShadow, isNotNull);
     });
   });
 }

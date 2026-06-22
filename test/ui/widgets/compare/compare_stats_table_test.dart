@@ -25,6 +25,27 @@ void main() {
       expect(find.text('VOLATILITY'), findsOneWidget);
     });
 
+    testWidgets('container and rows use card background', (tester) async {
+      final series = generateCompareSeries(compareSymbols.sublist(0, 3));
+      await tester.pumpWidget(buildTable(series));
+      await tester.pumpAndSettle();
+
+      final theme = Theme.of(tester.element(find.byType(CompareStatsTable)));
+      final containers = tester.widgetList<Container>(
+        find.descendant(
+          of: find.byType(CompareStatsTable),
+          matching: find.byType(Container),
+        ),
+      );
+      expect(containers, isNotEmpty);
+      for (final container in containers) {
+        final decoration = container.decoration;
+        if (decoration is BoxDecoration) {
+          expect(decoration.color, theme.cardColor);
+        }
+      }
+    });
+
     testWidgets('renders one row per series', (tester) async {
       final series = generateCompareSeries(compareSymbols.sublist(0, 3));
       await tester.pumpWidget(buildTable(series));

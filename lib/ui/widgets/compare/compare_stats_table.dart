@@ -12,23 +12,25 @@ class CompareStatsTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appColors = Theme.of(context).extension<AppColorTheme>()!;
+    final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>()!;
 
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: appColors.borderSubtle),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          _buildHeader(context, appColors),
+          _buildHeader(context, appColors, theme.cardColor),
           for (var i = 0; i < series.length; i++)
             _buildRow(
               context,
               series[i],
               appColors,
+              theme.cardColor,
               isLast: i == series.length - 1,
             ),
         ],
@@ -36,10 +38,15 @@ class CompareStatsTable extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, AppColorTheme appColors) {
+  Widget _buildHeader(
+    BuildContext context,
+    AppColorTheme appColors,
+    Color background,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 14),
       decoration: BoxDecoration(
+        color: background,
         border: Border(bottom: BorderSide(color: appColors.borderSubtle)),
       ),
       child: Row(
@@ -84,12 +91,14 @@ class CompareStatsTable extends StatelessWidget {
   Widget _buildRow(
     BuildContext context,
     CompareSeries s,
-    AppColorTheme appColors, {
+    AppColorTheme appColors,
+    Color background, {
     required bool isLast,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
       decoration: BoxDecoration(
+        color: background,
         border: Border(
           bottom: isLast
               ? BorderSide.none

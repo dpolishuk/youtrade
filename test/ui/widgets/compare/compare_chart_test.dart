@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
+import 'package:youtrade/presentation/theme/theme_extensions.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/widgets/compare/compare_chart.dart';
 import 'package:youtrade/ui/widgets/compare/compare_models.dart';
@@ -30,6 +31,34 @@ void main() {
       );
       expect(container.constraints?.minHeight, 220);
       expect(container.constraints?.maxHeight, 220);
+
+      final decoration = container.decoration! as BoxDecoration;
+      final theme = Theme.of(tester.element(find.byType(CompareChart)));
+      expect(decoration.color, theme.cardColor);
+    });
+
+    testWidgets('applies accent glow box shadow', (tester) async {
+      final series = generateCompareSeries([compareSymbols[0]]);
+      await tester.pumpWidget(buildChart(series));
+      await tester.pumpAndSettle();
+
+      final container = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(CompareChart),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      final decoration = container.decoration! as BoxDecoration;
+      final appColors = Theme.of(
+        tester.element(find.byType(CompareChart)),
+      ).extension<AppColorTheme>()!;
+      expect(decoration.boxShadow, isNotNull);
+      expect(decoration.boxShadow, hasLength(1));
+      expect(decoration.boxShadow!.single.color, appColors.accentGlow);
+      expect(decoration.boxShadow!.single.blurRadius, 22);
+      expect(decoration.boxShadow!.single.spreadRadius, -10);
     });
 
     testWidgets('renders multiple series', (tester) async {
