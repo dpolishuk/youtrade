@@ -13,12 +13,7 @@ void main() {
     ) async {
       await pumpAuthenticatedApp(tester);
 
-      await tester.tap(
-        find.descendant(
-          of: find.byType(NavigationBar),
-          matching: find.text('Trade'),
-        ),
-      );
+      await tester.tap(find.byKey(const Key('bottom-nav-item-2')));
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
       expect(find.text('Bitcoin Perpetual · Binance'), findsOneWidget);

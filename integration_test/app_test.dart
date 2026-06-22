@@ -26,44 +26,24 @@ void main() {
       expect(find.text('Orders'), findsOneWidget);
       await binding.takeScreenshot('orders_screen');
 
-      await tester.tap(
-        find.descendant(
-          of: find.byType(NavigationBar),
-          matching: find.text('Markets'),
-        ),
-      );
+      await tester.tap(find.byKey(const Key('bottom-nav-item-1')));
       await tester.pumpAndSettle(const Duration(seconds: 5));
       expect(find.text('Markets'), findsWidgets);
       expect(find.text('BTC'), findsOneWidget);
       await binding.takeScreenshot('markets_tab');
 
-      await tester.tap(
-        find.descendant(
-          of: find.byType(NavigationBar),
-          matching: find.text('Trade'),
-        ),
-      );
+      await tester.tap(find.byKey(const Key('bottom-nav-item-2')));
       await tester.pumpAndSettle(const Duration(seconds: 5));
       expect(find.text('Buy / Long'), findsOneWidget);
       expect(find.text('Bitcoin Perpetual · Binance'), findsOneWidget);
       await binding.takeScreenshot('trading_tab');
 
-      await tester.tap(
-        find.descendant(
-          of: find.byType(NavigationBar),
-          matching: find.text('Options'),
-        ),
-      );
+      await tester.tap(find.byKey(const Key('bottom-nav-item-3')));
       await tester.pumpAndSettle(const Duration(seconds: 5));
       expect(find.text('BTC'), findsWidgets);
       await binding.takeScreenshot('options_tab');
 
-      await tester.tap(
-        find.descendant(
-          of: find.byType(NavigationBar),
-          matching: find.text('More'),
-        ),
-      );
+      await tester.tap(find.byKey(const Key('bottom-nav-item-4')));
       await tester.pumpAndSettle(const Duration(seconds: 5));
       expect(find.text('Account'), findsWidgets);
       expect(find.text('APPEARANCE'), findsOneWidget);

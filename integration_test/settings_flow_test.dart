@@ -13,12 +13,7 @@ void main() {
       (tester) async {
         await pumpAuthenticatedApp(tester);
 
-        await tester.tap(
-          find.descendant(
-            of: find.byType(NavigationBar),
-            matching: find.text('More'),
-          ),
-        );
+        await tester.tap(find.byKey(const Key('bottom-nav-item-4')));
         await tester.pumpAndSettle(const Duration(seconds: 5));
 
         expect(find.text('Account'), findsOneWidget);

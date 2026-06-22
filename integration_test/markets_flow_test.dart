@@ -11,12 +11,7 @@ void main() {
     testWidgets('shows mockup screener values and navigates', (tester) async {
       await pumpAuthenticatedApp(tester);
 
-      await tester.tap(
-        find.descendant(
-          of: find.byType(NavigationBar),
-          matching: find.text('Markets'),
-        ),
-      );
+      await tester.tap(find.byKey(const Key('bottom-nav-item-1')));
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
       expect(find.text('BTC'), findsOneWidget);
@@ -36,12 +31,7 @@ void main() {
     testWidgets('options row navigates to options chain', (tester) async {
       await pumpAuthenticatedApp(tester);
 
-      await tester.tap(
-        find.descendant(
-          of: find.byType(NavigationBar),
-          matching: find.text('Markets'),
-        ),
-      );
+      await tester.tap(find.byKey(const Key('bottom-nav-item-1')));
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
       await tester.scrollUntilVisible(

@@ -13,12 +13,7 @@ void main() {
       (tester) async {
         await pumpAuthenticatedAppWithMockStore(tester, online: false);
 
-        await tester.tap(
-          find.descendant(
-            of: find.byType(NavigationBar),
-            matching: find.text('Options'),
-          ),
-        );
+        await tester.tap(find.byKey(const Key('bottom-nav-item-3')));
         await tester.pumpAndSettle(const Duration(seconds: 5));
 
         expect(find.text('BTC'), findsWidgets);
