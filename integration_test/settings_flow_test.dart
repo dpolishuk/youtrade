@@ -30,10 +30,7 @@ void main() {
         expect(find.text('APPEARANCE'), findsOneWidget);
         expect(find.text('DARK'), findsOneWidget);
         expect(find.text('FLUX'), findsOneWidget);
-        expect(
-          find.text('YouTrade · v1.0 · 4 venues linked'),
-          findsOneWidget,
-        );
+        expect(find.text('YouTrade · v1.0 · 4 venues linked'), findsOneWidget);
         await binding.takeScreenshot('more_tab_initial');
 
         await tester.tap(find.text('DARK'));

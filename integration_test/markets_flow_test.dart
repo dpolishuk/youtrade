@@ -28,8 +28,8 @@ void main() {
       await tester.tap(find.text('BTC'));
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
-      expect(find.text('Terminal'), findsOneWidget);
-      expect(find.text('BTC · Binance'), findsOneWidget);
+      expect(find.text('Buy / Long'), findsOneWidget);
+      expect(find.text('Bitcoin Perpetual · Binance'), findsOneWidget);
       await binding.takeScreenshot('trading_terminal_from_markets');
     });
 
@@ -52,7 +52,7 @@ void main() {
       await tester.tap(find.text('BTC-28K-C'));
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
-      expect(find.text('BTC'), findsWidgets);
+      expect(find.text('BTC-28K-C'), findsWidgets);
       expect(find.text('OPTIONS'), findsOneWidget);
       await binding.takeScreenshot('options_chain_from_markets');
     });

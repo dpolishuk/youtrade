@@ -44,8 +44,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle(const Duration(seconds: 5));
-      expect(find.text('Terminal'), findsOneWidget);
-      expect(find.text('BTC · Binance'), findsOneWidget);
+      expect(find.text('Buy / Long'), findsOneWidget);
+      expect(find.text('Bitcoin Perpetual · Binance'), findsOneWidget);
       await binding.takeScreenshot('trading_tab');
 
       await tester.tap(
@@ -66,7 +66,7 @@ void main() {
       );
       await tester.pumpAndSettle(const Duration(seconds: 5));
       expect(find.text('Account'), findsWidgets);
-      expect(find.text('Appearance'), findsOneWidget);
+      expect(find.text('APPEARANCE'), findsOneWidget);
       await binding.takeScreenshot('more_tab');
     });
   });
