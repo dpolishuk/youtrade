@@ -7,24 +7,22 @@ import 'package:youtrade/ui/screens/options_chain_screen.dart';
 
 void main() {
   group('OptionsChainScreen', () {
-    Widget buildScreen() {
+    Widget buildScreen({String? symbol}) {
       return MaterialApp(
         theme: AppTheme.dark(AppVisualDirection.flux),
-        home: const OptionsChainScreen(),
+        home: OptionsChainScreen(symbol: symbol),
       );
     }
 
     testWidgets(
-      'renders spot header, expiry pills, chain headers and strike rows',
+      'renders BTC header, spot price, expiry pills, headers and strike rows',
       (tester) async {
-        await tester.pumpWidget(buildScreen());
+        await tester.pumpWidget(buildScreen(symbol: 'BTC'));
         await tester.pumpAndSettle();
-
-        expect(find.text('Options'), findsOneWidget);
 
         expect(find.text('BTC'), findsOneWidget);
         expect(find.text('OPTIONS'), findsOneWidget);
-        expect(find.text('68,432'), findsOneWidget);
+        expect(find.text('105,154'), findsOneWidget);
 
         expect(find.text('26 JUN'), findsOneWidget);
         expect(find.text('25 JUL'), findsOneWidget);
@@ -38,29 +36,29 @@ void main() {
         expect(find.text('Δ'), findsNWidgets(2));
         expect(find.text('Mark'), findsNWidgets(2));
 
-        expect(find.text('ATM strike 68,000 · highlighted'), findsOneWidget);
+        expect(find.text('ATM strike 106,000 · highlighted'), findsOneWidget);
 
-        for (final strike in ['60,000', '62,000', '64,000', '66,000']) {
+        for (final strike in ['98,000', '100,000', '102,000', '104,000']) {
           expect(find.text(strike), findsOneWidget);
         }
-        expect(find.text('68,000'), findsOneWidget);
-        for (final strike in ['70,000', '72,000', '74,000', '76,000']) {
+        expect(find.text('106,000'), findsOneWidget);
+        for (final strike in ['108,000', '110,000', '112,000', '114,000']) {
           expect(find.text(strike), findsOneWidget);
         }
 
-        expect(find.text('0.98'), findsOneWidget);
-        expect(find.text('0.1482'), findsOneWidget);
-        expect(find.text('0.53'), findsOneWidget);
-        expect(find.text('0.0363'), findsOneWidget);
-        expect(find.text('-0.47'), findsOneWidget);
-        expect(find.text('0.0290'), findsOneWidget);
-        expect(find.text('0.0771'), findsOneWidget);
-        expect(find.text('0.1316'), findsOneWidget);
+        expect(find.text('57%'), findsOneWidget);
+        expect(find.text('0.77'), findsOneWidget);
+        expect(find.text('0.0780'), findsOneWidget);
+        expect(find.text('0.47'), findsOneWidget);
+        expect(find.text('-0.53'), findsOneWidget);
+        expect(find.text('0.0229'), findsOneWidget);
+        expect(find.text('59%'), findsOneWidget);
+        expect(find.text('67%'), findsNWidgets(3));
       },
     );
 
     testWidgets('switching expiry keeps all pills visible', (tester) async {
-      await tester.pumpWidget(buildScreen());
+      await tester.pumpWidget(buildScreen(symbol: 'BTC'));
       await tester.pumpAndSettle();
 
       expect(find.text('26 JUN'), findsOneWidget);
@@ -72,7 +70,25 @@ void main() {
       expect(find.text('25 JUL'), findsOneWidget);
       expect(find.text('29 AUG'), findsOneWidget);
       expect(find.text('26 SEP'), findsOneWidget);
-      expect(find.text('ATM strike 68,000 · highlighted'), findsOneWidget);
+      expect(find.text('ATM strike 106,000 · highlighted'), findsOneWidget);
+    });
+
+    testWidgets('uses default BTC chain when no symbol is provided', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      expect(find.text('BTC'), findsOneWidget);
+      expect(find.text('ATM strike 106,000 · highlighted'), findsOneWidget);
+    });
+
+    testWidgets('normalizes BTCUSDT raw symbol to BTC', (tester) async {
+      await tester.pumpWidget(buildScreen(symbol: 'BTCUSDT'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('BTC'), findsOneWidget);
+      expect(find.text('BTCUSDT'), findsNothing);
     });
   });
 }

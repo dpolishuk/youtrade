@@ -3,40 +3,44 @@ import 'package:flutter/material.dart';
 import '../../../presentation/theme/theme_extensions.dart';
 
 class OptionsHeader extends StatelessWidget {
-  const OptionsHeader({required this.spot, super.key});
+  const OptionsHeader({required this.symbol, required this.spot, super.key});
 
+  final String symbol;
   final double spot;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>()!;
+    final foreground = theme.colorScheme.onSurface;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
         children: [
           Row(
             children: [
               Text(
-                'BTC',
-                style: theme.textTheme.headlineMedium?.copyWith(
+                symbol,
+                style: TextStyle(
                   fontFamily: 'Space Grotesk',
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  letterSpacing: -0.02 * 18,
+                  color: foreground,
                 ),
               ),
               const SizedBox(width: 9),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: appColors.surfaceGlass,
+                  color: appColors.chip,
                   borderRadius: BorderRadius.circular(3),
                   border: Border.all(color: appColors.borderSubtle),
                 ),
                 child: Text(
                   'OPTIONS',
-                  style: theme.textTheme.labelSmall?.copyWith(
+                  style: TextStyle(
+                    fontFamily: 'JetBrains Mono',
                     fontSize: 8,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.06 * 8,
@@ -52,19 +56,20 @@ class OptionsHeader extends StatelessWidget {
             children: [
               Text(
                 'Spot',
-                style: theme.textTheme.labelSmall?.copyWith(
+                style: TextStyle(
+                  fontFamily: 'JetBrains Mono',
                   fontSize: 8.5,
                   letterSpacing: 0.06 * 8.5,
-                  color: appColors.subtleText,
+                  color: appColors.tertiaryText,
                 ),
               ),
               Text(
                 _formatPrice(spot),
-                style: theme.textTheme.labelLarge?.copyWith(
+                style: TextStyle(
+                  fontFamily: 'JetBrains Mono',
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  fontFamily: 'Geist',
-                  fontFeatures: const [FontFeature.tabularFigures()],
+                  color: foreground,
                 ),
               ),
             ],

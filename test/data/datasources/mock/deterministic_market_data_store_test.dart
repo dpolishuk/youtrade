@@ -53,6 +53,49 @@ void main() {
       expect(DeterministicMarketDataStore.btcOptionsAtmStrike, 106000.0);
     });
 
+    test('returns deterministic BTC options chain', () {
+      final chain = DeterministicMarketDataStore.btcOptionsChain;
+      final strikes = chain.map((r) => r.strike).toList();
+
+      expect(chain.length, 9);
+      expect(strikes, [
+        98000,
+        100000,
+        102000,
+        104000,
+        106000,
+        108000,
+        110000,
+        112000,
+        114000,
+      ]);
+
+      final atm = chain.firstWhere((r) => r.isAtm);
+      expect(atm.strike, 106000.0);
+      expect(atm.callInTheMoney, isFalse);
+      expect(atm.callIv, closeTo(59.226943359350, 1e-9));
+      expect(atm.callDelta, closeTo(0.467820429160, 1e-9));
+      expect(atm.callMark, closeTo(0.026335148456, 1e-9));
+      expect(atm.putIv, closeTo(63.226943359350, 1e-9));
+      expect(atm.putDelta, closeTo(-0.532179570840, 1e-9));
+      expect(atm.putMark, closeTo(0.022884988184, 1e-9));
+
+      final itmCall = chain.first;
+      expect(itmCall.strike, 98000.0);
+      expect(itmCall.callInTheMoney, isTrue);
+      expect(itmCall.callIv, closeTo(56.677117660957, 1e-9));
+      expect(itmCall.callMark, closeTo(0.078035062809, 1e-9));
+    });
+
+    test('returns deterministic BTC option expiries', () {
+      expect(DeterministicMarketDataStore.btcOptionExpiries, [
+        '26 JUN',
+        '25 JUL',
+        '29 AUG',
+        '26 SEP',
+      ]);
+    });
+
     test('returns deterministic BTC ticker', () async {
       final ticker = await store.getTicker(btc);
 

@@ -62,10 +62,8 @@ class _ExpiryPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = isSelected
         ? theme.colorScheme.primary.withValues(alpha: 0.15)
-        : appColors.surfaceGlass;
-    final fg = isSelected
-        ? theme.colorScheme.primary
-        : theme.colorScheme.onSurface;
+        : appColors.chip;
+    final fg = isSelected ? theme.colorScheme.primary : appColors.subtleText;
     final border = isSelected
         ? theme.colorScheme.primary.withValues(alpha: 0.4)
         : appColors.borderSubtle;
@@ -81,9 +79,10 @@ class _ExpiryPill extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: theme.textTheme.labelMedium?.copyWith(
+          style: TextStyle(
             color: fg,
-            fontFamily: 'Geist',
+            fontFamily: 'JetBrains Mono',
+            fontSize: 10.5,
             fontWeight: FontWeight.w600,
           ),
         ),

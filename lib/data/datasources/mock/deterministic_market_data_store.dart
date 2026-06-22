@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/candle.dart';
+import '../../../domain/entities/options_chain_strike.dart';
 import '../../../domain/entities/order_book.dart';
 import '../../../domain/entities/position.dart';
 import '../../../domain/entities/symbol.dart';
@@ -337,6 +338,52 @@ final class DeterministicMarketDataStore implements MarketDataStore {
   static double get btcOptionsAtmStrike {
     final spot = btcLastPrice;
     return (spot / 2000).round() * 2000.0;
+  }
+
+  /// Expiration labels shown on the BTC options chain.
+  static const List<String> btcOptionExpiries = [
+    '26 JUN',
+    '25 JUL',
+    '29 AUG',
+    '26 SEP',
+  ];
+
+  /// Deterministic BTC options chain rows matching the mockup exactly.
+  static List<OptionChainStrike> get btcOptionsChain {
+    final spot = btcLastPrice;
+    final base = btcOptionsAtmStrike;
+    final strikes = <double>[];
+    for (var i = -4; i <= 4; i++) {
+      strikes.add(base + i * 2000);
+    }
+
+    final optR = _rng(7);
+    return strikes.map((strike) {
+      final callInTheMoney = spot > strike;
+      final distance = (spot - strike) / spot;
+      final callDelta = (0.5 + distance * 4).clamp(0.02, 0.98);
+      final putDelta = callDelta - 1;
+      final callMark =
+          (spot - strike).clamp(0.0, double.infinity) / spot +
+          (0.5 + optR()) * 0.02;
+      final putMark =
+          (strike - spot).clamp(0.0, double.infinity) / spot +
+          (0.5 + optR()) * 0.02;
+      final iv = 48 + optR() * 30;
+      final isAtm = (strike - base).abs() < 1;
+
+      return OptionChainStrike(
+        strike: strike,
+        isAtm: isAtm,
+        callInTheMoney: callInTheMoney,
+        callIv: iv,
+        callDelta: callDelta,
+        callMark: callMark,
+        putIv: iv + 4,
+        putDelta: putDelta,
+        putMark: putMark,
+      );
+    }).toList();
   }
 
   /// Synchronous last price and 24h change for the screener.

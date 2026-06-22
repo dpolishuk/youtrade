@@ -169,6 +169,27 @@ Future<void> pumpAuthenticatedApp(
   await authenticateWithPin(tester);
 }
 
+Future<void> pumpAuthenticatedAppWithMockStore(
+  WidgetTester tester, {
+  bool online = false,
+}) async {
+  final mockAuth = MockLocalAuthService();
+  when(() => mockAuth.canCheckBiometrics()).thenAnswer((_) async => false);
+
+  app.main(
+    overrides: [
+      localAuthServiceProvider.overrideWithValue(mockAuth),
+      pinAuthServiceProvider.overrideWithValue(
+        FakePinAuthService(initialPin: '1234'),
+      ),
+      connectivityProvider.overrideWith((ref) => Stream.value(online)),
+    ],
+  );
+
+  await tester.pumpAndSettle(const Duration(seconds: 5));
+  await authenticateWithPin(tester);
+}
+
 Future<void> pumpAppWithBiometricCancellation(WidgetTester tester) async {
   final mockAuth = MockLocalAuthService();
   when(() => mockAuth.canCheckBiometrics()).thenAnswer((_) async => true);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/datasources/mock/deterministic_market_data_store.dart';
 import '../../presentation/theme/theme_extensions.dart';
 import '../widgets/options_chain/chain_column_headers.dart';
 import '../widgets/options_chain/expiry_selector.dart';
@@ -16,7 +17,8 @@ class OptionsChainScreen extends StatefulWidget {
 }
 
 class _OptionsChainScreenState extends State<OptionsChainScreen> {
-  static const _expiries = <String>['26 JUN', '25 JUL', '29 AUG', '26 SEP'];
+  static final _expiries = DeterministicMarketDataStore.btcOptionExpiries;
+  static final _rows = DeterministicMarketDataStore.btcOptionsChain;
 
   int _selectedExpiryIndex = 0;
 
@@ -24,12 +26,11 @@ class _OptionsChainScreenState extends State<OptionsChainScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>()!;
-    final spot = 68432.0;
-    final atmStrike = _atmStrike(spot);
-    final rows = _buildRows(spot, atmStrike, appColors);
+    final symbol = _displaySymbol(widget.symbol);
+    final spot = DeterministicMarketDataStore.btcLastPrice;
+    final atmStrike = DeterministicMarketDataStore.btcOptionsAtmStrike;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Options')),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -37,7 +38,7 @@ class _OptionsChainScreenState extends State<OptionsChainScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                OptionsHeader(spot: spot),
+                OptionsHeader(symbol: symbol, spot: spot),
                 const SizedBox(height: 12),
                 ExpirySelector(
                   expiries: _expiries,
@@ -57,7 +58,7 @@ class _OptionsChainScreenState extends State<OptionsChainScreen> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: appColors.borderSubtle),
                   ),
-                  child: rows.isEmpty
+                  child: _rows.isEmpty
                       ? Padding(
                           padding: const EdgeInsets.all(24),
                           child: Center(
@@ -73,10 +74,10 @@ class _OptionsChainScreenState extends State<OptionsChainScreen> {
                           borderRadius: BorderRadius.circular(10),
                           child: Column(
                             children: [
-                              for (var i = 0; i < rows.length; i++)
+                              for (var i = 0; i < _rows.length; i++)
                                 StrikeRow(
-                                  row: rows[i],
-                                  isLast: i == rows.length - 1,
+                                  row: _rows[i],
+                                  isLast: i == _rows.length - 1,
                                 ),
                             ],
                           ),
@@ -86,8 +87,10 @@ class _OptionsChainScreenState extends State<OptionsChainScreen> {
                 Text(
                   'ATM strike ${_formatPrice(atmStrike)} · highlighted',
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: appColors.subtleText,
+                  style: TextStyle(
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 9,
+                    color: appColors.tertiaryText,
                   ),
                 ),
               ],
@@ -98,51 +101,9 @@ class _OptionsChainScreenState extends State<OptionsChainScreen> {
     );
   }
 
-  double _atmStrike(double spot) {
-    return (spot / 2000).round() * 2000;
-  }
-
-  List<OptionStrikeRow> _buildRows(
-    double spot,
-    double atmStrike,
-    AppColorTheme appColors,
-  ) {
-    final strikes = <double>[];
-    for (var i = -4; i <= 4; i++) {
-      strikes.add(atmStrike + i * 2000);
-    }
-
-    return strikes.map((strike) {
-      final itmCall = spot > strike;
-      final distance = (spot - strike) / spot;
-      final callDelta = (0.5 + distance * 4).clamp(0.02, 0.98);
-      final putDelta = callDelta - 1;
-      final iv = 48 + (strike % 7) * 3;
-      final callMark =
-          ((spot - strike).clamp(0.0, double.infinity) / spot +
-                  0.02 +
-                  (strike % 13) * 0.001)
-              .clamp(0.001, double.infinity);
-      final putMark =
-          ((strike - spot).clamp(0.0, double.infinity) / spot +
-                  0.02 +
-                  (strike % 11) * 0.001)
-              .clamp(0.001, double.infinity);
-      final isAtm = (strike - atmStrike).abs() < 1;
-
-      return OptionStrikeRow(
-        strike: strike,
-        isAtm: isAtm,
-        callIv: iv.toDouble(),
-        callDelta: callDelta,
-        callMark: callMark,
-        callColor: itmCall ? appColors.bullish : appColors.subtleText,
-        putIv: iv + 4,
-        putDelta: putDelta,
-        putMark: putMark,
-        putColor: itmCall ? appColors.subtleText : appColors.bearish,
-      );
-    }).toList();
+  String _displaySymbol(String? symbol) {
+    final raw = (symbol ?? 'BTC').toUpperCase();
+    return raw.replaceAll('USDT', '').replaceAll(RegExp(r'=F$'), '');
   }
 }
 

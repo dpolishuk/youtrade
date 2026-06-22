@@ -7,13 +7,19 @@ class ChainColumnHeaders extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>()!;
-    final headerStyle = theme.textTheme.labelSmall?.copyWith(
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
+    final headerStyle = TextStyle(
+      fontFamily: 'JetBrains Mono',
       fontSize: 8,
       letterSpacing: 0.08 * 8,
-      color: appColors.subtleText,
-      fontFamily: 'Geist',
+      color: appColors.tertiaryText,
+      fontWeight: FontWeight.w500,
+    );
+    final subHeaderStyle = TextStyle(
+      fontFamily: 'JetBrains Mono',
+      fontSize: 7.5,
+      letterSpacing: 0.04 * 7.5,
+      color: appColors.tertiaryText,
       fontWeight: FontWeight.w500,
     );
 
@@ -26,7 +32,7 @@ class ChainColumnHeaders extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Calls',
-                  style: headerStyle?.copyWith(color: appColors.bullish),
+                  style: headerStyle.copyWith(color: appColors.bullish),
                 ),
               ),
               Expanded(
@@ -40,7 +46,7 @@ class ChainColumnHeaders extends StatelessWidget {
                 child: Text(
                   'Puts',
                   textAlign: TextAlign.right,
-                  style: headerStyle?.copyWith(color: appColors.bearish),
+                  style: headerStyle.copyWith(color: appColors.bearish),
                 ),
               ),
             ],
@@ -50,32 +56,29 @@ class ChainColumnHeaders extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(6, 0, 6, 6),
           child: Row(
             children: [
-              Expanded(flex: 2, child: Text('IV', style: headerStyle)),
-              Expanded(flex: 2, child: Text('Δ', style: headerStyle)),
+              Expanded(child: Text('IV', style: subHeaderStyle)),
+              Expanded(child: Text('Δ', style: subHeaderStyle)),
               Expanded(
-                flex: 3,
                 child: Text(
                   'Mark',
                   textAlign: TextAlign.right,
-                  style: headerStyle,
+                  style: subHeaderStyle,
                 ),
               ),
-              const Spacer(flex: 2),
-              Expanded(flex: 3, child: Text('Mark', style: headerStyle)),
+              Expanded(child: const SizedBox.shrink()),
+              Expanded(child: Text('Mark', style: subHeaderStyle)),
               Expanded(
-                flex: 2,
                 child: Text(
                   'Δ',
                   textAlign: TextAlign.right,
-                  style: headerStyle,
+                  style: subHeaderStyle,
                 ),
               ),
               Expanded(
-                flex: 2,
                 child: Text(
                   'IV',
                   textAlign: TextAlign.right,
-                  style: headerStyle,
+                  style: subHeaderStyle,
                 ),
               ),
             ],
