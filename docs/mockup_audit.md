@@ -630,8 +630,9 @@ Legend:
 
 1. Title
 2. Connected exchanges section
-3. Appearance section
-4. Footer
+3. Protection section
+4. Appearance section
+5. Footer
 
 ### Title
 
@@ -649,6 +650,16 @@ Legend:
 | Live dot | `8×8`, radius 50%, bg `#2ee6a6`, glow | matched | matched |
 | Name | `13px`, weight 600, `#f2f5fa`, flex 1 | matched | matched |
 | Status | JetBrains Mono `9px`, letter-spacing `0.05em`, uppercase, `#2ee6a6` → "Connected" | matched | matched |
+
+### Protection
+
+| Element | Mockup value | Current Flutter value | Status |
+|---|---|---|---|
+| Section eyebrow | JetBrains Mono `9px`, letter-spacing `0.1em`, uppercase, `rgba(255,255,255,0.34)`, margin-bottom `9px` | matched | matched |
+| Container | border `1px rgba(255,255,255,0.07)`, radius `11px`, overflow hidden, bg `#0e131f`, margin-bottom `18px` | matched | matched |
+| Row | padding `13px 14px`, border-bottom `1px rgba(255,255,255,0.07)`, justify space-between | matched | matched |
+| Label | `13px`, `#f2f5fa` | matched | matched |
+| Trailing icon | `18px` chevron / fingerprint / check per protection state | matched | matched |
 
 ### Appearance
 
@@ -700,7 +711,7 @@ The auth gate must align to the mockup visual language: dark `#06080f` backgroun
 | Custom status bar / notch | gap | Uses the system status bar; the preview-wrapper notch is not implemented in the app. |
 | Carbon direction-specific colors | gap | Carbon currently shares Flux `up`/`down` colors and uses a different accent than the mockup CSS specifies. |
 | Light-theme bottom nav | gap | `ScaffoldWithNavBar` uses the dark nav background (`#080b12`) in both themes. |
-| Settings security section | gap | Biometric/PIN toggle and sign-out actions are not yet implemented on the Account screen. |
+| Settings security section | partial | PIN status and biometric availability are shown in the Protection section; sign-out action is not yet implemented. |
 
 ## Audit Summary
 

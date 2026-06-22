@@ -35,7 +35,7 @@ lib/
 |---|---|
 | Single Responsibility | One file/class per responsibility: entity, source, client, repository, provider, screen, widget. |
 | Open/Closed | New exchanges are added by implementing existing interfaces, not editing core logic. |
-| Liskov Substitution | `BinanceRestClient` and `DeterministicMarketDataStore` are interchangeable behind `TickerSource`. |
+| Liskov Substitution | `BinanceRestClient` and `BybitRestClient` are interchangeable behind `TickerSource`. |
 | Interface Segregation | Small contracts: `TickerSource`, `CandleSource`, `OrderBookSource`, `TradeSource`, `MarketStreamSource`. |
 | Dependency Inversion | Use cases and providers depend on repository/source interfaces, not concrete implementations. |
 
@@ -144,9 +144,9 @@ Online/offline is handled by `connectivityProvider` in `presentation/providers/c
 | `orderBookStreamProvider(symbol)` | `AsyncValue<OrderBook>` |
 | `tradesStreamProvider(symbol)` | `AsyncValue<List<Trade>>` |
 | `marketScreenerItemsProvider` | `List<MarketScreenerItem>` |
-| `filteredMarketScreenerItemsProvider(filter)` | `List<MarketScreenerItem>` |
+| `filteredMarketScreenerItemsProvider` | `List<MarketScreenerItem>` |
 | `selectedSymbolProvider` | `TradingSymbol` |
-| `tradingTerminalProvider(symbol)` | `TradingTerminalState` |
+| `tradingTerminalProvider` | `TradingTerminalState` |
 | `themeSettingsProvider` | `ThemeSettings` |
 | `authNotifierProvider` | `AuthState` |
 | `exchangeCapabilityRegistryProvider` | `ExchangeCapabilityRegistry` |
@@ -214,7 +214,7 @@ Theme is implemented via `AppColorTheme` (`ThemeExtension`) and `AppTheme` facto
 ## Offline / Demo Mode
 
 - Detect connectivity with `connectivity_plus`.
-- Offline fallback to `DeterministicMarketDataStore`.
+- Offline fallback to `DemoMarketDataStore`.
 - Persistent "Demo data" banner when mock data is shown.
 - Disabled actions: submit order, cancel order, refresh real data.
 

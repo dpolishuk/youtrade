@@ -270,7 +270,7 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 **Purpose:** Show open orders, filled/cancelled history, and current positions.
 
 **Layout:**
-- Title
+- Title "Orders"
 - Tabs: Open / History / Positions
 - Open tab: order cards with side badge, symbol, type, venue, cancel action
 - History tab: list rows with status color
@@ -288,7 +288,7 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 
 **Interactions:**
 - Tap tab → switch view
-- Tap cancel → confirmation, then demo-remove
+- Tap cancel → demo-remove (no real order is cancelled)
 - Tap position row → Terminal
 
 **Edge cases:**
@@ -303,9 +303,9 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 
 **Layout:**
 - Title "Account"
+- Connected exchanges section
+- Protection section (PIN status / biometric unlock)
 - Appearance section: Theme toggle, Visual direction toggle
-- Connected exchanges section: read-only list of venue capabilities
-- Security section (TODO: not yet implemented — Biometric/PIN toggle, Sign out action)
 - Footer: app version + venue count
 
 **Data:**
@@ -319,8 +319,9 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 **Interactions:**
 - Tap Theme button → toggle dark/light
 - Tap Visual direction button → toggle Flux/Carbon
-- Tap Biometric/PIN toggle → enable/disable local auth gate (TODO: not yet implemented)
-- Tap Sign out → clear local auth and return to Auth Gate (TODO: not yet implemented)
+- Tap "Set up PIN" → configure local PIN protection
+- Tap "Unlock with biometrics" → enable biometric auth when available
+- Protection state reflects whether PIN/biometric protection is active
 
 ---
 
@@ -330,7 +331,7 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 - Detect connectivity via `connectivity_plus`.
 - When offline, show persistent "Demo data" banner.
 - All screens fall back to mock data store.
-- Disabled actions: submit order, cancel order, refresh real data.
+- Real trading actions are not disabled; instead they show a demo confirmation (e.g., submit order) or perform a demo-remove (e.g., cancel order) with no real exchange call.
 
 ### Local Auth Gate
 - On cold start, require biometric/PIN before showing Portfolio, Terminal, Exchange Detail, Orders, or Account.

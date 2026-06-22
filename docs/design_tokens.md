@@ -220,7 +220,7 @@ All other dark tokens (`up`, `down`, `fg`, `card`, etc.) are currently shared wi
 
 | Token | Value | Flutter `Color` |
 |---|---|---|
-| `bg` | `#f1efee` | `Color(0xFFF1EFEE)` |
+| `bg` | `#f7f4f3` | `Color(0xFFF7F4F3)` |
 | `bg2` | `#fbfafa` | `Color(0xFFFBFAFA)` |
 | `card` | `#ffffff` | `Color(0xFFFFFFFF)` |
 | `chip` | `#ffffff` | `Color(0xFFFFFFFF)` |
