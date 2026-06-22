@@ -16,6 +16,7 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
     required this.borderSubtle,
     required this.tertiaryText,
     required this.chip,
+    required this.line,
   });
 
   /// Positive price movement / long position.
@@ -45,6 +46,9 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
   /// Elevated chip / glyph background color.
   final Color chip;
 
+  /// Card and row border color from the mockup `line` token.
+  final Color line;
+
   @override
   AppColorTheme copyWith({
     Color? bullish,
@@ -56,6 +60,7 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
     Color? borderSubtle,
     Color? tertiaryText,
     Color? chip,
+    Color? line,
   }) {
     return AppColorTheme(
       bullish: bullish ?? this.bullish,
@@ -67,6 +72,7 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
       borderSubtle: borderSubtle ?? this.borderSubtle,
       tertiaryText: tertiaryText ?? this.tertiaryText,
       chip: chip ?? this.chip,
+      line: line ?? this.line,
     );
   }
 
@@ -83,6 +89,7 @@ class AppColorTheme extends ThemeExtension<AppColorTheme> {
       borderSubtle: Color.lerp(borderSubtle, other.borderSubtle, t)!,
       tertiaryText: Color.lerp(tertiaryText, other.tertiaryText, t)!,
       chip: Color.lerp(chip, other.chip, t)!,
+      line: Color.lerp(line, other.line, t)!,
     );
   }
 }

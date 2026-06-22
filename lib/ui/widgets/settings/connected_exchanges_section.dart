@@ -10,8 +10,7 @@ class ConnectedExchangesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
 
     return SettingsSection(
       title: 'Connected exchanges',
@@ -40,15 +39,14 @@ class _ExchangeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         border: isLast
             ? null
-            : Border(bottom: BorderSide(color: appColors.borderSubtle)),
+            : Border(bottom: BorderSide(color: appColors.line)),
       ),
       child: Row(
         children: [
@@ -67,17 +65,22 @@ class _ExchangeRow extends StatelessWidget {
           Expanded(
             child: Text(
               name,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: TextStyle(
+                fontFamily: 'Geist',
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
+                color: appColors.foreground,
               ),
             ),
           ),
           Text(
-            'Connected',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: bullish,
+            'Connected'.toUpperCase(),
+            style: TextStyle(
+              fontFamily: 'JetBrains Mono',
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
               letterSpacing: 0.05 * 9,
+              color: bullish,
             ),
           ),
         ],

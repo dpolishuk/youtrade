@@ -5,8 +5,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:youtrade/domain/auth/local_auth_service.dart';
 
 import 'package:youtrade/presentation/auth/auth_guard_provider.dart';
-import 'package:youtrade/presentation/auth/auth_state.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
+import 'package:youtrade/presentation/theme/theme_extensions.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/screens/settings_screen.dart';
 
@@ -37,7 +37,7 @@ void main() {
   }
 
   group('SettingsScreen', () {
-    testWidgets('renders without overflow', (tester) async {
+    testWidgets('renders Account title with mockup typography', (tester) async {
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => false);
@@ -45,11 +45,17 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(find.text('Account'), findsOneWidget);
+      final title = tester.widget<Text>(find.text('Account'));
+      expect(title.style?.fontFamily, 'Space Grotesk');
+      expect(title.style?.fontSize, 18);
+      expect(title.style?.fontWeight, FontWeight.w600);
+      expect(title.style?.letterSpacing, closeTo(-0.36, 0.001));
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('shows connected exchanges list', (tester) async {
+    testWidgets('shows connected exchanges section with mockup venues', (
+      tester,
+    ) async {
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => false);
@@ -57,15 +63,18 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(find.text('Connected exchanges'), findsOneWidget);
+      expect(find.text('CONNECTED EXCHANGES'), findsOneWidget);
       expect(find.text('Binance'), findsOneWidget);
       expect(find.text('Bybit'), findsOneWidget);
+      expect(find.text('OKX'), findsOneWidget);
       expect(find.text('Coinbase'), findsOneWidget);
-      expect(find.text('Kraken'), findsOneWidget);
-      expect(find.text('Connected'), findsNWidgets(4));
+      expect(find.text('Kraken'), findsNothing);
+      expect(find.text('CONNECTED'), findsNWidgets(4));
     });
 
-    testWidgets('shows appearance toggles', (tester) async {
+    testWidgets('connected exchange status uses mockup typography and color', (
+      tester,
+    ) async {
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => false);
@@ -73,14 +82,35 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(find.text('Appearance'), findsOneWidget);
+      final context = tester.element(find.text('CONNECTED').first);
+      final appColors = Theme.of(context).extension<AppColorTheme>()!;
+      final status = tester.widget<Text>(find.text('CONNECTED').first);
+
+      expect(status.style?.fontFamily, 'JetBrains Mono');
+      expect(status.style?.fontSize, 9);
+      expect(status.style?.fontWeight, FontWeight.w600);
+      expect(status.style?.letterSpacing, closeTo(0.45, 0.001));
+      expect(status.style?.color, appColors.bullish);
+    });
+
+    testWidgets('shows appearance section with uppercase title and toggles', (
+      tester,
+    ) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      expect(find.text('APPEARANCE'), findsOneWidget);
       expect(find.text('Theme'), findsOneWidget);
       expect(find.text('Visual direction'), findsOneWidget);
-      expect(find.text('Dark'), findsOneWidget);
-      expect(find.text('Flux'), findsOneWidget);
+      expect(find.text('DARK'), findsOneWidget);
+      expect(find.text('FLUX'), findsOneWidget);
     });
 
-    testWidgets('theme toggle switches between light and dark', (tester) async {
+    testWidgets('theme toggle button matches mockup styling', (tester) async {
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => false);
@@ -88,17 +118,17 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(find.text('Dark'), findsOneWidget);
-      expect(find.text('Light'), findsNothing);
+      final context = tester.element(find.text('DARK'));
+      final appColors = Theme.of(context).extension<AppColorTheme>()!;
+      final label = tester.widget<Text>(find.text('DARK'));
 
-      await tester.tap(find.text('Dark'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Light'), findsOneWidget);
-      expect(find.text('Dark'), findsNothing);
+      expect(label.style?.fontFamily, 'JetBrains Mono');
+      expect(label.style?.fontSize, 11);
+      expect(label.style?.fontWeight, FontWeight.w600);
+      expect(label.style?.color, appColors.foreground);
     });
 
-    testWidgets('visual direction toggle switches between Flux and Carbon', (
+    testWidgets('theme toggle switches between uppercase Dark and Light', (
       tester,
     ) async {
       when(
@@ -108,17 +138,38 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(find.text('Flux'), findsOneWidget);
-      expect(find.text('Carbon'), findsNothing);
+      expect(find.text('DARK'), findsOneWidget);
+      expect(find.text('LIGHT'), findsNothing);
 
-      await tester.tap(find.text('Flux'));
+      await tester.tap(find.text('DARK'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Carbon'), findsOneWidget);
-      expect(find.text('Flux'), findsNothing);
+      expect(find.text('LIGHT'), findsOneWidget);
+      expect(find.text('DARK'), findsNothing);
     });
 
-    testWidgets('shows sign out option', (tester) async {
+    testWidgets(
+      'visual direction toggle switches between uppercase Flux and Carbon',
+      (tester) async {
+        when(
+          () => mockService.canCheckBiometrics(),
+        ).thenAnswer((_) async => false);
+
+        await tester.pumpWidget(buildScreen());
+        await tester.pumpAndSettle();
+
+        expect(find.text('FLUX'), findsOneWidget);
+        expect(find.text('CARBON'), findsNothing);
+
+        await tester.tap(find.text('FLUX'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('CARBON'), findsOneWidget);
+        expect(find.text('FLUX'), findsNothing);
+      },
+    );
+
+    testWidgets('visual direction toggle uses accent color', (tester) async {
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => false);
@@ -126,12 +177,14 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(find.text('Security'), findsOneWidget);
-      expect(find.text('Biometric / PIN'), findsOneWidget);
-      expect(find.text('Sign out'), findsOneWidget);
+      final context = tester.element(find.text('FLUX'));
+      final appColors = Theme.of(context).extension<AppColorTheme>()!;
+      final label = tester.widget<Text>(find.text('FLUX'));
+
+      expect(label.style?.color, appColors.accent);
     });
 
-    testWidgets('tapping sign out transitions to unauthenticated', (
+    testWidgets('renders version footer with mockup typography', (
       tester,
     ) async {
       when(
@@ -141,21 +194,17 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      final container = ProviderScope.containerOf(
-        tester.element(find.byType(SettingsScreen)),
+      final footer = tester.widget<Text>(
+        find.text('YouTrade · v1.0 · 4 venues linked'),
       );
-      expect(container.read(authNotifierProvider), const AuthUnknown());
-
-      await tester.tap(find.text('Sign out'));
-      await tester.pump();
-
-      // Catches bug where sign out leaves the user authenticated.
-      final authState = container.read(authNotifierProvider);
-      expect(authState, isA<AuthUnauthenticated>());
-      expect((authState as AuthUnauthenticated).pinSet, false);
+      expect(footer.style?.fontFamily, 'JetBrains Mono');
+      expect(footer.style?.fontSize, 9);
+      expect(footer.style?.letterSpacing, closeTo(0.54, 0.001));
     });
 
-    testWidgets('tapping Biometric/PIN navigates to auth gate', (tester) async {
+    testWidgets('does not show security section from old layout', (
+      tester,
+    ) async {
       when(
         () => mockService.canCheckBiometrics(),
       ).thenAnswer((_) async => false);
@@ -163,13 +212,9 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Biometric / PIN'));
-      await tester.pump();
-
-      final container = ProviderScope.containerOf(
-        tester.element(find.byType(SettingsScreen)),
-      );
-      expect(container.read(authNotifierProvider), isA<AuthUnauthenticated>());
+      expect(find.text('Security'), findsNothing);
+      expect(find.text('Biometric / PIN'), findsNothing);
+      expect(find.text('Sign out'), findsNothing);
     });
   });
 }

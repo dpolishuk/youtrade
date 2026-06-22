@@ -21,17 +21,20 @@ class SettingsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          title,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: appColors.subtleText,
+          title.toUpperCase(),
+          style: TextStyle(
+            fontFamily: 'JetBrains Mono',
+            fontSize: 9,
+            fontWeight: FontWeight.w500,
             letterSpacing: 0.1 * 9,
+            color: appColors.tertiaryText,
           ),
         ),
         const SizedBox(height: 9),
         Container(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            border: Border.all(color: appColors.borderSubtle),
+            color: theme.cardColor,
+            border: Border.all(color: appColors.line),
             borderRadius: BorderRadius.circular(11),
           ),
           child: Column(children: children),

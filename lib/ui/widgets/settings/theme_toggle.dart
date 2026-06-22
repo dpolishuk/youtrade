@@ -11,15 +11,16 @@ class ThemeToggle extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
     final settings = ref.watch(themeSettingsProvider);
-    final label = settings.themeMode == ThemeMode.light ? 'Light' : 'Dark';
+    final label = settings.themeMode == ThemeMode.light ? 'LIGHT' : 'DARK';
 
     return SettingsTile(
       title: 'Theme',
-      trailing: TextButton(
-        onPressed: () =>
-            ref.read(themeSettingsProvider.notifier).toggleLightDark(),
-        child: Text(label),
+      trailing: SettingsToggleButton(
+        label: label,
+        textColor: appColors.foreground,
+        onTap: () => ref.read(themeSettingsProvider.notifier).toggleLightDark(),
       ),
     );
   }
@@ -30,20 +31,20 @@ class VisualDirectionToggle extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
     final settings = ref.watch(themeSettingsProvider);
     final label = settings.visualDirection == AppVisualDirection.flux
-        ? 'Flux'
-        : 'Carbon';
+        ? 'FLUX'
+        : 'CARBON';
 
     return SettingsTile(
       title: 'Visual direction',
       isLast: true,
-      trailing: TextButton(
-        onPressed: () =>
+      trailing: SettingsToggleButton(
+        label: label,
+        textColor: appColors.accent,
+        onTap: () =>
             ref.read(themeSettingsProvider.notifier).toggleVisualDirection(),
-        child: Text(label, style: TextStyle(color: appColors.accent)),
       ),
     );
   }

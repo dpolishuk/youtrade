@@ -70,6 +70,7 @@ abstract final class AppTheme {
         borderSubtle: _white6,
         tertiaryText: const Color(0x57FFFFFF),
         chip: const Color(0xFF10151F),
+        line: const Color(0x12FFFFFF),
       ),
     );
   }
@@ -114,6 +115,7 @@ abstract final class AppTheme {
         borderSubtle: _carbon8,
         tertiaryText: const Color(0x61020D23),
         chip: _lightSurface,
+        line: const Color(0x17020D23),
       ),
     );
   }
