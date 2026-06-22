@@ -89,7 +89,7 @@ List<double> _sparkline(String rawSymbol) {
   return DeterministicMarketDataStore.screenerSparkline(rawSymbol);
 }
 
-MarketScreenerItem _row({
+MarketScreenerItem row({
   required String rawSymbol,
   required String name,
   required Venue venue,
@@ -98,7 +98,7 @@ MarketScreenerItem _row({
   double? price,
   double? change24hPercent,
 }) {
-  final ticker = price == null
+  final ticker = price == null || change24hPercent == null
       ? DeterministicMarketDataStore.screenerTicker(rawSymbol)
       : null;
   return MarketScreenerItem(
@@ -115,35 +115,35 @@ MarketScreenerItem _row({
 }
 
 final _mockMarkets = <MarketScreenerItem>[
-  _row(
+  row(
     rawSymbol: 'BTCUSDT',
     name: 'Bitcoin Perp',
     venue: Venue.binance,
     assetClass: AssetClass.perp,
     decimals: 1,
   ),
-  _row(
+  row(
     rawSymbol: 'ETHUSDT',
     name: 'Ethereum Perp',
     venue: Venue.bybit,
     assetClass: AssetClass.perp,
     decimals: 2,
   ),
-  _row(
+  row(
     rawSymbol: 'SOLUSDT',
     name: 'Solana',
     venue: Venue.okx,
     assetClass: AssetClass.spot,
     decimals: 2,
   ),
-  _row(
+  row(
     rawSymbol: 'AAPL',
     name: 'Apple Inc.',
     venue: Venue.coinbase,
     assetClass: AssetClass.stock,
     decimals: 2,
   ),
-  _row(
+  row(
     rawSymbol: 'GC=F',
     name: 'Gold Futures',
     venue: Venue.okx,

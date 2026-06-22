@@ -461,6 +461,31 @@ void main() {
     });
 
     test(
+      'initialize emits AuthUnauthenticated when isPinSet throws unexpectedly',
+      () async {
+        final throwingPinAuth = FakePinAuthService(
+          exceptionOnIsPinSet: Exception('storage corrupted'),
+        );
+        final container = ProviderContainer(
+          overrides: [
+            localAuthServiceProvider.overrideWithValue(mockLocalAuth),
+            pinAuthServiceProvider.overrideWithValue(throwingPinAuth),
+          ],
+        );
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container.read(authNotifierProvider.notifier).initialize();
+
+        expect(states, [isA<AuthUnauthenticated>()]);
+        final unauthenticated = states.single as AuthUnauthenticated;
+        expect(unauthenticated.pinSet, isFalse);
+        expect(container.read(authNotifierProvider.notifier).isPinSet, isFalse);
+      },
+    );
+
+    test(
       'initialize does not attempt biometrics when no PIN is set even if biometrics are available',
       () async {
         when(

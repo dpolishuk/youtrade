@@ -116,12 +116,13 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
     return ListView.separated(
       itemCount: _openOrders.length,
       separatorBuilder: (_, _) => const SizedBox(height: 9),
-      itemBuilder: (_, index) => OrderListTile(
-        order: _openOrders[index],
-        onCancel: () => setState(() {
-          if (index < _openOrders.length) _openOrders.removeAt(index);
-        }),
-      ),
+      itemBuilder: (_, index) {
+        final order = _openOrders[index];
+        return OrderListTile(
+          order: order,
+          onCancel: (_) => setState(() => _openOrders.remove(order)),
+        );
+      },
     );
   }
 

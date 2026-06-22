@@ -58,6 +58,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       state = const AuthUnauthenticated(pinSet: true);
+    } on Object {
+      _pinSet = false;
+      _isBiometricAvailable = false;
+      state = const AuthUnauthenticated(pinSet: false);
     } finally {
       _isInitializing = false;
     }

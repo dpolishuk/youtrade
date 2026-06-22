@@ -9,7 +9,7 @@ class OrderListTile extends StatelessWidget {
   const OrderListTile({required this.order, this.onCancel, super.key});
 
   final Order order;
-  final VoidCallback? onCancel;
+  final void Function(Order order)? onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +56,7 @@ class OrderListTile extends StatelessWidget {
                 ),
               ),
               GestureDetector(
-                onTap: onCancel,
+                onTap: onCancel == null ? null : () => onCancel!(order),
                 behavior: HitTestBehavior.opaque,
                 child: Text(
                   'Cancel',
