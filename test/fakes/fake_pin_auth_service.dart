@@ -7,11 +7,15 @@ class FakePinAuthService implements PinAuthService {
     String? initialPin,
     this.failureOnSet,
     this.exceptionOnIsPinSet,
+    this.exceptionOnSet,
+    this.exceptionOnAuthenticatePin,
   }) : _pin = initialPin;
 
   String? _pin;
   final Failure? failureOnSet;
   final Exception? exceptionOnIsPinSet;
+  final Exception? exceptionOnSet;
+  final Exception? exceptionOnAuthenticatePin;
 
   @override
   Future<bool> isPinSet() async {
@@ -22,6 +26,8 @@ class FakePinAuthService implements PinAuthService {
 
   @override
   Future<bool> authenticatePin(String pin) async {
+    final exception = exceptionOnAuthenticatePin;
+    if (exception != null) throw exception;
     if (pin.length < 4) return false;
     if (_pin == null) {
       _pin = pin;
@@ -32,6 +38,8 @@ class FakePinAuthService implements PinAuthService {
 
   @override
   Future<Result<void>> setPin(String pin) async {
+    final exception = exceptionOnSet;
+    if (exception != null) throw exception;
     if (failureOnSet != null) {
       return Err<void>(failureOnSet!);
     }

@@ -251,6 +251,63 @@ void main() {
     });
 
     test(
+      'authenticateWithBiometrics emits AuthError when authenticate throws unexpectedly',
+      () async {
+        fakePinAuth.setStoredPin('1234');
+        when(
+          () => mockLocalAuth.authenticate(),
+        ).thenThrow(Exception('local auth crashed'));
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithBiometrics();
+
+        expect(states, [isA<AuthError>()]);
+        final error = states.single as AuthError;
+        expect(error.failure, isA<UnknownFailure>());
+        expect(
+          container.read(authNotifierProvider.notifier).isAuthenticating,
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'authenticateWithBiometrics emits AuthError when isPinSet throws unexpectedly',
+      () async {
+        final throwingPinAuth = FakePinAuthService(
+          exceptionOnIsPinSet: Exception('storage corrupted'),
+        );
+        final container = ProviderContainer(
+          overrides: [
+            localAuthServiceProvider.overrideWithValue(mockLocalAuth),
+            pinAuthServiceProvider.overrideWithValue(throwingPinAuth),
+          ],
+        );
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithBiometrics();
+
+        expect(states, [isA<AuthError>()]);
+        final error = states.single as AuthError;
+        expect(error.failure, isA<UnknownFailure>());
+        expect(
+          container.read(authNotifierProvider.notifier).isAuthenticating,
+          isFalse,
+        );
+      },
+    );
+
+    test(
       'authenticateWithPin sets PIN and authenticates on first use',
       () async {
         final container = makeContainer();
@@ -365,6 +422,69 @@ void main() {
       expect(error.failure.message, 'PIN must be exactly 4 digits');
       expect(container.read(authNotifierProvider.notifier).isPinSet, isFalse);
     });
+
+    test(
+      'authenticateWithPin emits AuthError when setPin throws unexpectedly',
+      () async {
+        final throwingPinAuth = FakePinAuthService(
+          exceptionOnSet: Exception('storage write failed'),
+        );
+        final container = ProviderContainer(
+          overrides: [
+            localAuthServiceProvider.overrideWithValue(mockLocalAuth),
+            pinAuthServiceProvider.overrideWithValue(throwingPinAuth),
+          ],
+        );
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('5678');
+
+        expect(states, [isA<AuthError>()]);
+        final error = states.single as AuthError;
+        expect(error.failure, isA<UnknownFailure>());
+        expect(container.read(authNotifierProvider.notifier).isPinSet, isFalse);
+        expect(
+          container.read(authNotifierProvider.notifier).isAuthenticating,
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'authenticateWithPin emits AuthError when authenticatePin throws unexpectedly',
+      () async {
+        final throwingPinAuth = FakePinAuthService(
+          initialPin: '1234',
+          exceptionOnAuthenticatePin: Exception('crypto module crashed'),
+        );
+        final container = ProviderContainer(
+          overrides: [
+            localAuthServiceProvider.overrideWithValue(mockLocalAuth),
+            pinAuthServiceProvider.overrideWithValue(throwingPinAuth),
+          ],
+        );
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('1234');
+
+        expect(states, [isA<AuthError>()]);
+        final error = states.single as AuthError;
+        expect(error.failure, isA<UnknownFailure>());
+        expect(container.read(authNotifierProvider.notifier).isPinSet, isTrue);
+        expect(
+          container.read(authNotifierProvider.notifier).isAuthenticating,
+          isFalse,
+        );
+      },
+    );
 
     test(
       'initialize treats canCheckBiometrics exception as unavailable',

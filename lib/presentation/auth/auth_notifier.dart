@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/failures.dart';
 import '../../domain/auth/auth_failure.dart';
 import '../../domain/auth/local_auth_service.dart';
 import '../../domain/auth/pin_auth_service.dart';
@@ -87,6 +88,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
         },
         failure: (failure) => state = AuthError(failure),
       );
+    } on Object catch (e) {
+      if (_isAuthenticating) {
+        state = AuthError(
+          UnknownFailure(
+            'Biometric authentication failed unexpectedly.',
+            error: e,
+          ),
+        );
+      }
     } finally {
       _isAuthenticating = false;
     }
@@ -136,6 +146,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       } else {
         _recordFailedPinAttempt();
         state = const AuthError(PinMismatchFailure());
+      }
+    } on Object catch (e) {
+      if (_isAuthenticating) {
+        state = AuthError(
+          UnknownFailure('PIN authentication failed unexpectedly.', error: e),
+        );
       }
     } finally {
       _isAuthenticating = false;
