@@ -28,6 +28,9 @@ linux/flutter/ephemeral/
 *.ipr
 *.iws
 
+# macOS / OS generated files
+.DS_Store
+
 # Local config / caches
 .bv/
 .opencode/cache/
