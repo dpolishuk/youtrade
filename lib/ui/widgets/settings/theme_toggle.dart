@@ -9,6 +9,8 @@ import 'settings_tile.dart';
 class ThemeToggle extends ConsumerWidget {
   const ThemeToggle({super.key});
 
+  static const Key keyToggle = ValueKey('theme-toggle');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appColors = Theme.of(context).extension<AppColorTheme>()!;
@@ -16,6 +18,7 @@ class ThemeToggle extends ConsumerWidget {
     final label = settings.themeMode == ThemeMode.light ? 'LIGHT' : 'DARK';
 
     return SettingsTile(
+      key: keyToggle,
       title: 'Theme',
       trailing: SettingsToggleButton(
         label: label,
@@ -29,6 +32,8 @@ class ThemeToggle extends ConsumerWidget {
 class VisualDirectionToggle extends ConsumerWidget {
   const VisualDirectionToggle({super.key});
 
+  static const Key keyToggle = ValueKey('visual-direction-toggle');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appColors = Theme.of(context).extension<AppColorTheme>()!;
@@ -38,6 +43,7 @@ class VisualDirectionToggle extends ConsumerWidget {
         : 'CARBON';
 
     return SettingsTile(
+      key: keyToggle,
       title: 'Visual direction',
       isLast: true,
       trailing: SettingsToggleButton(

@@ -23,20 +23,66 @@ void main() {
         expect(find.text('OKX'), findsOneWidget);
         expect(find.text('Coinbase'), findsOneWidget);
         expect(find.text('APPEARANCE'), findsOneWidget);
-        expect(find.text('DARK'), findsOneWidget);
-        expect(find.text('FLUX'), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('theme-toggle')),
+            matching: find.text('DARK'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('visual-direction-toggle')),
+            matching: find.text('FLUX'),
+          ),
+          findsOneWidget,
+        );
         expect(find.text('YouTrade · v1.0 · 4 venues linked'), findsOneWidget);
         await binding.takeScreenshot('more_tab_initial');
 
-        await tester.tap(find.text('DARK'));
+        await tester.tap(
+          find.descendant(
+            of: find.byKey(const ValueKey('theme-toggle')),
+            matching: find.byType(TextButton),
+          ),
+        );
         await tester.pumpAndSettle();
-        expect(find.text('LIGHT'), findsOneWidget);
-        expect(find.text('DARK'), findsNothing);
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('theme-toggle')),
+            matching: find.text('LIGHT'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('theme-toggle')),
+            matching: find.text('DARK'),
+          ),
+          findsNothing,
+        );
 
-        await tester.tap(find.text('FLUX'));
+        await tester.tap(
+          find.descendant(
+            of: find.byKey(const ValueKey('visual-direction-toggle')),
+            matching: find.byType(TextButton),
+          ),
+        );
         await tester.pumpAndSettle();
-        expect(find.text('CARBON'), findsOneWidget);
-        expect(find.text('FLUX'), findsNothing);
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('visual-direction-toggle')),
+            matching: find.text('CARBON'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('visual-direction-toggle')),
+            matching: find.text('FLUX'),
+          ),
+          findsNothing,
+        );
         await binding.takeScreenshot('more_tab_toggled');
       },
       timeout: const Timeout(Duration(minutes: 5)),

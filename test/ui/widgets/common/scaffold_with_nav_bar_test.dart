@@ -18,6 +18,8 @@ import 'package:youtrade/presentation/providers/repository_provider.dart';
 import 'package:youtrade/presentation/routing/app_router.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
+import 'package:youtrade/presentation/theme/theme_provider.dart';
+import 'package:youtrade/ui/widgets/common/scaffold_with_nav_bar.dart';
 
 import '../../../fakes/fake_pin_auth_service.dart';
 
@@ -131,11 +133,16 @@ void main() {
   }) {
     return UncontrolledProviderScope(
       container: container,
-      child: MaterialApp.router(
-        theme: theme ?? AppTheme.dark(AppVisualDirection.carbon),
-        darkTheme: darkTheme ?? AppTheme.dark(AppVisualDirection.carbon),
-        themeMode: themeMode ?? ThemeMode.dark,
-        routerConfig: router,
+      child: Consumer(
+        builder: (context, ref, child) {
+          final appTheme = ref.watch(appThemeProvider);
+          return MaterialApp.router(
+            theme: theme ?? appTheme,
+            darkTheme: darkTheme ?? appTheme,
+            themeMode: themeMode ?? ThemeMode.dark,
+            routerConfig: router,
+          );
+        },
       ),
     );
   }
@@ -271,6 +278,111 @@ void main() {
         );
         expect(opacity.opacity, i == 2 ? 1.0 : 0.0);
       }
+    });
+
+    testWidgets('renders global app header on portfolio branch', (
+      tester,
+    ) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = createContainer();
+      final router = container.read(appRouterProvider);
+
+      container.read(authNotifierProvider.notifier).authenticateWithPin('1234');
+      router.go('/');
+
+      await tester.pumpWidget(
+        buildRouter(router: router, container: container),
+      );
+      await pumpFrames(tester);
+
+      expect(find.text('YouTrade'), findsOneWidget);
+      expect(find.text('FLUX TERMINAL'), findsOneWidget);
+      expect(find.byIcon(Icons.dark_mode), findsOneWidget);
+      expect(find.text('FLUX'), findsOneWidget);
+    });
+
+    testWidgets('global header persists when switching to markets branch', (
+      tester,
+    ) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = createContainer();
+      final router = container.read(appRouterProvider);
+
+      container.read(authNotifierProvider.notifier).authenticateWithPin('1234');
+      router.go('/');
+
+      await tester.pumpWidget(
+        buildRouter(router: router, container: container),
+      );
+      await pumpFrames(tester);
+
+      await tester.tap(find.byKey(const Key('bottom-nav-item-1')));
+      await pumpFrames(tester);
+
+      expect(find.text('YouTrade'), findsOneWidget);
+      expect(find.text('Markets'), findsWidgets);
+    });
+
+    testWidgets('toggles visual direction from the global header', (
+      tester,
+    ) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = createContainer();
+      final router = container.read(appRouterProvider);
+
+      container.read(authNotifierProvider.notifier).authenticateWithPin('1234');
+      router.go('/');
+
+      await tester.pumpWidget(
+        buildRouter(router: router, container: container),
+      );
+      await pumpFrames(tester);
+
+      expect(find.text('FLUX'), findsOneWidget);
+      expect(find.text('FLUX TERMINAL'), findsOneWidget);
+      expect(find.text('CARBON'), findsNothing);
+
+      await tester.tap(find.text('FLUX'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('CARBON'), findsOneWidget);
+      expect(find.text('CARBON TERMINAL'), findsOneWidget);
+      expect(find.text('FLUX'), findsNothing);
+    });
+
+    testWidgets('toggles theme mode from the global header', (tester) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = createContainer();
+      final router = container.read(appRouterProvider);
+
+      container.read(authNotifierProvider.notifier).authenticateWithPin('1234');
+      router.go('/');
+
+      await tester.pumpWidget(
+        buildRouter(router: router, container: container),
+      );
+      await pumpFrames(tester);
+
+      final context = tester.element(find.byType(ScaffoldWithNavBar));
+      expect(Theme.of(context).brightness, Brightness.dark);
+
+      await tester.tap(find.byIcon(Icons.dark_mode));
+      await tester.pumpAndSettle();
+
+      final contextAfter = tester.element(find.byType(ScaffoldWithNavBar));
+      expect(Theme.of(contextAfter).brightness, Brightness.light);
     });
   });
 }

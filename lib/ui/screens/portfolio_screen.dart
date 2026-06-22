@@ -5,8 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../domain/entities/position.dart';
 import '../../presentation/providers/portfolio_data_provider.dart';
 import '../../presentation/theme/theme_extensions.dart';
-import '../../presentation/theme/theme_mode.dart';
-import '../../presentation/theme/theme_provider.dart';
 import '../widgets/portfolio/allocation_bar.dart';
 import '../widgets/portfolio/exchange_card.dart';
 import '../widgets/portfolio/equity_curve.dart';
@@ -19,7 +17,6 @@ class PortfolioScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final settings = ref.watch(themeSettingsProvider);
     final portfolio = ref.watch(portfolioDataProvider);
 
     return Scaffold(
@@ -28,7 +25,6 @@ class PortfolioScreen extends ConsumerWidget {
         bottom: false,
         child: Column(
           children: [
-            _buildHeader(context, ref, settings),
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
@@ -63,88 +59,6 @@ class PortfolioScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(
-    BuildContext context,
-    WidgetRef ref,
-    ThemeSettings settings,
-  ) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>()!;
-    final accent = appColors.accent;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 6, 18, 12),
-      child: Row(
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: accent,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: accent.withValues(alpha: 0.35),
-                  blurRadius: 18,
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: CustomPaint(
-              size: const Size(17, 17),
-              painter: _CheckmarkPainter(color: Colors.white),
-            ),
-          ),
-          const SizedBox(width: 9),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'YouTrade',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontFamily: 'Space Grotesk',
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                  letterSpacing: -0.04 * 16,
-                  height: 1,
-                  color: appColors.foreground,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                settings.visualDirection == AppVisualDirection.flux
-                    ? 'FLUX TERMINAL'
-                    : 'CARBON TERMINAL',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontFamily: 'JetBrains Mono',
-                  color: appColors.tertiaryText,
-                  letterSpacing: 0.14 * 8.5,
-                  fontSize: 8.5,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          _IconButton(
-            icon: Icons.dark_mode,
-            onTap: () =>
-                ref.read(themeSettingsProvider.notifier).toggleLightDark(),
-            tooltip: 'Toggle theme',
-          ),
-          const SizedBox(width: 7),
-          _DirectionButton(
-            label: settings.visualDirection == AppVisualDirection.flux
-                ? 'FLUX'
-                : 'CARBON',
-            onTap: () => ref
-                .read(themeSettingsProvider.notifier)
-                .toggleVisualDirection(),
-          ),
-        ],
       ),
     );
   }
@@ -408,125 +322,4 @@ class PortfolioScreen extends ConsumerWidget {
     }
     return widgets;
   }
-}
-
-class _IconButton extends StatelessWidget {
-  const _IconButton({required this.icon, required this.onTap, this.tooltip});
-
-  final IconData icon;
-  final VoidCallback onTap;
-  final String? tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>();
-    final chipColor = appColors?.chip ?? theme.colorScheme.secondary;
-    final iconColor =
-        appColors?.subtleText ?? theme.colorScheme.onSurfaceVariant;
-
-    return Tooltip(
-      message: tooltip ?? '',
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(9),
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: chipColor,
-            borderRadius: BorderRadius.circular(9),
-            border: Border.all(color: theme.dividerColor),
-          ),
-          alignment: Alignment.center,
-          child: Icon(icon, size: 16, color: iconColor),
-        ),
-      ),
-    );
-  }
-}
-
-class _DirectionButton extends StatelessWidget {
-  const _DirectionButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>();
-    final accent = appColors?.accent ?? theme.colorScheme.primary;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(9),
-      child: Container(
-        height: 34,
-        padding: const EdgeInsets.symmetric(horizontal: 11),
-        decoration: BoxDecoration(
-          color: appColors?.chip ?? theme.colorScheme.secondary,
-          borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: theme.dividerColor),
-        ),
-        alignment: Alignment.center,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 7,
-              height: 7,
-              decoration: BoxDecoration(
-                color: accent,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: accent.withValues(alpha: 0.4),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                fontFamily: 'JetBrains Mono',
-                fontSize: 10,
-                letterSpacing: 0.08 * 10,
-                color: accent,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CheckmarkPainter extends CustomPainter {
-  const _CheckmarkPainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final path = Path()
-      ..moveTo(size.width * 0.22, size.height * 0.52)
-      ..lineTo(size.width * 0.44, size.height * 0.74)
-      ..lineTo(size.width * 0.78, size.height * 0.28);
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
