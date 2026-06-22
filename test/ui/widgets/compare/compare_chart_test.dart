@@ -62,5 +62,16 @@ void main() {
       expect(spots.last.x, normalized.length - 1);
       expect(spots.last.y, closeTo(normalized.last, 1e-9));
     });
+
+    testWidgets('series are rendered as straight lines', (tester) async {
+      final series = generateCompareSeries(compareSymbols.sublist(0, 3));
+      await tester.pumpWidget(buildChart(series));
+      await tester.pumpAndSettle();
+
+      final lineChart = tester.widget<LineChart>(find.byType(LineChart));
+      for (final bar in lineChart.data.lineBarsData) {
+        expect(bar.isCurved, isFalse);
+      }
+    });
   });
 }

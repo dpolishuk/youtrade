@@ -18,9 +18,9 @@ class TradingTerminalState {
   const TradingTerminalState({
     this.selectedTab = TerminalTab.trade,
     this.orderSide = OrderSide.buy,
-    this.orderType = OrderType.market,
-    this.leverage = 1,
-    this.selectedSizePercent = 0,
+    this.orderType = OrderType.limit,
+    this.leverage = 10,
+    this.selectedSizePercent = 25,
     this.selectedTimeframe = Timeframe.h1,
   });
 

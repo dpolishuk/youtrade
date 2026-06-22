@@ -426,7 +426,7 @@ void main() {
       expect(decoration.borderRadius, BorderRadius.circular(16));
       expect(
         (decoration.border as Border?)?.top.color,
-        const Color(0x0FFFFFFF),
+        const Color(0x12FFFFFF),
       );
     });
   });

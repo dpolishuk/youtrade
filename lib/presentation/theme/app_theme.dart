@@ -20,8 +20,10 @@ abstract final class AppTheme {
   static const _turquoiseVivid = Color(0xFF00E6D2); // dark+flux accent
   static const _turquoiseBold = Color(0xFF0094A8); // light+flux accent
   static const _emeraldVivid = Color(0xFF2EE6A6); // dark+flux up
+  static const _emeraldBold = Color(0xFF1D683F); // light+carbon up
   static const _emeraldLight = Color(0xFF00936B); // light+flux up
   static const _rose = Color(0xFFFF5D77); // dark+flux down
+  static const _roseBold = Color(0xFFC0392B); // light+carbon down
   static const _roseLight = Color(0xFFD22A47); // light+flux down
 
   // Carbon direction tokens
@@ -34,7 +36,7 @@ abstract final class AppTheme {
   static const _white = Color(0xFFFFFFFF);
   static const _white55 = Color(0x8CFFFFFF); // ~ --color-white-50
   static const _white8 = Color(0x14FFFFFF); // --color-white-8
-  static const _white6 = Color(0x0FFFFFFF); // --color-border (dark)
+  static const _white7 = Color(0x12FFFFFF); // --color-border (dark)
   static const _carbon60 = Color(0x99020D23); // --color-carbon-60
   static const _carbon8 = Color(0x14020D23); // --color-carbon-8
 
@@ -57,7 +59,7 @@ abstract final class AppTheme {
       onSecondary: _white,
       error: bearish,
       onError: _white,
-      outline: _white6,
+      outline: _white7,
       outlineVariant: _white8,
     );
 
@@ -71,7 +73,7 @@ abstract final class AppTheme {
         foreground: const Color(0xFFF2F5FA),
         surfaceGlass: _white8,
         subtleText: _white55,
-        borderSubtle: _white6,
+        borderSubtle: _white7,
         tertiaryText: const Color(0x57FFFFFF),
         chip: const Color(0xFF10151F),
         line: const Color(0x12FFFFFF),
@@ -86,8 +88,8 @@ abstract final class AppTheme {
     final accent = isCarbon ? _carbonLightAccent : _turquoiseBold;
     const surface = Color(0xFFF1EFEE);
     const card = _lightSurface;
-    final bullish = isCarbon ? _carbonUp : _emeraldLight;
-    final bearish = isCarbon ? _carbonDown : _roseLight;
+    final bullish = isCarbon ? _emeraldBold : _emeraldLight;
+    final bearish = isCarbon ? _roseBold : _roseLight;
 
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primary,

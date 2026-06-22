@@ -29,9 +29,10 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
       expect(find.text('Compare'), findsOneWidget);
-      expect(find.text('2/4 · normalized %'), findsOneWidget);
+      expect(find.text('3/4 · normalized %'), findsOneWidget);
       expect(find.text('BTC'), findsWidgets);
       expect(find.text('ETH'), findsWidgets);
+      expect(find.text('SOL'), findsWidgets);
       expect(find.text('30-period stats'), findsOneWidget);
       await binding.takeScreenshot('compare_screen');
     });

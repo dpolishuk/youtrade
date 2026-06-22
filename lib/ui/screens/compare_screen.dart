@@ -16,7 +16,7 @@ class CompareScreen extends StatefulWidget {
 }
 
 class _CompareScreenState extends State<CompareScreen> {
-  var _selectedSymbols = List<CompareSymbol>.from(compareSymbols.sublist(0, 2));
+  var _selectedSymbols = List<CompareSymbol>.from(compareSymbols.sublist(0, 3));
 
   @override
   Widget build(BuildContext context) {
