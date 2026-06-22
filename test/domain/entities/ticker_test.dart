@@ -203,7 +203,7 @@ void main() {
           volume: 0.0,
           timestamp: DateTime.utc(2026, 6, 21, 12, 0),
         );
-        final localNoon = Ticker(
+        final offsetNoon = Ticker(
           symbol: symbol,
           lastPrice: 100.0,
           bid: 99.0,
@@ -211,14 +211,9 @@ void main() {
           change24h: 0.0,
           change24hPercent: 0.0,
           volume: 0.0,
-          timestamp: DateTime(2026, 6, 21, 12, 0),
+          timestamp: DateTime.parse('2026-06-21T12:00:00-04:00'),
         );
-        // Only equal when the local machine happens to be in UTC.
-        if (DateTime(2026, 6, 21, 12, 0).isUtc) {
-          expect(utcNoon, localNoon);
-        } else {
-          expect(utcNoon, isNot(equals(localNoon)));
-        }
+        expect(utcNoon, isNot(equals(offsetNoon)));
       },
     );
   });

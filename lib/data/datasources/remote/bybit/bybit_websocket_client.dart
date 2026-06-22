@@ -13,13 +13,14 @@ import '../../../../domain/sources/market_stream_source.dart';
 
 typedef WebSocketChannelFactory = WebSocketChannel Function(String url);
 
-final class BybitWebSocketClient implements MarketStreamSource {
+class BybitWebSocketClient implements MarketStreamSource {
   BybitWebSocketClient({
     WebSocketChannelFactory? channelFactory,
     String? baseUrl,
   }) : _channelFactory = channelFactory ?? _defaultFactory(baseUrl);
 
   final WebSocketChannelFactory _channelFactory;
+  final List<Future<void> Function()> _sessions = [];
 
   static WebSocketChannelFactory _defaultFactory(String? baseUrl) {
     final url = baseUrl ?? 'wss://stream.bybit.com/v5/public/spot';
@@ -78,18 +79,33 @@ final class BybitWebSocketClient implements MarketStreamSource {
   ) {
     final channel = _channelFactory('');
     StreamSubscription<dynamic>? subscription;
+    var disposed = false;
+
+    Future<void> disposeSession() async {
+      if (disposed) return;
+      disposed = true;
+      await subscription?.cancel();
+      await channel.sink.close();
+    }
+
+    _sessions.add(disposeSession);
 
     final controller = StreamController<T>(
       onCancel: () async {
-        await subscription?.cancel();
-        await channel.sink.close();
+        await disposeSession();
+        _sessions.remove(disposeSession);
       },
     );
 
     channel.ready
         .then((_) {
-          if (controller.isClosed) return;
-          channel.sink.add(subscribeMessage);
+          if (disposed || controller.isClosed) return;
+          try {
+            channel.sink.add(subscribeMessage);
+          } on StateError {
+            if (disposed) return;
+            rethrow;
+          }
           subscription = channel.stream.listen(
             (message) {
               try {
@@ -117,6 +133,7 @@ final class BybitWebSocketClient implements MarketStreamSource {
           );
         })
         .catchError((Object error, StackTrace stackTrace) {
+          if (disposed || controller.isClosed) return;
           if (!controller.isClosed) {
             controller.add(onError(error));
             controller.close();
@@ -124,6 +141,13 @@ final class BybitWebSocketClient implements MarketStreamSource {
         });
 
     return controller.stream;
+  }
+
+  void closeAll() {
+    for (final dispose in _sessions.toList()) {
+      unawaited(dispose());
+    }
+    _sessions.clear();
   }
 
   Ticker _parseTicker(TradingSymbol symbol, Map<String, dynamic> json) {

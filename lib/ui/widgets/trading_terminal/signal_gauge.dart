@@ -1,10 +1,12 @@
-import 'dart:math' show cos, pi, sin;
+import 'dart:math' show cos, min, pi, sin;
 
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/candle.dart';
 import '../../../domain/entities/symbol.dart';
+import '../../../domain/entities/symbol_metadata.dart';
 import '../../../domain/entities/ticker.dart';
+import '../../../presentation/theme/app_theme.dart';
 import '../../../presentation/theme/theme_extensions.dart';
 import 'formatting.dart';
 
@@ -22,24 +24,47 @@ class SignalGauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
+    final meta = resolveSymbolMetadata(symbol);
 
-    final price =
-        ticker?.lastPrice ?? (candles.isNotEmpty ? candles.first.close : 0);
-    final score = _computeScore();
-    final verdict = _verdict(score);
-    final verdictColor = score > 70
+    final last =
+        ticker?.lastPrice ?? (candles.isNotEmpty ? candles.last.close : 0.0);
+    final first24 = candles.length >= 24
+        ? candles[candles.length - 24].close
+        : (candles.isNotEmpty ? candles.first.close : last);
+    final chg = last - first24;
+    final chgP = first24 != 0 ? chg / first24 * 100 : 0.0;
+
+    final rsi = _rsi(symbol.rawSymbol);
+    final gauge = (50 + chgP * 6 + (rsi - 50) * 0.6).clamp(0.0, 100.0);
+    final verdict = gauge > 62
+        ? 'BUY'
+        : gauge > 54
+        ? 'NEUTRAL'
+        : gauge < 40
+        ? 'SELL'
+        : 'NEUTRAL';
+    final verdictColor = gauge > 54
         ? appColors.bullish
-        : score < 30
+        : gauge < 46
         ? appColors.bearish
-        : appColors.subtleText;
-    final buyCount = score ~/ 10;
-    final sellCount = 10 - buyCount;
+        : const Color(0x8CFFFFFF);
 
-    final oscillators = _buildOscillators(price, appColors);
-    final movingAverages = _buildMovingAverages(price, appColors);
-    final pivots = _buildPivots(price);
+    final oscillators = _buildOscillators(chg, chgP, rsi, appColors);
+    final movingAverages = _buildMovingAverages(
+      candles,
+      last,
+      meta.decimals,
+      appColors,
+    );
+    final pivots = _buildPivots(candles, meta);
+
+    final buyCount =
+        movingAverages.where((r) => r.signal == 'Buy').length +
+        oscillators.where((r) => r.signal == 'Buy').length;
+    final sellCount =
+        movingAverages.where((r) => r.signal == 'Sell').length +
+        oscillators.where((r) => r.signal == 'Sell').length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,9 +75,8 @@ class SignalGauge extends StatelessWidget {
               width: 120,
               height: 66,
               child: _GaugePainter(
-                score: score,
+                score: gauge.toDouble(),
                 appColors: appColors,
-                theme: theme,
               ),
             ),
             const SizedBox(width: 16),
@@ -62,24 +86,27 @@ class SignalGauge extends StatelessWidget {
                 children: [
                   Text(
                     verdict,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      color: verdictColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 26,
-                    ),
+                    style: AppTheme.display(color: verdictColor, fontSize: 26)
+                        .copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.02 * 26,
+                          height: 1.0,
+                        ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     '$buyCount buy · $sellCount sell signals',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: appColors.subtleText,
+                    style: AppTheme.mono(
+                      color: const Color(0x57FFFFFF),
+                      fontSize: 11,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'Oscillator score $score/100',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: appColors.subtleText,
+                    'Oscillator score ${gauge.round()}/100',
+                    style: AppTheme.mono(
+                      color: const Color(0x8CFFFFFF),
+                      fontSize: 11,
                     ),
                   ),
                 ],
@@ -89,153 +116,143 @@ class SignalGauge extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _SectionTitle('Oscillators'),
-        _SignalTable(rows: oscillators, appColors: appColors, theme: theme),
+        _SignalTable(rows: oscillators, signalWidth: 64),
         const SizedBox(height: 14),
         _SectionTitle('Moving averages'),
-        _SignalTable(rows: movingAverages, appColors: appColors, theme: theme),
+        _SignalTable(rows: movingAverages, signalWidth: 36),
         const SizedBox(height: 14),
         _SectionTitle('Pivot levels'),
-        _PivotGrid(pivots: pivots, appColors: appColors, theme: theme),
+        _PivotGrid(pivots: pivots),
       ],
     );
   }
 
-  int _computeScore() {
-    final change = ticker?.change24hPercent ?? 0;
-    return ((change * 5000 + 50).clamp(0, 100)).toInt();
+  int _rsi(String rawSymbol) {
+    var seed = rawSymbol.length * 13;
+    const modulus = 2147483647;
+    const multiplier = 16807;
+    seed = seed % modulus;
+    if (seed <= 0) seed += modulus - 1;
+    seed = (seed * multiplier) % modulus;
+    final r = seed / modulus;
+    return 58 + (r * 20 - 6).round();
   }
 
-  String _verdict(int score) {
-    if (score >= 80) return 'Strong Buy';
-    if (score >= 60) return 'Buy';
-    if (score >= 40) return 'Neutral';
-    if (score >= 20) return 'Sell';
-    return 'Strong Sell';
-  }
-
-  List<_SignalRow> _buildOscillators(double price, AppColorTheme appColors) {
+  List<_SignalRow> _buildOscillators(
+    double chg,
+    double chgP,
+    int rsi,
+    AppColorTheme appColors,
+  ) {
     return [
       _SignalRow(
         'RSI (14)',
-        _jitter(price, 0.02).toStringAsFixed(2),
-        'Neutral',
-        appColors.subtleText,
+        rsi.toStringAsFixed(1),
+        rsi > 70
+            ? 'Overbought'
+            : rsi < 35
+            ? 'Oversold'
+            : 'Neutral',
+        rsi > 70
+            ? appColors.bearish
+            : rsi < 35
+            ? appColors.bullish
+            : const Color(0x8CFFFFFF),
       ),
       _SignalRow(
         'MACD (12,26)',
-        _jitter(price, 0.01).toStringAsFixed(2),
-        'Buy',
-        appColors.bullish,
+        (chg * 0.12).toStringAsFixed(1),
+        chg > 0 ? 'Buy' : 'Sell',
+        chg > 0 ? appColors.bullish : appColors.bearish,
       ),
       _SignalRow(
-        'Stoch (14,3,3)',
-        _jitter(price, 0.03).toStringAsFixed(2),
-        'Sell',
-        appColors.bearish,
+        'Stoch %K',
+        (rsi - 4).toStringAsFixed(1),
+        'Neutral',
+        const Color(0x8CFFFFFF),
       ),
       _SignalRow(
         'CCI (20)',
-        _jitter(price, 0.015).toStringAsFixed(2),
-        'Neutral',
-        appColors.subtleText,
+        (chgP * 9).toStringAsFixed(1),
+        chgP > 0 ? 'Buy' : 'Sell',
+        chgP > 0 ? appColors.bullish : appColors.bearish,
       ),
       _SignalRow(
-        'Momentum (10)',
-        _jitter(price, 0.025).toStringAsFixed(2),
+        'Williams %R',
+        (-30 - rsi * 0.3).toStringAsFixed(1),
         'Buy',
         appColors.bullish,
       ),
     ];
   }
 
-  List<_SignalRow> _buildMovingAverages(double price, AppColorTheme appColors) {
+  List<_SignalRow> _buildMovingAverages(
+    List<Candle> data,
+    double last,
+    int decimals,
+    AppColorTheme appColors,
+  ) {
+    return [7, 25, 50, 99, 200].map((p) {
+      final mv = _movingAverage(data, p);
+      final buy = last >= mv;
+      return _SignalRow(
+        'MA $p',
+        formatFixedPrice(mv, decimals),
+        buy ? 'Buy' : 'Sell',
+        buy ? appColors.bullish : appColors.bearish,
+      );
+    }).toList();
+  }
+
+  List<_Pivot> _buildPivots(List<Candle> candles, SymbolMetadata meta) {
+    final last24 = candles.length >= 24
+        ? candles.sublist(candles.length - 24)
+        : candles;
+    final hi = last24.map((c) => c.high).reduce((a, b) => a > b ? a : b);
+    final lo = last24.map((c) => c.low).reduce((a, b) => a < b ? a : b);
+    final last = candles.isNotEmpty ? candles.last.close : hi;
     return [
-      _SignalRow(
-        'MA10',
-        formatPrice(price * 0.998, maxDecimals: 2),
-        'Buy',
-        appColors.bullish,
-      ),
-      _SignalRow(
-        'MA20',
-        formatPrice(price * 0.995, maxDecimals: 2),
-        'Buy',
-        appColors.bullish,
-      ),
-      _SignalRow(
-        'MA50',
-        formatPrice(price * 0.985, maxDecimals: 2),
-        'Buy',
-        appColors.bullish,
-      ),
-      _SignalRow(
-        'MA100',
-        formatPrice(price * 0.97, maxDecimals: 2),
-        'Neutral',
-        appColors.subtleText,
-      ),
-      _SignalRow(
-        'MA200',
-        formatPrice(price * 0.94, maxDecimals: 2),
-        'Sell',
-        appColors.bearish,
-      ),
+      _Pivot('R2', hi * 1.012, meta.decimals),
+      _Pivot('R1', hi, meta.decimals),
+      _Pivot('Pivot', (hi + lo + last) / 3, meta.decimals),
+      _Pivot('S1', lo, meta.decimals),
+      _Pivot('S2', lo * 0.988, meta.decimals),
     ];
   }
 
-  List<_Pivot> _buildPivots(double price) {
-    return [
-      _Pivot('S2', price * 0.96),
-      _Pivot('S1', price * 0.98),
-      _Pivot('PP', price),
-      _Pivot('R1', price * 1.02),
-      _Pivot('R2', price * 1.04),
-    ];
-  }
-
-  double _jitter(double base, double factor) {
-    return base * (1 + factor);
+  double _movingAverage(List<Candle> data, int period) {
+    if (data.isEmpty) return 0.0;
+    final effective = min(period, data.length);
+    final slice = data.sublist(data.length - effective);
+    final sum = slice.fold(0.0, (acc, c) => acc + c.close);
+    return sum / slice.length;
   }
 }
 
 class _GaugePainter extends StatelessWidget {
-  const _GaugePainter({
-    required this.score,
-    required this.appColors,
-    required this.theme,
-  });
+  const _GaugePainter({required this.score, required this.appColors});
 
-  final int score;
+  final double score;
   final AppColorTheme appColors;
-  final ThemeData theme;
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       size: const Size(120, 66),
-      painter: _GaugeArcPainter(
-        score: score,
-        appColors: appColors,
-        theme: theme,
-      ),
+      painter: _GaugeArcPainter(score: score, appColors: appColors),
     );
   }
 }
 
 class _GaugeArcPainter extends CustomPainter {
-  _GaugeArcPainter({
-    required this.score,
-    required this.appColors,
-    required this.theme,
-  });
+  _GaugeArcPainter({required this.score, required this.appColors});
 
-  final int score;
+  final double score;
   final AppColorTheme appColors;
-  final ThemeData theme;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final strokeWidth = size.width * 0.09;
+    const strokeWidth = 11.0;
     final radius = size.width / 2 - strokeWidth;
     final center = Offset(size.width / 2, size.height - strokeWidth / 2);
 
@@ -254,16 +271,16 @@ class _GaugeArcPainter extends CustomPainter {
       );
     }
 
-    drawArc(pi, pi * 0.32, appColors.bearish.withValues(alpha: 0.7));
+    drawArc(pi, pi * 0.32, appColors.bearish.withValues(alpha: 0.85));
     drawArc(
       pi + pi * 0.34,
       pi * 0.32,
-      appColors.subtleText.withValues(alpha: 0.7),
+      const Color(0xFFFFB020).withValues(alpha: 0.85),
     );
     drawArc(
       pi + pi * 0.68,
       pi * 0.32,
-      appColors.bullish.withValues(alpha: 0.7),
+      appColors.bullish.withValues(alpha: 0.85),
     );
 
     final angle = pi + (score / 100) * pi;
@@ -277,16 +294,12 @@ class _GaugeArcPainter extends CustomPainter {
       center,
       needleEnd,
       Paint()
-        ..color = theme.colorScheme.onSurface
+        ..color = const Color(0xFFF2F5FA)
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round,
     );
 
-    canvas.drawCircle(
-      center,
-      4.5,
-      Paint()..color = theme.colorScheme.onSurface,
-    );
+    canvas.drawCircle(center, 4.5, Paint()..color = const Color(0xFFF2F5FA));
   }
 
   @override
@@ -300,17 +313,14 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>()!;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 7),
       child: Text(
         title,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: appColors.subtleText,
-          letterSpacing: 0.1,
-        ),
+        style: AppTheme.mono(
+          color: const Color(0x57FFFFFF),
+          fontSize: 9,
+        ).copyWith(letterSpacing: 0.1),
       ),
     );
   }
@@ -326,21 +336,16 @@ class _SignalRow {
 }
 
 class _SignalTable extends StatelessWidget {
-  const _SignalTable({
-    required this.rows,
-    required this.appColors,
-    required this.theme,
-  });
+  const _SignalTable({required this.rows, required this.signalWidth});
 
   final List<_SignalRow> rows;
-  final AppColorTheme appColors;
-  final ThemeData theme;
+  final double signalWidth;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: appColors.borderSubtle),
+        border: Border.all(color: const Color(0x12FFFFFF)),
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -350,9 +355,10 @@ class _SignalTable extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
+                color: const Color(0xFF0E131F),
                 border: Border(
                   bottom: i < rows.length - 1
-                      ? BorderSide(color: appColors.borderSubtle)
+                      ? const BorderSide(color: Color(0x12FFFFFF))
                       : BorderSide.none,
                 ),
               ),
@@ -361,28 +367,30 @@ class _SignalTable extends StatelessWidget {
                 children: [
                   Text(
                     rows[i].name,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: appColors.subtleText,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0x8CFFFFFF),
+                      fontSize: 12,
                     ),
                   ),
                   Row(
                     children: [
                       Text(
                         rows[i].value,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: AppTheme.mono(
+                          color: const Color(0xFFF2F5FA),
+                          fontSize: 12,
+                        ).copyWith(fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(width: 12),
                       SizedBox(
-                        width: 64,
+                        width: signalWidth,
                         child: Text(
                           rows[i].signal,
                           textAlign: TextAlign.right,
-                          style: theme.textTheme.labelSmall?.copyWith(
+                          style: AppTheme.mono(
                             color: rows[i].signalColor,
-                            fontWeight: FontWeight.w600,
-                          ),
+                            fontSize: 10,
+                          ).copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
@@ -397,28 +405,23 @@ class _SignalTable extends StatelessWidget {
 }
 
 class _Pivot {
-  const _Pivot(this.label, this.value);
+  const _Pivot(this.label, this.value, this.decimals);
 
   final String label;
   final double value;
+  final int decimals;
 }
 
 class _PivotGrid extends StatelessWidget {
-  const _PivotGrid({
-    required this.pivots,
-    required this.appColors,
-    required this.theme,
-  });
+  const _PivotGrid({required this.pivots});
 
   final List<_Pivot> pivots;
-  final AppColorTheme appColors;
-  final ThemeData theme;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: appColors.borderSubtle,
+        color: const Color(0x12FFFFFF),
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -428,22 +431,24 @@ class _PivotGrid extends StatelessWidget {
             Expanded(
               child: Container(
                 margin: EdgeInsets.only(left: i == 0 ? 0 : 1),
-                color: theme.colorScheme.surface,
+                color: const Color(0xFF0E131F),
                 padding: const EdgeInsets.symmetric(vertical: 9),
                 child: Column(
                   children: [
                     Text(
                       pivots[i].label,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: appColors.subtleText,
+                      style: AppTheme.mono(
+                        color: const Color(0x57FFFFFF),
+                        fontSize: 9,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      formatPrice(pivots[i].value, maxDecimals: 2),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
+                      formatFixedPrice(pivots[i].value, pivots[i].decimals),
+                      style: AppTheme.mono(
+                        color: const Color(0xFFF2F5FA),
+                        fontSize: 10,
+                      ).copyWith(fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),

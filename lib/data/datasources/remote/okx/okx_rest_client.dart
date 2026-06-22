@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -46,9 +47,9 @@ final class OKXRestClient
   @override
   Future<Result<Ticker>> fetchTicker(TradingSymbol symbol) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/api/v5/market/ticker', {'instId': _instId(symbol)}),
-      );
+      final response = await _httpClient
+          .get(_uri('/api/v5/market/ticker', {'instId': _instId(symbol)}))
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('OKX ticker ${response.statusCode}'));
       }
@@ -58,6 +59,8 @@ final class OKXRestClient
         return Err(NetworkFailure(apiError));
       }
       return Success(_parseTicker(symbol, _firstDataItem(json)));
+    } on TimeoutException {
+      return const Err(NetworkFailure('OKX ticker request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('OKX ticker parse failed: $e'));
     } on TypeError catch (e) {
@@ -78,13 +81,15 @@ final class OKXRestClient
     int? limit,
   }) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/api/v5/market/history-candles', {
-          'instId': _instId(symbol),
-          'bar': _timeframeCode(timeframe),
-          if (limit != null) 'limit': limit.toString(),
-        }),
-      );
+      final response = await _httpClient
+          .get(
+            _uri('/api/v5/market/history-candles', {
+              'instId': _instId(symbol),
+              'bar': _timeframeCode(timeframe),
+              if (limit != null) 'limit': limit.toString(),
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('OKX candles ${response.statusCode}'));
       }
@@ -97,6 +102,8 @@ final class OKXRestClient
       return Success(
         data.map((e) => _parseCandle(e as List<dynamic>)).toList(),
       );
+    } on TimeoutException {
+      return const Err(NetworkFailure('OKX candles request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('OKX candles parse failed: $e'));
     } on TypeError catch (e) {
@@ -116,12 +123,14 @@ final class OKXRestClient
     int? depth,
   }) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/api/v5/market/books', {
-          'instId': _instId(symbol),
-          if (depth != null) 'sz': depth.toString(),
-        }),
-      );
+      final response = await _httpClient
+          .get(
+            _uri('/api/v5/market/books', {
+              'instId': _instId(symbol),
+              if (depth != null) 'sz': depth.toString(),
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('OKX order book ${response.statusCode}'));
       }
@@ -131,6 +140,8 @@ final class OKXRestClient
         return Err(NetworkFailure(apiError));
       }
       return Success(_parseOrderBook(_firstDataItem(json)));
+    } on TimeoutException {
+      return const Err(NetworkFailure('OKX order book request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('OKX order book parse failed: $e'));
     } on TypeError catch (e) {
@@ -150,12 +161,14 @@ final class OKXRestClient
     int? limit,
   }) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/api/v5/market/trades', {
-          'instId': _instId(symbol),
-          if (limit != null) 'limit': limit.toString(),
-        }),
-      );
+      final response = await _httpClient
+          .get(
+            _uri('/api/v5/market/trades', {
+              'instId': _instId(symbol),
+              if (limit != null) 'limit': limit.toString(),
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('OKX trades ${response.statusCode}'));
       }
@@ -168,6 +181,8 @@ final class OKXRestClient
       return Success(
         data.map((e) => _parseTrade(e as Map<String, dynamic>)).toList(),
       );
+    } on TimeoutException {
+      return const Err(NetworkFailure('OKX trades request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('OKX trades parse failed: $e'));
     } on TypeError catch (e) {
@@ -245,10 +260,15 @@ final class OKXRestClient
       throw const FormatException('negative trade value');
     }
     final sideString = json['side'] as String;
+    final side = switch (sideString.toLowerCase()) {
+      'buy' => TradeSide.buy,
+      'sell' => TradeSide.sell,
+      _ => throw FormatException('Unknown trade side: $sideString'),
+    };
     return Trade(
       price: price,
       amount: amount,
-      side: sideString.toLowerCase() == 'buy' ? TradeSide.buy : TradeSide.sell,
+      side: side,
       timestamp: _parseTimestamp(json['ts'] as String?),
       tradeId: json['tradeId']?.toString(),
     );

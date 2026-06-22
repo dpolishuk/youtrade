@@ -1,17 +1,17 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-bool _isOnline(List<ConnectivityResult> results) =>
+bool isOnline(List<ConnectivityResult> results) =>
     results.isNotEmpty && !results.contains(ConnectivityResult.none);
 
 final connectivityProvider = StreamProvider<bool>((ref) async* {
   final connectivity = Connectivity();
 
   final initialResult = await connectivity.checkConnectivity();
-  yield _isOnline(initialResult);
+  yield isOnline(initialResult);
 
   await for (final result in connectivity.onConnectivityChanged) {
-    yield _isOnline(result);
+    yield isOnline(result);
   }
 });
 

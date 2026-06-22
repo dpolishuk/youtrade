@@ -13,13 +13,14 @@ import '../../../../domain/sources/market_stream_source.dart';
 
 typedef WebSocketChannelFactory = WebSocketChannel Function(String streamName);
 
-final class BinanceWebSocketClient implements MarketStreamSource {
+class BinanceWebSocketClient implements MarketStreamSource {
   BinanceWebSocketClient({
     WebSocketChannelFactory? channelFactory,
     String? baseUrl,
   }) : _channelFactory = channelFactory ?? _defaultFactory(baseUrl);
 
   final WebSocketChannelFactory _channelFactory;
+  final List<Future<void> Function()> _sessions = [];
 
   static WebSocketChannelFactory _defaultFactory(String? baseUrl) {
     return (streamName) {
@@ -71,11 +72,21 @@ final class BinanceWebSocketClient implements MarketStreamSource {
   ) {
     final channel = _channelFactory(streamName);
     StreamSubscription<dynamic>? subscription;
+    var disposed = false;
+
+    Future<void> disposeSession() async {
+      if (disposed) return;
+      disposed = true;
+      await subscription?.cancel();
+      await channel.sink.close();
+    }
+
+    _sessions.add(disposeSession);
 
     final controller = StreamController<T>(
       onCancel: () async {
-        await subscription?.cancel();
-        await channel.sink.close();
+        await disposeSession();
+        _sessions.remove(disposeSession);
       },
     );
 
@@ -94,10 +105,6 @@ final class BinanceWebSocketClient implements MarketStreamSource {
           controller.add(onParseError(e));
         } on ArgumentError catch (e) {
           controller.add(onParseError(e));
-        } on Exception catch (e) {
-          controller.add(onError(e));
-        } on Error catch (e) {
-          controller.add(onError(e));
         }
       },
       onError: (Object error) => controller.add(onError(error)),
@@ -105,6 +112,13 @@ final class BinanceWebSocketClient implements MarketStreamSource {
     );
 
     return controller.stream;
+  }
+
+  void closeAll() {
+    for (final dispose in _sessions.toList()) {
+      unawaited(dispose());
+    }
+    _sessions.clear();
   }
 
   Ticker _parseTicker(TradingSymbol symbol, Map<String, dynamic> json) {

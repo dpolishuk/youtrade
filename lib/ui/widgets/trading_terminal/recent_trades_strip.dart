@@ -20,7 +20,11 @@ class RecentTradesStrip extends ConsumerWidget {
 
     return tradesAsync.when(
       data: (trades) {
-        final recent = trades.take(5).toList();
+        final recent =
+            (trades.toList()
+                  ..sort((a, b) => b.timestamp.compareTo(a.timestamp)))
+                .take(5)
+                .toList();
         if (recent.isEmpty) return const SizedBox.shrink();
 
         return Column(
@@ -87,7 +91,7 @@ class RecentTradesStrip extends ConsumerWidget {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (error, stack) => const SizedBox.shrink(),
+      error: (error, stack) => const Center(child: Text('Trades unavailable')),
     );
   }
 }

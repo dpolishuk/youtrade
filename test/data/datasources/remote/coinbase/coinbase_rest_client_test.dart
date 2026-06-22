@@ -189,7 +189,14 @@ void main() {
       expect(result, isA<Err<List<Candle>>>());
       result.when(
         success: (_) => fail('expected failure'),
-        failure: (failure) => expect(failure, isA<ParseFailure>()),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Coinbase candles parse failed:'));
+          expect(
+            failure.message,
+            contains("is not a subtype of type 'List<dynamic>'"),
+          );
+        },
       );
     });
 
@@ -280,7 +287,11 @@ void main() {
       expect(result, isA<Err<List<Trade>>>());
       result.when(
         success: (_) => fail('expected failure'),
-        failure: (failure) => expect(failure, isA<ParseFailure>()),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Coinbase trades parse failed:'));
+          expect(failure.message, contains("type 'Null'"));
+        },
       );
     });
 
@@ -551,6 +562,32 @@ void main() {
       );
     });
 
+    test('fetchTrades returns ParseFailure on unknown side', () async {
+      final client = CoinbaseRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '[{"time":"2024-06-21T12:00:00.000Z","trade_id":1,"price":"100.0","size":"1.0","side":"unknown"}]',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTrades(symbol, limit: 1);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith(
+              'Coinbase trades parse failed: FormatException: Unknown trade side: unknown',
+            ),
+          );
+        },
+      );
+    });
+
     test(
       'fetchTicker returns NetworkFailure when stats succeeds but quote throws',
       () async {
@@ -714,10 +751,7 @@ void main() {
         success: (_) => fail('expected failure'),
         failure: (failure) {
           expect(failure, isA<NetworkFailure>());
-          expect(
-            failure.message,
-            startsWith('Coinbase ticker request failed: TimeoutException'),
-          );
+          expect(failure.message, 'Coinbase ticker stats request timed out');
         },
       );
     });
@@ -735,10 +769,7 @@ void main() {
         success: (_) => fail('expected failure'),
         failure: (failure) {
           expect(failure, isA<NetworkFailure>());
-          expect(
-            failure.message,
-            startsWith('Coinbase candles request failed: TimeoutException'),
-          );
+          expect(failure.message, 'Coinbase candles request timed out');
         },
       );
     });
@@ -756,10 +787,7 @@ void main() {
         success: (_) => fail('expected failure'),
         failure: (failure) {
           expect(failure, isA<NetworkFailure>());
-          expect(
-            failure.message,
-            startsWith('Coinbase order book request failed: TimeoutException'),
-          );
+          expect(failure.message, 'Coinbase order book request timed out');
         },
       );
     });
@@ -777,10 +805,7 @@ void main() {
         success: (_) => fail('expected failure'),
         failure: (failure) {
           expect(failure, isA<NetworkFailure>());
-          expect(
-            failure.message,
-            startsWith('Coinbase trades request failed: TimeoutException'),
-          );
+          expect(failure.message, 'Coinbase trades request timed out');
         },
       );
     });

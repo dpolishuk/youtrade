@@ -599,6 +599,42 @@ void main() {
       expect(values.first, isA<Success<Ticker>>());
       _expectTickerEquals((values.first as Success<Ticker>).value, expected);
     });
+
+    test('watchOrderBook emits mock data when offline', () async {
+      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expected = await expectedStore.watchOrderBook(symbol).first;
+      final repository = MarketDataRepositoryImpl(
+        registry: _FakeRegistry(),
+        isOnline: false,
+      );
+
+      final values = await repository.watchOrderBook(symbol).take(1).toList();
+
+      expect(values.length, 1);
+      expect(values.first, isA<Success<OrderBook>>());
+      _expectOrderBookEquals(
+        (values.first as Success<OrderBook>).value,
+        expected,
+      );
+    });
+
+    test('watchTrades emits mock data when offline', () async {
+      final expectedStore = MockMarketDataStore(random: Random(42));
+      final expected = await expectedStore.watchTrades(symbol).first;
+      final repository = MarketDataRepositoryImpl(
+        registry: _FakeRegistry(),
+        isOnline: false,
+      );
+
+      final values = await repository.watchTrades(symbol).take(1).toList();
+
+      expect(values.length, 1);
+      expect(values.first, isA<Success<List<Trade>>>());
+      _expectTradesEqual(
+        (values.first as Success<List<Trade>>).value,
+        expected,
+      );
+    });
   });
 
   group('MarketDataRepositoryImpl network failure fallback', () {
@@ -846,7 +882,7 @@ void main() {
 
       delayedSource.complete(networkTicker);
       await pumpEventQueue();
-      expect(await cache.getTicker(symbol), networkTicker);
+      expect(await cache.getTicker(symbol), freshTicker);
     });
 
     test('getTicker saves network result to cache', () async {
@@ -931,7 +967,7 @@ void main() {
 
         delayedSource.complete(networkCandles);
         await pumpEventQueue();
-        expect(await cache.getCandles(symbol, Timeframe.h1), networkCandles);
+        expect(await cache.getCandles(symbol, Timeframe.h1), freshCandles);
       },
     );
 
@@ -1004,7 +1040,7 @@ void main() {
 
         delayedSource.complete(networkOrderBook);
         await pumpEventQueue();
-        expect(await cache.getOrderBook(symbol), networkOrderBook);
+        expect(await cache.getOrderBook(symbol), freshOrderBook);
       },
     );
 
@@ -1075,8 +1111,176 @@ void main() {
 
       delayedSource.complete(networkTrades);
       await pumpEventQueue();
-      expect(await cache.getTrades(symbol), networkTrades);
+      expect(await cache.getTrades(symbol), freshTrades);
     });
+
+    test(
+      'getTicker background refresh updates cache when network is newer',
+      () async {
+        final newerNetworkTicker = Ticker(
+          symbol: symbol,
+          lastPrice: 300,
+          bid: 299,
+          ask: 301,
+          change24h: 3,
+          change24hPercent: 0.03,
+          volume: 3000,
+          timestamp: DateTime.now().toUtc().add(const Duration(seconds: 1)),
+        );
+        final cache = _FakeMarketCacheDataSource()..saveTicker(freshTicker);
+        final delayedSource = _DelayedTickerSource();
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          isOnline: true,
+          cache: cache,
+          venueSources: {
+            Venue.binance: VenueSources(
+              ticker: delayedSource,
+              candles: _FailingCandleSource(),
+              orderBook: _FailingOrderBookSource(),
+              trades: _FailingTradeSource(),
+              stream: _FailingStreamSource(),
+            ),
+          },
+        );
+
+        final future = repository.getTicker(symbol);
+        final result = await future;
+
+        expect(result, isA<Success<Ticker>>());
+        expect((result as Success<Ticker>).value, freshTicker);
+
+        delayedSource.complete(newerNetworkTicker);
+        await pumpEventQueue();
+        expect(await cache.getTicker(symbol), newerNetworkTicker);
+      },
+    );
+
+    test(
+      'getCandles background refresh updates cache when network is newer',
+      () async {
+        final newerNetworkCandles = [
+          Candle(
+            open: 3,
+            high: 4,
+            low: 2,
+            close: 3.5,
+            volume: 300,
+            timestamp: DateTime.now().toUtc().add(const Duration(seconds: 1)),
+          ),
+        ];
+        final cache = _FakeMarketCacheDataSource()
+          ..saveCandles(symbol, Timeframe.h1, freshCandles);
+        final delayedSource = _DelayedCandleSource();
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          isOnline: true,
+          cache: cache,
+          venueSources: {
+            Venue.binance: VenueSources(
+              ticker: _FailingTickerSource(),
+              candles: delayedSource,
+              orderBook: _FailingOrderBookSource(),
+              trades: _FailingTradeSource(),
+              stream: _FailingStreamSource(),
+            ),
+          },
+        );
+
+        final future = repository.getCandles(symbol, Timeframe.h1);
+        final result = await future;
+
+        expect(result, isA<Success<List<Candle>>>());
+        expect((result as Success<List<Candle>>).value, freshCandles);
+
+        delayedSource.complete(newerNetworkCandles);
+        await pumpEventQueue();
+        expect(
+          await cache.getCandles(symbol, Timeframe.h1),
+          newerNetworkCandles,
+        );
+      },
+    );
+
+    test(
+      'getOrderBook background refresh updates cache when network is newer',
+      () async {
+        final newerNetworkOrderBook = OrderBook(
+          bids: const [OrderBookLevel(price: 299, amount: 1)],
+          asks: const [OrderBookLevel(price: 301, amount: 1)],
+          timestamp: DateTime.now().toUtc().add(const Duration(seconds: 1)),
+        );
+        final cache = _FakeMarketCacheDataSource()
+          ..saveOrderBook(symbol, freshOrderBook);
+        final delayedSource = _DelayedOrderBookSource();
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          isOnline: true,
+          cache: cache,
+          venueSources: {
+            Venue.binance: VenueSources(
+              ticker: _FailingTickerSource(),
+              candles: _FailingCandleSource(),
+              orderBook: delayedSource,
+              trades: _FailingTradeSource(),
+              stream: _FailingStreamSource(),
+            ),
+          },
+        );
+
+        final future = repository.getOrderBook(symbol);
+        final result = await future;
+
+        expect(result, isA<Success<OrderBook>>());
+        expect((result as Success<OrderBook>).value, freshOrderBook);
+
+        delayedSource.complete(newerNetworkOrderBook);
+        await pumpEventQueue();
+        expect(await cache.getOrderBook(symbol), newerNetworkOrderBook);
+      },
+    );
+
+    test(
+      'getTrades background refresh updates cache when network is newer',
+      () async {
+        final newerNetworkTrades = [
+          Trade(
+            price: 300,
+            amount: 3,
+            side: TradeSide.buy,
+            timestamp: DateTime.now().toUtc().add(const Duration(seconds: 1)),
+            tradeId: 't3',
+          ),
+        ];
+        final cache = _FakeMarketCacheDataSource()
+          ..saveTrades(symbol, freshTrades);
+        final delayedSource = _DelayedTradeSource();
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          isOnline: true,
+          cache: cache,
+          venueSources: {
+            Venue.binance: VenueSources(
+              ticker: _FailingTickerSource(),
+              candles: _FailingCandleSource(),
+              orderBook: _FailingOrderBookSource(),
+              trades: delayedSource,
+              stream: _FailingStreamSource(),
+            ),
+          },
+        );
+
+        final future = repository.getTrades(symbol);
+        final result = await future;
+
+        expect(result, isA<Success<List<Trade>>>());
+        expect((result as Success<List<Trade>>).value, freshTrades);
+
+        delayedSource.complete(newerNetworkTrades);
+        await pumpEventQueue();
+        expect(await cache.getTrades(symbol), newerNetworkTrades);
+      },
+    );
 
     test('getTrades saves network result to cache', () async {
       final cache = _FakeMarketCacheDataSource();
@@ -1117,6 +1321,34 @@ void main() {
       expect(result, isA<Success<List<Trade>>>());
       expect((result as Success<List<Trade>>).value, staleTrades);
     });
+
+    test(
+      'getTicker returns fresh cache and keeps it when background refresh throws',
+      () async {
+        final cache = _FakeMarketCacheDataSource()..saveTicker(freshTicker);
+        final repository = MarketDataRepositoryImpl(
+          registry: _FakeRegistry(),
+          isOnline: true,
+          cache: cache,
+          venueSources: {
+            Venue.binance: VenueSources(
+              ticker: _ThrowingTickerSource(),
+              candles: _FailingCandleSource(),
+              orderBook: _FailingOrderBookSource(),
+              trades: _FailingTradeSource(),
+              stream: _FailingStreamSource(),
+            ),
+          },
+        );
+
+        final result = await repository.getTicker(symbol);
+
+        expect(result, isA<Success<Ticker>>());
+        expect((result as Success<Ticker>).value, freshTicker);
+        await pumpEventQueue();
+        expect(await cache.getTicker(symbol), freshTicker);
+      },
+    );
 
     test('watchTicker emits cached snapshot before network updates', () async {
       final cache = _FakeMarketCacheDataSource()..saveTicker(freshTicker);

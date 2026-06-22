@@ -31,17 +31,37 @@ void main() {
       );
     });
 
-    test('rejects internal whitespace in base or quote', () {
-      expect(
-        () =>
-            TradingSymbol(base: 'BTC USD', quote: 'USDT', venue: Venue.binance),
-        throwsA(isA<ArgumentError>()),
-      );
-      expect(
-        () => TradingSymbol(base: 'BTC', quote: 'US DT', venue: Venue.binance),
-        throwsA(isA<ArgumentError>()),
-      );
-    });
+    test(
+      'rejects base or quote containing characters outside the allowlist',
+      () {
+        expect(
+          () => TradingSymbol(
+            base: 'BTC USD',
+            quote: 'USDT',
+            venue: Venue.binance,
+          ),
+          throwsA(isA<ArgumentError>()),
+        );
+        expect(
+          () =>
+              TradingSymbol(base: 'BTC', quote: 'US DT', venue: Venue.binance),
+          throwsA(isA<ArgumentError>()),
+        );
+        expect(
+          () => TradingSymbol(base: '日本語', quote: 'USDT', venue: Venue.binance),
+          throwsA(isA<ArgumentError>()),
+        );
+        expect(
+          () => TradingSymbol(base: 'BTC', quote: '韩元', venue: Venue.binance),
+          throwsA(isA<ArgumentError>()),
+        );
+        expect(
+          () =>
+              TradingSymbol(base: 'BTC!', quote: 'USDT', venue: Venue.binance),
+          throwsA(isA<ArgumentError>()),
+        );
+      },
+    );
 
     test('preserves exchange-specific raw symbol', () {
       final coinbase = TradingSymbol(
@@ -69,15 +89,19 @@ void main() {
       expect(binance, isNot(equals(coinbase)));
     });
 
-    test('normalizes unicode base and quote without corruption', () {
-      final symbol = TradingSymbol(
-        base: '日本語',
-        quote: '韩元',
-        venue: Venue.binance,
+    test('rejects base or quote longer than 20 characters', () {
+      final longBase = 'A' * 21;
+      final longQuote = 'B' * 21;
+      expect(
+        () =>
+            TradingSymbol(base: longBase, quote: 'USDT', venue: Venue.binance),
+        throwsA(isA<ArgumentError>()),
       );
-      expect(symbol.base, '日本語');
-      expect(symbol.quote, '韩元');
-      expect(symbol.id, '日本語/韩元');
+      expect(
+        () =>
+            TradingSymbol(base: 'BTC', quote: longQuote, venue: Venue.binance),
+        throwsA(isA<ArgumentError>()),
+      );
     });
 
     test('rejects null byte in base or quote to prevent malformed symbols', () {
@@ -91,21 +115,6 @@ void main() {
             TradingSymbol(base: 'BTC', quote: 'USD\x00T', venue: Venue.binance),
         throwsA(isA<ArgumentError>()),
       );
-    });
-
-    test('handles very long base and quote without truncation', () {
-      final longBase = 'A' * 1000;
-      final longQuote = 'B' * 1000;
-      final symbol = TradingSymbol(
-        base: longBase,
-        quote: longQuote,
-        venue: Venue.binance,
-      );
-      expect(symbol.base, longBase);
-      expect(symbol.quote, longQuote);
-      expect(symbol.base.length, 1000);
-      expect(symbol.quote.length, 1000);
-      expect(symbol.id, '$longBase/$longQuote');
     });
 
     test('trims leading and trailing whitespace before normalizing', () {

@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/core/failures.dart';
@@ -88,9 +85,6 @@ class _ThrowingReadStorage extends _FakeSecureStorage {
     throw exception;
   }
 }
-
-String _expectedHash(String pin, String salt) =>
-    sha256.convert(utf8.encode('$salt$pin')).toString();
 
 void main() {
   group('SecurePinAuthService', () {
@@ -202,14 +196,13 @@ void main() {
         expect(hash, isNotEmpty);
 
         final candidates = ['1111', '2222', '3333'];
-        final matchingCandidates = candidates
-            .where((pin) => _expectedHash(pin, salt!) == hash)
-            .toList();
+        final matchingCandidates = <String>[];
+        for (final pin in candidates) {
+          if (await service.authenticatePin(pin)) {
+            matchingCandidates.add(pin);
+          }
+        }
         expect(matchingCandidates.length, 1);
-        expect(
-          await service.authenticatePin(matchingCandidates.single),
-          isTrue,
-        );
         for (final other in candidates.where(
           (p) => p != matchingCandidates.single,
         )) {

@@ -66,7 +66,7 @@ class FakeMarketDataRepository implements MarketDataRepository {
         ),
       );
     }
-    return Success(candles.reversed.toList());
+    return Success(candles);
   }
 
   @override

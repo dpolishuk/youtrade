@@ -19,16 +19,50 @@ import '../widgets/trading_terminal/symbol_header.dart';
 import '../widgets/trading_terminal/time_frame_selector.dart';
 import '../widgets/trading_terminal/trade_ticket.dart';
 
-class TradingTerminalScreen extends ConsumerWidget {
+class TradingTerminalScreen extends ConsumerStatefulWidget {
   const TradingTerminalScreen({this.symbol, super.key});
 
   final String? symbol;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selectedSymbol = symbol != null
-        ? TradingSymbol(base: symbol!, quote: 'USDT', venue: Venue.binance)
-        : ref.watch(selectedSymbolProvider);
+  ConsumerState<TradingTerminalScreen> createState() =>
+      _TradingTerminalScreenState();
+}
+
+class _TradingTerminalScreenState extends ConsumerState<TradingTerminalScreen> {
+  static final _symbolPartRegex = RegExp(r'^[A-Za-z0-9.]{1,20}$');
+  bool _invalidSymbolWarningShown = false;
+
+  @override
+  void didUpdateWidget(covariant TradingTerminalScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.symbol != oldWidget.symbol) {
+      _invalidSymbolWarningShown = false;
+    }
+  }
+
+  TradingSymbol _resolveSymbol() {
+    final raw = widget.symbol?.trim();
+    if (raw != null && raw.isNotEmpty && _symbolPartRegex.hasMatch(raw)) {
+      return TradingSymbol(base: raw, quote: 'USDT', venue: Venue.binance);
+    }
+
+    if (raw != null && !_invalidSymbolWarningShown) {
+      _invalidSymbolWarningShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Invalid symbol parameter: $raw')),
+        );
+      });
+    }
+
+    return ref.watch(selectedSymbolProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedSymbol = _resolveSymbol();
     final terminalState = ref.watch(tradingTerminalProvider);
     final tickerAsync = ref.watch(tickerStreamProvider(selectedSymbol));
     final candlesAsync = ref.watch(
@@ -37,7 +71,6 @@ class TradingTerminalScreen extends ConsumerWidget {
     final tab = terminalState.selectedTab;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Terminal')),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -53,8 +86,7 @@ class TradingTerminalScreen extends ConsumerWidget {
               ),
               const TimeFrameSelector(),
               CandlestickChart(
-                symbol: selectedSymbol,
-                timeframe: terminalState.selectedTimeframe,
+                candles: candlesAsync.valueOrNull ?? const <Candle>[],
               ),
               const SizedBox(height: 14),
               const LowerTabs(),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import '../../../domain/entities/candle.dart';
@@ -6,8 +7,9 @@ import '../../../domain/entities/symbol.dart';
 import '../../../domain/entities/ticker.dart';
 import '../../../domain/entities/timeframe.dart';
 import '../../../domain/entities/trade.dart';
+import '../../../domain/sources/market_data_store.dart';
 
-final class MockMarketDataStore {
+final class MockMarketDataStore implements MarketDataStore {
   MockMarketDataStore({Random? random}) : _random = random ?? Random(42);
 
   final Random _random;
@@ -21,6 +23,7 @@ final class MockMarketDataStore {
     return price * (1 + (_random.nextDouble() - 0.5) * 0.02);
   }
 
+  @override
   Future<Ticker> getTicker(TradingSymbol symbol) async {
     final lastPrice = _jitter(_seedPrice(symbol));
     final bid = lastPrice * 0.9995;
@@ -37,6 +40,7 @@ final class MockMarketDataStore {
     );
   }
 
+  @override
   Future<List<Candle>> getCandles(
     TradingSymbol symbol,
     Timeframe timeframe, {
@@ -68,9 +72,10 @@ final class MockMarketDataStore {
         ),
       );
     }
-    return candles.reversed.toList();
+    return candles;
   }
 
+  @override
   Future<OrderBook> getOrderBook(TradingSymbol symbol, {int? depth}) async {
     final levels = depth ?? 10;
     final midPrice = _jitter(_seedPrice(symbol));
@@ -93,6 +98,7 @@ final class MockMarketDataStore {
     return OrderBook(bids: bids, asks: asks, timestamp: DateTime.now().toUtc());
   }
 
+  @override
   Future<List<Trade>> getTrades(TradingSymbol symbol, {int? limit}) async {
     final count = limit ?? 20;
     final basePrice = _seedPrice(symbol);
@@ -112,24 +118,39 @@ final class MockMarketDataStore {
     return trades;
   }
 
-  Stream<Ticker> watchTicker(TradingSymbol symbol) async* {
-    while (true) {
-      await Future.delayed(const Duration(seconds: 1));
-      yield await getTicker(symbol);
-    }
+  @override
+  Stream<Ticker> watchTicker(TradingSymbol symbol) {
+    Timer? timer;
+    final controller = StreamController<Ticker>(
+      onCancel: () => timer?.cancel(),
+    );
+    timer = Timer.periodic(const Duration(seconds: 1), (_) async {
+      controller.add(await getTicker(symbol));
+    });
+    return controller.stream;
   }
 
-  Stream<OrderBook> watchOrderBook(TradingSymbol symbol) async* {
-    while (true) {
-      await Future.delayed(const Duration(seconds: 1));
-      yield await getOrderBook(symbol);
-    }
+  @override
+  Stream<OrderBook> watchOrderBook(TradingSymbol symbol) {
+    Timer? timer;
+    final controller = StreamController<OrderBook>(
+      onCancel: () => timer?.cancel(),
+    );
+    timer = Timer.periodic(const Duration(seconds: 1), (_) async {
+      controller.add(await getOrderBook(symbol));
+    });
+    return controller.stream;
   }
 
-  Stream<List<Trade>> watchTrades(TradingSymbol symbol) async* {
-    while (true) {
-      await Future.delayed(const Duration(seconds: 1));
-      yield await getTrades(symbol);
-    }
+  @override
+  Stream<List<Trade>> watchTrades(TradingSymbol symbol) {
+    Timer? timer;
+    final controller = StreamController<List<Trade>>(
+      onCancel: () => timer?.cancel(),
+    );
+    timer = Timer.periodic(const Duration(seconds: 1), (_) async {
+      controller.add(await getTrades(symbol));
+    });
+    return controller.stream;
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/local/app_database.dart';
 import '../../data/datasources/local/market_cache_data_source.dart';
+import '../../data/datasources/mock/deterministic_market_data_store.dart';
 import '../../data/datasources/remote/binance/binance_rest_client.dart';
 import '../../data/datasources/remote/binance/binance_websocket_client.dart';
 import '../../data/datasources/remote/bybit/bybit_rest_client.dart';
@@ -62,7 +63,11 @@ final class _StaticExchangeCapabilityRegistry
   }
 }
 
-final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
+final appDatabaseProvider = Provider<AppDatabase>((ref) {
+  final db = AppDatabase();
+  ref.onDispose(() => db.close());
+  return db;
+});
 
 final exchangeCapabilityRegistryProvider = Provider<ExchangeCapabilityRegistry>(
   (ref) => const _StaticExchangeCapabilityRegistry(),
@@ -92,21 +97,31 @@ final _coinbaseRestClientProvider = Provider<CoinbaseRestClient>((ref) {
   return client;
 });
 
-final _binanceWebSocketClientProvider = Provider<BinanceWebSocketClient>(
-  (ref) => BinanceWebSocketClient(),
-);
+final binanceWebSocketClientProvider = Provider<BinanceWebSocketClient>((ref) {
+  final client = BinanceWebSocketClient();
+  ref.onDispose(client.closeAll);
+  return client;
+});
 
-final _bybitWebSocketClientProvider = Provider<BybitWebSocketClient>(
-  (ref) => BybitWebSocketClient(),
-);
+final bybitWebSocketClientProvider = Provider<BybitWebSocketClient>((ref) {
+  final client = BybitWebSocketClient();
+  ref.onDispose(client.closeAll);
+  return client;
+});
 
-final _okxWebSocketClientProvider = Provider<OKXWebSocketClient>(
-  (ref) => OKXWebSocketClient(),
-);
+final okxWebSocketClientProvider = Provider<OKXWebSocketClient>((ref) {
+  final client = OKXWebSocketClient();
+  ref.onDispose(client.closeAll);
+  return client;
+});
 
-final _coinbaseWebSocketClientProvider = Provider<CoinbaseWebSocketClient>(
-  (ref) => CoinbaseWebSocketClient(),
-);
+final coinbaseWebSocketClientProvider = Provider<CoinbaseWebSocketClient>((
+  ref,
+) {
+  final client = CoinbaseWebSocketClient();
+  ref.onDispose(client.closeAll);
+  return client;
+});
 
 final marketDataRepositoryProvider = Provider<MarketDataRepository>((ref) {
   final database = ref.watch(appDatabaseProvider);
@@ -120,6 +135,7 @@ final marketDataRepositoryProvider = Provider<MarketDataRepository>((ref) {
   final repository = MarketDataRepositoryImpl(
     registry: const _StaticExchangeCapabilityRegistry(),
     isOnline: ref.read(connectivityProvider).valueOrNull ?? true,
+    mockStore: const DeterministicMarketDataStore(),
     cache: cache,
     venueSources: {
       Venue.binance: VenueSources(
@@ -127,28 +143,28 @@ final marketDataRepositoryProvider = Provider<MarketDataRepository>((ref) {
         candles: binanceRest,
         orderBook: binanceRest,
         trades: binanceRest,
-        stream: ref.watch(_binanceWebSocketClientProvider),
+        stream: ref.watch(binanceWebSocketClientProvider),
       ),
       Venue.bybit: VenueSources(
         ticker: bybitRest,
         candles: bybitRest,
         orderBook: bybitRest,
         trades: bybitRest,
-        stream: ref.watch(_bybitWebSocketClientProvider),
+        stream: ref.watch(bybitWebSocketClientProvider),
       ),
       Venue.okx: VenueSources(
         ticker: okxRest,
         candles: okxRest,
         orderBook: okxRest,
         trades: okxRest,
-        stream: ref.watch(_okxWebSocketClientProvider),
+        stream: ref.watch(okxWebSocketClientProvider),
       ),
       Venue.coinbase: VenueSources(
         ticker: coinbaseRest,
         candles: coinbaseRest,
         orderBook: coinbaseRest,
         trades: coinbaseRest,
-        stream: ref.watch(_coinbaseWebSocketClientProvider),
+        stream: ref.watch(coinbaseWebSocketClientProvider),
       ),
     },
   );

@@ -91,7 +91,7 @@ final class MarketCacheDataSource implements MarketCache {
             c.timeframeCode.equals(timeframe.code),
       )
       ..orderBy([
-        (c) => OrderingTerm(expression: c.timestamp, mode: OrderingMode.desc),
+        (c) => OrderingTerm(expression: c.timestamp, mode: OrderingMode.asc),
       ]);
     if (limit != null) {
       query.limit(limit);
@@ -164,11 +164,14 @@ final class MarketCacheDataSource implements MarketCache {
           },
         )
         .toList();
+    final timestamp = trades.isEmpty
+        ? DateTime.now().toUtc()
+        : trades.map((t) => t.timestamp).reduce((a, b) => a.isAfter(b) ? a : b);
     await _database.cachedTrades.insertOnConflictUpdate(
       CachedTradesCompanion.insert(
         symbolId: symbol.id,
         tradesJson: jsonEncode(payload),
-        timestamp: DateTime.now().toUtc(),
+        timestamp: timestamp,
       ),
     );
   }

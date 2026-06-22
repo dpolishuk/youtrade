@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -32,14 +33,16 @@ final class BinanceRestClient
   @override
   Future<Result<Ticker>> fetchTicker(TradingSymbol symbol) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/api/v3/ticker/24hr', {'symbol': symbol.rawSymbol}),
-      );
+      final response = await _httpClient
+          .get(_uri('/api/v3/ticker/24hr', {'symbol': symbol.rawSymbol}))
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('Binance ticker ${response.statusCode}'));
       }
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return Success(_parseTicker(symbol, json));
+    } on TimeoutException {
+      return const Err(NetworkFailure('Binance ticker request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('Binance ticker parse failed: $e'));
     } on TypeError catch (e) {
@@ -60,13 +63,15 @@ final class BinanceRestClient
     int? limit,
   }) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/api/v3/klines', {
-          'symbol': symbol.rawSymbol,
-          'interval': _timeframeCode(timeframe),
-          if (limit != null) 'limit': limit.toString(),
-        }),
-      );
+      final response = await _httpClient
+          .get(
+            _uri('/api/v3/klines', {
+              'symbol': symbol.rawSymbol,
+              'interval': _timeframeCode(timeframe),
+              if (limit != null) 'limit': limit.toString(),
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('Binance candles ${response.statusCode}'));
       }
@@ -74,6 +79,8 @@ final class BinanceRestClient
       return Success(
         json.map((e) => _parseCandle(e as List<dynamic>)).toList(),
       );
+    } on TimeoutException {
+      return const Err(NetworkFailure('Binance candles request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('Binance candles parse failed: $e'));
     } on TypeError catch (e) {
@@ -93,17 +100,21 @@ final class BinanceRestClient
     int? depth,
   }) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/api/v3/depth', {
-          'symbol': symbol.rawSymbol,
-          if (depth != null) 'limit': depth.toString(),
-        }),
-      );
+      final response = await _httpClient
+          .get(
+            _uri('/api/v3/depth', {
+              'symbol': symbol.rawSymbol,
+              if (depth != null) 'limit': depth.toString(),
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('Binance order book ${response.statusCode}'));
       }
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return Success(_parseOrderBook(json));
+    } on TimeoutException {
+      return const Err(NetworkFailure('Binance order book request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('Binance order book parse failed: $e'));
     } on TypeError catch (e) {
@@ -123,12 +134,14 @@ final class BinanceRestClient
     int? limit,
   }) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/api/v3/trades', {
-          'symbol': symbol.rawSymbol,
-          if (limit != null) 'limit': limit.toString(),
-        }),
-      );
+      final response = await _httpClient
+          .get(
+            _uri('/api/v3/trades', {
+              'symbol': symbol.rawSymbol,
+              if (limit != null) 'limit': limit.toString(),
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('Binance trades ${response.statusCode}'));
       }
@@ -136,6 +149,8 @@ final class BinanceRestClient
       return Success(
         json.map((e) => _parseTrade(e as Map<String, dynamic>)).toList(),
       );
+    } on TimeoutException {
+      return const Err(NetworkFailure('Binance trades request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('Binance trades parse failed: $e'));
     } on TypeError catch (e) {

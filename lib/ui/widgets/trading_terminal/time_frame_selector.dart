@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/timeframe.dart';
 import '../../../presentation/providers/trading_terminal_provider.dart';
+import '../../../presentation/theme/app_theme.dart';
 import '../../../presentation/theme/theme_extensions.dart';
 
 class TimeFrameSelector extends ConsumerWidget {
@@ -12,9 +14,8 @@ class TimeFrameSelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(tradingTerminalProvider);
     final notifier = ref.read(tradingTerminalProvider.notifier);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
+    final accent = appColors.accent;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -29,11 +30,10 @@ class TimeFrameSelector extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.only(right: 3),
                       child: _TimeFrameChip(
-                        label: tf.code,
+                        label: tf.code.toUpperCase(),
                         isSelected: state.selectedTimeframe == tf,
                         onTap: () => notifier.selectTimeframe(tf),
-                        colorScheme: colorScheme,
-                        appColors: appColors,
+                        accent: accent,
                       ),
                     ),
                 ],
@@ -42,25 +42,19 @@ class TimeFrameSelector extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           Material(
-            color: colorScheme.surface,
+            color: const Color(0xFF10151F),
             borderRadius: BorderRadius.circular(6),
             child: InkWell(
-              onTap: () {
-                // Compare action is not part of this task.
-              },
+              onTap: () => context.go('/markets/compare'),
               borderRadius: BorderRadius.circular(6),
               child: Container(
                 width: 30,
                 height: 26,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: appColors.borderSubtle),
+                  border: Border.all(color: const Color(0x12FFFFFF)),
                 ),
-                child: Icon(
-                  Icons.stacked_line_chart,
-                  size: 15,
-                  color: colorScheme.primary,
-                ),
+                child: Icon(Icons.stacked_line_chart, size: 15, color: accent),
               ),
             ),
           ),
@@ -75,22 +69,24 @@ class _TimeFrameChip extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
-    required this.colorScheme,
-    required this.appColors,
+    required this.accent,
   });
 
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
-  final ColorScheme colorScheme;
-  final AppColorTheme appColors;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final bg = isSelected ? accent.withValues(alpha: 0.15) : Colors.transparent;
+    final border = isSelected
+        ? accent.withValues(alpha: 0.4)
+        : Colors.transparent;
+    final fg = isSelected ? accent : const Color(0x57FFFFFF);
 
     return Material(
-      color: isSelected ? colorScheme.primary : Colors.transparent,
+      color: bg,
       borderRadius: BorderRadius.circular(5),
       child: InkWell(
         onTap: onTap,
@@ -99,16 +95,14 @@ class _TimeFrameChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
-            border: Border.all(
-              color: isSelected ? colorScheme.primary : appColors.borderSubtle,
-            ),
+            border: Border.all(color: border),
           ),
           child: Text(
             label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTheme.mono(
+              color: fg,
+              fontSize: 10.5,
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
         ),
       ),

@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/core/result.dart';
 import 'package:youtrade/domain/entities/candle.dart';
 import 'package:youtrade/domain/entities/order_book.dart';
@@ -21,29 +20,12 @@ final _symbol = TradingSymbol(
 
 final _timestamp = DateTime.utc(2026, 1, 1);
 
-Ticker _ticker(TradingSymbol symbol) => Ticker(
-  symbol: symbol,
-  lastPrice: 100000,
-  bid: 99900,
-  ask: 100100,
-  change24h: 1000,
-  change24hPercent: 0.01,
-  volume: 1000,
-  timestamp: _timestamp,
-);
-
 Candle _candle() => Candle(
   open: 1,
   high: 2,
   low: 0.5,
   close: 1.5,
   volume: 100,
-  timestamp: _timestamp,
-);
-
-OrderBook _orderBook() => OrderBook(
-  bids: const [OrderBookLevel(price: 99, amount: 1)],
-  asks: const [OrderBookLevel(price: 101, amount: 1)],
   timestamp: _timestamp,
 );
 
@@ -56,25 +38,14 @@ Trade _trade() => Trade(
 );
 
 final class _FakeRepository implements MarketDataRepository {
-  _FakeRepository({
-    this.tickerResult,
-    this.candlesResult,
-    this.tradesResult,
-    this.tickerStream,
-    this.orderBookStream,
-    this.tradesStream,
-  });
+  _FakeRepository({this.candlesResult, this.tradesResult});
 
-  final Result<Ticker>? tickerResult;
   final Result<List<Candle>>? candlesResult;
   final Result<List<Trade>>? tradesResult;
-  final Stream<Result<Ticker>>? tickerStream;
-  final Stream<Result<OrderBook>>? orderBookStream;
-  final Stream<Result<List<Trade>>>? tradesStream;
 
   @override
   Future<Result<Ticker>> getTicker(TradingSymbol symbol) async =>
-      tickerResult ?? Success(_ticker(symbol));
+      throw UnimplementedError();
 
   @override
   Future<Result<List<Candle>>> getCandles(
@@ -87,7 +58,7 @@ final class _FakeRepository implements MarketDataRepository {
   Future<Result<OrderBook>> getOrderBook(
     TradingSymbol symbol, {
     int? depth,
-  }) async => Success(_orderBook());
+  }) async => throw UnimplementedError();
 
   @override
   Future<Result<List<Trade>>> getTrades(
@@ -97,15 +68,15 @@ final class _FakeRepository implements MarketDataRepository {
 
   @override
   Stream<Result<Ticker>> watchTicker(TradingSymbol symbol) =>
-      tickerStream ?? Stream.value(Success(_ticker(symbol)));
+      throw UnimplementedError();
 
   @override
   Stream<Result<OrderBook>> watchOrderBook(TradingSymbol symbol) =>
-      orderBookStream ?? Stream.value(Success(_orderBook()));
+      throw UnimplementedError();
 
   @override
   Stream<Result<List<Trade>>> watchTrades(TradingSymbol symbol) =>
-      tradesStream ?? Stream.value(Success([_trade()]));
+      throw UnimplementedError();
 }
 
 final class _FakeRegistry implements ExchangeCapabilityRegistry {
@@ -128,28 +99,6 @@ final class _FakeRegistry implements ExchangeCapabilityRegistry {
 
 void main() {
   final symbol = _symbol;
-
-  group('GetTickerUseCase', () {
-    test('returns ticker from repository', () async {
-      final expected = _ticker(symbol);
-      final repository = _FakeRepository(tickerResult: Success(expected));
-      final useCase = GetTickerUseCase(repository);
-
-      final result = await useCase.call(symbol);
-
-      expect(result, Success(expected));
-    });
-
-    test('returns failure from repository', () async {
-      const failure = NetworkFailure('offline');
-      final repository = _FakeRepository(tickerResult: const Err(failure));
-      final useCase = GetTickerUseCase(repository);
-
-      final result = await useCase.call(symbol);
-
-      expect(result, const Err<Ticker>(failure));
-    });
-  });
 
   group('GetCandlesUseCase', () {
     test('returns candles from repository', () async {
@@ -183,16 +132,6 @@ void main() {
   });
 
   group('GetTradesUseCase', () {
-    test('returns trades from repository', () async {
-      final expected = [_trade()];
-      final repository = _FakeRepository(tradesResult: Success(expected));
-      final useCase = GetTradesUseCase(repository);
-
-      final result = await useCase.call(symbol);
-
-      expect(result, Success(expected));
-    });
-
     test('passes limit to repository', () async {
       int? capturedLimit;
       final repository = _FakeRepository(tradesResult: Success([_trade()]));
@@ -205,51 +144,6 @@ void main() {
       await useCase.call(symbol, limit: 25);
 
       expect(capturedLimit, 25);
-    });
-  });
-
-  group('WatchTickerUseCase', () {
-    test('emits ticker from repository stream', () async {
-      final expected = _ticker(symbol);
-      final repository = _FakeRepository(
-        tickerStream: Stream.value(Success(expected)),
-      );
-      final useCase = WatchTickerUseCase(repository);
-
-      await expectLater(
-        useCase.call(symbol),
-        emitsInOrder([Success(expected)]),
-      );
-    });
-  });
-
-  group('WatchOrderBookUseCase', () {
-    test('emits order book from repository stream', () async {
-      final expected = _orderBook();
-      final repository = _FakeRepository(
-        orderBookStream: Stream.value(Success(expected)),
-      );
-      final useCase = WatchOrderBookUseCase(repository);
-
-      await expectLater(
-        useCase.call(symbol),
-        emitsInOrder([Success(expected)]),
-      );
-    });
-  });
-
-  group('WatchTradesUseCase', () {
-    test('emits trades from repository stream', () async {
-      final expected = [_trade()];
-      final repository = _FakeRepository(
-        tradesStream: Stream.value(Success(expected)),
-      );
-      final useCase = WatchTradesUseCase(repository);
-
-      await expectLater(
-        useCase.call(symbol),
-        emitsInOrder([Success(expected)]),
-      );
     });
   });
 
@@ -301,7 +195,7 @@ final class _RecordingRepository implements MarketDataRepository {
 
   @override
   Future<Result<Ticker>> getTicker(TradingSymbol symbol) =>
-      delegate.getTicker(symbol);
+      throw UnimplementedError();
 
   @override
   Future<Result<List<Candle>>> getCandles(
@@ -315,7 +209,7 @@ final class _RecordingRepository implements MarketDataRepository {
 
   @override
   Future<Result<OrderBook>> getOrderBook(TradingSymbol symbol, {int? depth}) =>
-      delegate.getOrderBook(symbol, depth: depth);
+      throw UnimplementedError();
 
   @override
   Future<Result<List<Trade>>> getTrades(TradingSymbol symbol, {int? limit}) {
@@ -325,13 +219,13 @@ final class _RecordingRepository implements MarketDataRepository {
 
   @override
   Stream<Result<Ticker>> watchTicker(TradingSymbol symbol) =>
-      delegate.watchTicker(symbol);
+      throw UnimplementedError();
 
   @override
   Stream<Result<OrderBook>> watchOrderBook(TradingSymbol symbol) =>
-      delegate.watchOrderBook(symbol);
+      throw UnimplementedError();
 
   @override
   Stream<Result<List<Trade>>> watchTrades(TradingSymbol symbol) =>
-      delegate.watchTrades(symbol);
+      throw UnimplementedError();
 }

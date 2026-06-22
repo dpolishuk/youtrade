@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -110,7 +112,14 @@ void main() {
       expect(result, isA<Err<List<Candle>>>());
       result.when(
         success: (_) => fail('expected failure'),
-        failure: (failure) => expect(failure, isA<ParseFailure>()),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Binance candles parse failed:'));
+          expect(
+            failure.message,
+            contains("is not a subtype of type 'List<dynamic>'"),
+          );
+        },
       );
     });
 
@@ -204,7 +213,14 @@ void main() {
       expect(result, isA<Err<List<Trade>>>());
       result.when(
         success: (_) => fail('expected failure'),
-        failure: (failure) => expect(failure, isA<ParseFailure>()),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Binance trades parse failed:'));
+          expect(
+            failure.message,
+            contains("type 'String' is not a subtype of type 'int'"),
+          );
+        },
       );
     });
 
@@ -220,7 +236,14 @@ void main() {
       expect(result, isA<Err<List<Trade>>>());
       result.when(
         success: (_) => fail('expected failure'),
-        failure: (failure) => expect(failure, isA<ParseFailure>()),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Binance trades parse failed:'));
+          expect(
+            failure.message,
+            contains("is not a subtype of type 'List<dynamic>'"),
+          );
+        },
       );
     });
 
@@ -355,6 +378,66 @@ void main() {
           expect(failure, isA<ParseFailure>());
           expect(failure.message, startsWith('Binance trades parse failed:'));
           expect(failure.message, contains("type 'Null'"));
+        },
+      );
+    });
+
+    test('fetchTicker returns NetworkFailure on timeout', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Binance ticker request timed out');
+        },
+      );
+    });
+
+    test('fetchCandles returns NetworkFailure on timeout', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchCandles(symbol, Timeframe.h1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Binance candles request timed out');
+        },
+      );
+    });
+
+    test('fetchOrderBook returns NetworkFailure on timeout', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchOrderBook(symbol);
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Binance order book request timed out');
+        },
+      );
+    });
+
+    test('fetchTrades returns NetworkFailure on timeout', () async {
+      final client = BinanceRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchTrades(symbol);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Binance trades request timed out');
         },
       );
     });

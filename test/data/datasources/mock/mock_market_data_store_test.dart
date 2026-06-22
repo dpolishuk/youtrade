@@ -40,24 +40,24 @@ void main() {
       expect(candles.length, 10);
 
       final first = candles.first;
-      expect(first.open, closeTo(62922.26275821006, 1e-9));
-      expect(first.high, closeTo(63346.73879738399, 1e-9));
-      expect(first.low, closeTo(62096.08382479038, 1e-9));
-      expect(first.close, closeTo(62504.629314044396, 1e-9));
-      expect(first.volume, closeTo(1762680.8913776842, 1e-9));
+      expect(first.open, closeTo(63109.0, 1e-9));
+      expect(first.high, closeTo(63490.27174398782, 1e-9));
+      expect(first.low, closeTo(62253.74015263581, 1e-9));
+      expect(first.close, closeTo(62668.40509202628, 1e-9));
+      expect(first.volume, closeTo(1394654.3731219976, 1e-9));
 
       final last = candles.last;
-      expect(last.open, closeTo(63109.0, 1e-9));
-      expect(last.high, closeTo(63490.27174398782, 1e-9));
-      expect(last.low, closeTo(62253.74015263581, 1e-9));
-      expect(last.close, closeTo(62668.40509202628, 1e-9));
-      expect(last.volume, closeTo(1394654.3731219976, 1e-9));
+      expect(last.open, closeTo(62922.26275821006, 1e-9));
+      expect(last.high, closeTo(63346.73879738399, 1e-9));
+      expect(last.low, closeTo(62096.08382479038, 1e-9));
+      expect(last.close, closeTo(62504.629314044396, 1e-9));
+      expect(last.volume, closeTo(1762680.8913776842, 1e-9));
 
       for (var i = 0; i < candles.length - 1; i++) {
         expect(
-          candles[i].timestamp.isAfter(candles[i + 1].timestamp),
+          candles[i].timestamp.isBefore(candles[i + 1].timestamp),
           isTrue,
-          reason: 'candle $i should be newer than candle ${i + 1}',
+          reason: 'candle $i should be older than candle ${i + 1}',
         );
       }
 

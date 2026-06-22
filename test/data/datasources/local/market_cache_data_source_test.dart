@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/data/datasources/local/app_database.dart';
@@ -68,8 +69,8 @@ void main() {
       final candles = [olderCandle, newerCandle];
       await cache.saveCandles(symbol, Timeframe.h1, candles);
       final retrieved = await cache.getCandles(symbol, Timeframe.h1);
-      // The data source returns candles ordered newest-first.
-      expect(retrieved, [newerCandle, olderCandle]);
+      // The data source returns candles ordered oldest-first.
+      expect(retrieved, [olderCandle, newerCandle]);
     });
 
     // Catches bid/ask level corruption, amount loss, or timestamp drift in the
@@ -129,13 +130,39 @@ void main() {
       expect(retrieved, isEmpty);
     });
 
+    test(
+      'saveTrades stores newest trade timestamp as cache timestamp',
+      () async {
+        final olderTrade = Trade(
+          price: 100.0,
+          amount: 1.0,
+          side: TradeSide.buy,
+          timestamp: DateTime(2026, 6, 21, 11),
+          tradeId: 't1',
+        );
+        final newerTrade = Trade(
+          price: 200.0,
+          amount: 2.0,
+          side: TradeSide.sell,
+          timestamp: DateTime(2026, 6, 21, 13),
+          tradeId: 't2',
+        );
+        await cache.saveTrades(symbol, [olderTrade, newerTrade]);
+        final row =
+            await (database.cachedTrades.select()
+                  ..where((t) => t.symbolId.equals(symbol.id)))
+                .getSingle();
+        expect(row.timestamp, newerTrade.timestamp);
+      },
+    );
+
     test('saves and retrieves empty trade list', () async {
       await cache.saveTrades(symbol, const []);
       final retrieved = await cache.getTrades(symbol);
       expect(retrieved, isEmpty);
     });
 
-    test('limit parameter truncates candles newest first', () async {
+    test('limit parameter truncates candles oldest first', () async {
       final candles = [
         Candle(
           open: 1.0,
@@ -165,7 +192,7 @@ void main() {
       await cache.saveCandles(symbol, Timeframe.h1, candles);
       final retrieved = await cache.getCandles(symbol, Timeframe.h1, limit: 2);
       expect(retrieved.length, 2);
-      expect(retrieved.first, candles.last);
+      expect(retrieved.first, candles.first);
       expect(retrieved.last, candles[1]);
     });
 

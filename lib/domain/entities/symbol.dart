@@ -43,6 +43,24 @@ final class TradingSymbol {
         'quote must not contain whitespace',
       );
     }
+
+    const symbolPartPattern = r'^[A-Za-z0-9.]{1,20}$';
+    final symbolPartRegex = RegExp(symbolPartPattern);
+    if (!symbolPartRegex.hasMatch(normalizedBase)) {
+      throw ArgumentError.value(
+        base,
+        'base',
+        'base must match $symbolPartPattern',
+      );
+    }
+    if (!symbolPartRegex.hasMatch(normalizedQuote)) {
+      throw ArgumentError.value(
+        quote,
+        'quote',
+        'quote must match $symbolPartPattern',
+      );
+    }
+
     return TradingSymbol._(
       base: normalizedBase,
       quote: normalizedQuote,

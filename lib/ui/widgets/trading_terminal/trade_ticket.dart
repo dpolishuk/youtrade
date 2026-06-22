@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/symbol.dart';
+import '../../../domain/entities/symbol_metadata.dart';
 import '../../../domain/entities/ticker.dart';
 import '../../../presentation/providers/trading_terminal_provider.dart';
+import '../../../presentation/theme/app_theme.dart';
 import '../../../presentation/theme/theme_extensions.dart';
 import 'formatting.dart';
 
@@ -17,21 +19,20 @@ class TradeTicket extends ConsumerWidget {
   final TradingSymbol symbol;
   final AsyncValue<Ticker> tickerAsync;
 
-  static const _maxBaseSize = 1.0;
+  static const _maxBaseSize = 4.2;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(tradingTerminalProvider);
     final notifier = ref.read(tradingTerminalProvider.notifier);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
+    final meta = resolveSymbolMetadata(symbol);
 
     final price = tickerAsync.valueOrNull?.lastPrice ?? 0.0;
     final isBuy = state.orderSide == OrderSide.buy;
     final sideColor = isBuy ? appColors.bullish : appColors.bearish;
     final sizeQty = _maxBaseSize * state.selectedSizePercent / 100;
-    final orderCost = price * sizeQty / state.leverage;
+    final orderCost = sizeQty * price;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -67,11 +68,9 @@ class TradeTicket extends ConsumerWidget {
                     right: type == OrderType.values.last ? 0 : 4,
                   ),
                   child: _OrderTypeChip(
-                    label: type.name.toUpperCase(),
+                    label: _orderTypeLabel(type),
                     isSelected: state.orderType == type,
                     onTap: () => notifier.selectOrderType(type),
-                    colorScheme: colorScheme,
-                    appColors: appColors,
                   ),
                 ),
               ),
@@ -82,70 +81,77 @@ class TradeTicket extends ConsumerWidget {
           height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: colorScheme.surface,
+            color: const Color(0xFF10151F),
             borderRadius: BorderRadius.circular(7),
-            border: Border.all(color: appColors.borderSubtle),
+            border: Border.all(color: const Color(0x12FFFFFF)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Price',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: appColors.subtleText,
+                style: themeBodySmall(context)?.copyWith(
+                  color: const Color(0x57FFFFFF),
+                  fontSize: 10,
+                  letterSpacing: 0.06,
                 ),
               ),
               Text(
-                formatPrice(price, maxDecimals: 2),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
+                formatFixedPrice(price, meta.decimals),
+                style: AppTheme.mono(
+                  color: const Color(0xFFF2F5FA),
+                  fontSize: 14,
+                ).copyWith(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+        if (meta.showsLeverage) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10151F),
+              borderRadius: BorderRadius.circular(7),
+              border: Border.all(color: const Color(0x12FFFFFF)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Leverage',
+                      style: themeBodySmall(context)?.copyWith(
+                        color: const Color(0x57FFFFFF),
+                        fontSize: 10,
+                        letterSpacing: 0.06,
+                      ),
+                    ),
+                    Text(
+                      '${state.leverage}x',
+                      style: AppTheme.mono(
+                        color: appColors.accent,
+                        fontSize: 13,
+                      ).copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Slider(
+                  value: state.leverage.toDouble(),
+                  min: 1,
+                  max: 100,
+                  divisions: 99,
+                  activeColor: appColors.accent,
+                  inactiveColor: const Color(0x12FFFFFF),
+                  onChanged: (value) => notifier.setLeverage(value.round()),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(7),
-            border: Border.all(color: appColors.borderSubtle),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Leverage',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: appColors.subtleText,
-                    ),
-                  ),
-                  Text(
-                    '${state.leverage}x',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Slider(
-                value: state.leverage.toDouble(),
-                min: 1,
-                max: 100,
-                divisions: 99,
-                activeColor: colorScheme.primary,
-                inactiveColor: appColors.borderSubtle,
-                onChanged: (value) => notifier.setLeverage(value.round()),
-              ),
-            ],
-          ),
-        ),
+        ],
         const SizedBox(height: 8),
         Row(
           children: [
@@ -157,8 +163,7 @@ class TradeTicket extends ConsumerWidget {
                     label: '$pct%',
                     isSelected: state.selectedSizePercent == pct,
                     onTap: () => notifier.selectSizePercent(pct),
-                    colorScheme: colorScheme,
-                    appColors: appColors,
+                    accent: appColors.accent,
                   ),
                 ),
               ),
@@ -172,46 +177,109 @@ class TradeTicket extends ConsumerWidget {
             children: [
               Text(
                 'Order size',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: appColors.subtleText,
+                style: AppTheme.mono(
+                  color: const Color(0x57FFFFFF),
+                  fontSize: 11,
                 ),
               ),
               Text(
-                '${sizeQty.toStringAsFixed(4)} ${symbol.base} · ${formatPrice(orderCost, maxDecimals: 2)}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurface,
+                '${sizeQty.toStringAsFixed(3)} ${meta.base} · \$${orderCost.toStringAsFixed(0)}',
+                style: AppTheme.mono(
+                  color: const Color(0xFFF2F5FA),
+                  fontSize: 11,
                 ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: () {
-            // Order submission is not wired in this UI-only task.
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: sideColor,
-            foregroundColor: Colors.white,
-            minimumSize: const Size(double.infinity, 46),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            elevation: 0,
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: sideColor.withValues(alpha: 0.5),
+                blurRadius: 20,
+                spreadRadius: -6,
+              ),
+            ],
           ),
-          child: Text(
-            isBuy ? 'Buy / Long ${symbol.base}' : 'Sell / Short ${symbol.base}',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
+          child: ElevatedButton(
+            onPressed: () =>
+                _showDemoConfirmation(context, meta, isBuy, price, sizeQty),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: sideColor,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 46),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
+            child: Text(
+              '${isBuy ? 'Buy / Long' : 'Sell / Short'} ${meta.base}',
+              style: AppTheme.display(
+                color: Colors.white,
+                fontSize: 15,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
         ),
       ],
     );
   }
+
+  String _orderTypeLabel(OrderType type) => switch (type) {
+    OrderType.limit => 'Limit',
+    OrderType.market => 'Market',
+    OrderType.stop => 'Stop',
+  };
+
+  void _showDemoConfirmation(
+    BuildContext context,
+    SymbolMetadata meta,
+    bool isBuy,
+    double price,
+    double sizeQty,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF0E131F),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(11),
+          side: const BorderSide(color: Color(0x12FFFFFF)),
+        ),
+        title: Text(
+          'Demo ${isBuy ? 'Buy' : 'Sell'}',
+          style: AppTheme.display(
+            color: const Color(0xFFF2F5FA),
+            fontSize: 18,
+          ).copyWith(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          '${isBuy ? 'Buy' : 'Sell'} ${sizeQty.toStringAsFixed(3)} ${meta.base} @ ${formatFixedPrice(price, meta.decimals)}\n\nNo real order will be placed.',
+          style: AppTheme.mono(color: const Color(0x8CFFFFFF), fontSize: 12),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'OK',
+              style: AppTheme.mono(
+                color: Theme.of(context).extension<AppColorTheme>()!.accent,
+                fontSize: 12,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+TextStyle? themeBodySmall(BuildContext context) =>
+    Theme.of(context).textTheme.bodySmall;
 
 class _SideButton extends StatelessWidget {
   const _SideButton({
@@ -228,10 +296,8 @@ class _SideButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Material(
-      color: isActive ? color : theme.colorScheme.surface,
+      color: isActive ? color.withValues(alpha: 0.18) : Colors.transparent,
       borderRadius: BorderRadius.circular(7),
       child: InkWell(
         onTap: onTap,
@@ -240,16 +306,19 @@ class _SideButton extends StatelessWidget {
           height: 38,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(7),
-            border: Border.all(color: color),
+            border: Border.all(
+              color: isActive
+                  ? color.withValues(alpha: 0.6)
+                  : const Color(0x12FFFFFF),
+            ),
           ),
           alignment: Alignment.center,
           child: Text(
             label,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: isActive ? Colors.white : color,
-              fontWeight: FontWeight.w600,
+            style: AppTheme.display(
+              color: isActive ? color : const Color(0x8CFFFFFF),
               fontSize: 14,
-            ),
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -262,22 +331,16 @@ class _OrderTypeChip extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
-    required this.colorScheme,
-    required this.appColors,
   });
 
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
-  final ColorScheme colorScheme;
-  final AppColorTheme appColors;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Material(
-      color: isSelected ? colorScheme.primary : appColors.surfaceGlass,
+      color: isSelected ? const Color(0xFFF2F5FA) : Colors.transparent,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onTap,
@@ -287,10 +350,12 @@ class _OrderTypeChip extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTheme.mono(
+              color: isSelected
+                  ? const Color(0xFF06080F)
+                  : const Color(0x8CFFFFFF),
+              fontSize: 11,
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -303,22 +368,20 @@ class _SizePercentChip extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
-    required this.colorScheme,
-    required this.appColors,
+    required this.accent,
   });
 
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
-  final ColorScheme colorScheme;
-  final AppColorTheme appColors;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Material(
-      color: isSelected ? colorScheme.primary : colorScheme.surface,
+      color: isSelected
+          ? accent.withValues(alpha: 0.15)
+          : const Color(0xFF10151F),
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onTap,
@@ -329,15 +392,17 @@ class _SizePercentChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: isSelected ? colorScheme.primary : appColors.borderSubtle,
+              color: isSelected
+                  ? accent.withValues(alpha: 0.4)
+                  : const Color(0x12FFFFFF),
             ),
           ),
           child: Text(
             label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTheme.mono(
+              color: isSelected ? accent : const Color(0x8CFFFFFF),
+              fontSize: 10.5,
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
         ),
       ),

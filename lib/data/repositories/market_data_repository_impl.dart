@@ -17,6 +17,7 @@ import '../../domain/sources/market_stream_source.dart';
 import '../../domain/sources/order_book_source.dart';
 import '../../domain/sources/ticker_source.dart';
 import '../../domain/sources/trade_source.dart';
+import '../../domain/sources/market_data_store.dart';
 import '../datasources/mock/mock_market_data_store.dart';
 
 final class VenueSources {
@@ -38,7 +39,7 @@ final class VenueSources {
 final class MarketDataRepositoryImpl implements MarketDataRepository {
   MarketDataRepositoryImpl({
     required this.registry,
-    MockMarketDataStore? mockStore,
+    MarketDataStore? mockStore,
     Map<Venue, VenueSources>? venueSources,
     this.cache,
     this.isOnline = true,
@@ -46,7 +47,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
        _venueSources = venueSources ?? const {};
 
   final ExchangeCapabilityRegistry registry;
-  final MockMarketDataStore _mockStore;
+  final MarketDataStore _mockStore;
   final Map<Venue, VenueSources> _venueSources;
   final MarketCache? cache;
   bool isOnline;
@@ -62,11 +63,21 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
 
   Future<void> _refreshInBackground<T>(
     Future<Result<T>> Function() fetch,
-    Future<void> Function(T value) save,
-  ) async {
+    Future<T?> Function() getCached,
+    Future<void> Function(T value) save, {
+    required bool isOnline,
+    bool Function(T fetched, T cached)? isNewer,
+  }) async {
+    if (!isOnline) return;
     try {
       final result = await fetch();
       if (result is Success<T>) {
+        final cached = await getCached();
+        if (cached != null &&
+            isNewer != null &&
+            !isNewer(result.value, cached)) {
+          return;
+        }
         await save(result.value);
       }
     } on Exception {
@@ -77,11 +88,13 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
   Future<Result<T>> _fetchWithCache<T>({
     required String errorContext,
     required VenueSources? sources,
+    required bool isOnline,
     required Future<T?> Function() getCached,
     required bool Function(T cached) isFresh,
     required Future<Result<T>> Function() fetchFromSource,
     required Future<void> Function(T value) saveToCache,
     required Future<T> Function() fetchMock,
+    bool Function(T fetched, T cached)? isNewer,
   }) async {
     final cached = await getCached();
 
@@ -95,7 +108,15 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
     }
 
     if (cached != null && isFresh(cached)) {
-      unawaited(_refreshInBackground(fetchFromSource, saveToCache));
+      unawaited(
+        _refreshInBackground(
+          fetchFromSource,
+          getCached,
+          saveToCache,
+          isOnline: isOnline,
+          isNewer: isNewer,
+        ),
+      );
       return Success(cached);
     }
 
@@ -132,9 +153,11 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       );
     }
     final sources = _venueSources[symbol.venue];
+    final isOnline = this.isOnline;
     return _fetchWithCache(
       errorContext: '${symbol.venue.displayName} REST ticker',
       sources: sources,
+      isOnline: isOnline,
       getCached: () async => cache?.getTicker(symbol),
       isFresh: (ticker) => _isFresh(ticker.timestamp, _tickerTtl),
       fetchFromSource: () => sources!.ticker.fetchTicker(symbol),
@@ -142,6 +165,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
         await cache?.saveTicker(ticker);
       },
       fetchMock: () => _mockStore.getTicker(symbol),
+      isNewer: (fetched, cached) => fetched.timestamp.isAfter(cached.timestamp),
     );
   }
 
@@ -159,22 +183,39 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       );
     }
     final sources = _venueSources[symbol.venue];
+    final isOnline = this.isOnline;
     return _fetchWithCache(
       errorContext: '${symbol.venue.displayName} REST candles',
       sources: sources,
+      isOnline: isOnline,
       getCached: () async {
         final candles =
             await cache?.getCandles(symbol, timeframe, limit: limit) ?? [];
         return candles.isNotEmpty ? candles : null;
       },
       isFresh: (candles) =>
-          candles.isNotEmpty && _isFresh(candles.first.timestamp, _candlesTtl),
-      fetchFromSource: () =>
-          sources!.candles.fetchCandles(symbol, timeframe, limit: limit),
+          candles.isNotEmpty && _isFresh(candles.last.timestamp, _candlesTtl),
+      fetchFromSource: () async {
+        final result = await sources!.candles.fetchCandles(
+          symbol,
+          timeframe,
+          limit: limit,
+        );
+        if (result is Success<List<Candle>>) {
+          final sorted = [...result.value]
+            ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          return Success(sorted);
+        }
+        return result;
+      },
       saveToCache: (candles) async {
         await cache?.saveCandles(symbol, timeframe, candles);
       },
       fetchMock: () => _mockStore.getCandles(symbol, timeframe, limit: limit),
+      isNewer: (fetched, cached) {
+        if (fetched.isEmpty || cached.isEmpty) return true;
+        return fetched.last.timestamp.isAfter(cached.last.timestamp);
+      },
     );
   }
 
@@ -191,9 +232,11 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       );
     }
     final sources = _venueSources[symbol.venue];
+    final isOnline = this.isOnline;
     return _fetchWithCache(
       errorContext: '${symbol.venue.displayName} REST order book',
       sources: sources,
+      isOnline: isOnline,
       getCached: () async => cache?.getOrderBook(symbol),
       isFresh: (orderBook) => _isFresh(orderBook.timestamp, _orderBookTtl),
       fetchFromSource: () =>
@@ -202,6 +245,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
         await cache?.saveOrderBook(symbol, orderBook);
       },
       fetchMock: () => _mockStore.getOrderBook(symbol, depth: depth),
+      isNewer: (fetched, cached) => fetched.timestamp.isAfter(cached.timestamp),
     );
   }
 
@@ -218,9 +262,11 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       );
     }
     final sources = _venueSources[symbol.venue];
+    final isOnline = this.isOnline;
     return _fetchWithCache(
       errorContext: '${symbol.venue.displayName} REST trades',
       sources: sources,
+      isOnline: isOnline,
       getCached: () async => cache?.getTrades(symbol),
       isFresh: (trades) {
         if (trades.isEmpty) return false;
@@ -234,6 +280,17 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
         await cache?.saveTrades(symbol, trades);
       },
       fetchMock: () => _mockStore.getTrades(symbol, limit: limit),
+      isNewer: (fetched, cached) {
+        if (fetched.isEmpty) return false;
+        final fetchedNewest = fetched.reduce(
+          (a, b) => a.timestamp.isAfter(b.timestamp) ? a : b,
+        );
+        if (cached.isEmpty) return true;
+        final cachedNewest = cached.reduce(
+          (a, b) => a.timestamp.isAfter(b.timestamp) ? a : b,
+        );
+        return fetchedNewest.timestamp.isAfter(cachedNewest.timestamp);
+      },
     );
   }
 
@@ -253,6 +310,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       yield Success(cached);
     }
 
+    final isOnline = this.isOnline;
     if (!isOnline) {
       await for (final ticker in _mockStore.watchTicker(symbol)) {
         yield Success(ticker);
@@ -287,6 +345,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       yield Success(cached);
     }
 
+    final isOnline = this.isOnline;
     if (!isOnline) {
       await for (final orderBook in _mockStore.watchOrderBook(symbol)) {
         yield Success(orderBook);
@@ -321,6 +380,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       yield Success(cached);
     }
 
+    final isOnline = this.isOnline;
     if (!isOnline) {
       await for (final trades in _mockStore.watchTrades(symbol)) {
         yield Success(trades);

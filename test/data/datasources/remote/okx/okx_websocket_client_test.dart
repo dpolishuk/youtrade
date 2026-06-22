@@ -577,5 +577,33 @@ void main() {
         expect(channels, containsAll(['tickers', 'books', 'trades']));
       },
     );
+
+    test('closeAll closes every active subscription sink', () async {
+      final channels = <FakeWebSocketChannel>[];
+      final client = OKXWebSocketClient(
+        channelFactory: (_) {
+          final channel = FakeWebSocketChannel();
+          channels.add(channel);
+          return channel;
+        },
+      );
+
+      client.watchTicker(symbol).listen(null);
+      client.watchOrderBook(symbol).listen(null);
+      client.watchTrades(symbol).listen(null);
+      await Future.delayed(Duration.zero);
+
+      expect(channels.length, 3);
+      for (final channel in channels) {
+        expect(channel.sink.closed, isFalse);
+      }
+
+      client.closeAll();
+      await pumpEventQueue();
+
+      for (final channel in channels) {
+        expect(channel.sink.closed, isTrue);
+      }
+    });
   });
 }

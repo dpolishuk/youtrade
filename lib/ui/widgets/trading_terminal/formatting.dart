@@ -14,6 +14,20 @@ String formatPrice(num value, {int maxDecimals = 4}) {
   return _formatNumber(value, decimals);
 }
 
+/// Formats a chart axis value: no decimals above 1000, one decimal 100-999,
+/// two decimals below 100. Matches the mockup's `axisNum()`.
+String formatAxisNumber(num value) {
+  final abs = value.abs();
+  if (abs >= 1000) return _formatNumber(value.round(), 0);
+  if (abs >= 100) return _formatNumber(value, 1);
+  return _formatNumber(value, 2);
+}
+
+/// Formats a mockup-style price with a fixed decimal count and grouping.
+String formatFixedPrice(num value, int decimals) {
+  return _formatNumber(value, decimals);
+}
+
 /// Formats a large quantity / volume compactly (e.g. 1.2K, 3.4M).
 String formatCompact(num value) {
   final abs = value.abs();
@@ -36,11 +50,19 @@ String formatPercent(num value) {
 }
 
 String _formatNumber(num value, int decimals) {
+  if (decimals == 0) {
+    final rounded = value.round();
+    return _groupInteger(rounded.toString());
+  }
   final rounded = (value * pow(10, decimals)).round() / pow(10, decimals);
   final parts = rounded.toStringAsFixed(decimals).split('.');
   final integerPart = parts[0];
   final fractionalPart = parts[1];
 
+  return '${_groupInteger(integerPart)}.$fractionalPart';
+}
+
+String _groupInteger(String integerPart) {
   final buffer = StringBuffer();
   var count = 0;
   for (var i = integerPart.length - 1; i >= 0; i--) {
@@ -50,8 +72,5 @@ String _formatNumber(num value, int decimals) {
       buffer.write(',');
     }
   }
-  final groupedInteger = buffer.toString().split('').reversed.join();
-
-  if (decimals == 0) return groupedInteger;
-  return '$groupedInteger.$fractionalPart';
+  return buffer.toString().split('').reversed.join();
 }

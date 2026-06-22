@@ -356,5 +356,33 @@ void main() {
         failure: (_) => fail('expected success'),
       );
     });
+
+    test('closeAll closes every active subscription sink', () async {
+      final channels = <_FakeWebSocketChannel>[];
+      final client = BinanceWebSocketClient(
+        channelFactory: (_) {
+          final channel = _FakeWebSocketChannel();
+          channels.add(channel);
+          return channel;
+        },
+      );
+
+      client.watchTicker(symbol).listen(null);
+      client.watchOrderBook(symbol).listen(null);
+      client.watchTrades(symbol).listen(null);
+      await Future.delayed(Duration.zero);
+
+      expect(channels.length, 3);
+      for (final channel in channels) {
+        expect(channel.sink.closed, isFalse);
+      }
+
+      client.closeAll();
+      await pumpEventQueue();
+
+      for (final channel in channels) {
+        expect(channel.sink.closed, isTrue);
+      }
+    });
   });
 }

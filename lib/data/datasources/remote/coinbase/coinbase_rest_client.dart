@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -54,29 +55,41 @@ final class CoinbaseRestClient
   }
 
   Future<Result<Map<String, dynamic>>> _fetchStats(TradingSymbol symbol) async {
-    final response = await _httpClient.get(
-      _uri('/products/${_productId(symbol)}/stats', const {}),
-    );
-    if (response.statusCode != 200) {
-      return Err(
-        NetworkFailure('Coinbase ticker stats ${response.statusCode}'),
+    try {
+      final response = await _httpClient
+          .get(_uri('/products/${_productId(symbol)}/stats', const {}))
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        return Err(
+          NetworkFailure('Coinbase ticker stats ${response.statusCode}'),
+        );
+      }
+      return Success(jsonDecode(response.body) as Map<String, dynamic>);
+    } on TimeoutException {
+      return const Err(
+        NetworkFailure('Coinbase ticker stats request timed out'),
       );
     }
-    return Success(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   Future<Result<Map<String, dynamic>>> _fetchTickerQuote(
     TradingSymbol symbol,
   ) async {
-    final response = await _httpClient.get(
-      _uri('/products/${_productId(symbol)}/ticker', const {}),
-    );
-    if (response.statusCode != 200) {
-      return Err(
-        NetworkFailure('Coinbase ticker quote ${response.statusCode}'),
+    try {
+      final response = await _httpClient
+          .get(_uri('/products/${_productId(symbol)}/ticker', const {}))
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        return Err(
+          NetworkFailure('Coinbase ticker quote ${response.statusCode}'),
+        );
+      }
+      return Success(jsonDecode(response.body) as Map<String, dynamic>);
+    } on TimeoutException {
+      return const Err(
+        NetworkFailure('Coinbase ticker quote request timed out'),
       );
     }
-    return Success(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   Ticker _buildTicker(
@@ -116,9 +129,9 @@ final class CoinbaseRestClient
       if (limit != null) {
         query['limit'] = limit.toString();
       }
-      final response = await _httpClient.get(
-        _uri('/products/${_productId(symbol)}/candles', query),
-      );
+      final response = await _httpClient
+          .get(_uri('/products/${_productId(symbol)}/candles', query))
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('Coinbase candles ${response.statusCode}'));
       }
@@ -131,6 +144,8 @@ final class CoinbaseRestClient
       return Success(
         json.map((e) => _parseCandle(e as List<dynamic>)).toList(),
       );
+    } on TimeoutException {
+      return const Err(NetworkFailure('Coinbase candles request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('Coinbase candles parse failed: $e'));
     } on TypeError catch (e) {
@@ -150,9 +165,11 @@ final class CoinbaseRestClient
     int? depth,
   }) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/products/${_productId(symbol)}/book', const {'level': '2'}),
-      );
+      final response = await _httpClient
+          .get(
+            _uri('/products/${_productId(symbol)}/book', const {'level': '2'}),
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(
           NetworkFailure('Coinbase order book ${response.statusCode}'),
@@ -160,6 +177,8 @@ final class CoinbaseRestClient
       }
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return Success(_parseOrderBook(json));
+    } on TimeoutException {
+      return const Err(NetworkFailure('Coinbase order book request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('Coinbase order book parse failed: $e'));
     } on TypeError catch (e) {
@@ -183,9 +202,9 @@ final class CoinbaseRestClient
       if (limit != null) {
         query['limit'] = limit.toString();
       }
-      final response = await _httpClient.get(
-        _uri('/products/${_productId(symbol)}/trades', query),
-      );
+      final response = await _httpClient
+          .get(_uri('/products/${_productId(symbol)}/trades', query))
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('Coinbase trades ${response.statusCode}'));
       }
@@ -193,6 +212,8 @@ final class CoinbaseRestClient
       return Success(
         json.map((e) => _parseTrade(e as Map<String, dynamic>)).toList(),
       );
+    } on TimeoutException {
+      return const Err(NetworkFailure('Coinbase trades request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('Coinbase trades parse failed: $e'));
     } on TypeError catch (e) {
@@ -253,6 +274,11 @@ final class CoinbaseRestClient
 
   Trade _parseTrade(Map<String, dynamic> json) {
     final sideString = json['side'] as String;
+    final side = switch (sideString.toLowerCase()) {
+      'buy' => TradeSide.buy,
+      'sell' => TradeSide.sell,
+      _ => throw FormatException('Unknown trade side: $sideString'),
+    };
     final price = double.parse(json['price'] as String);
     final amount = double.parse(json['size'] as String);
     if (price < 0 || amount < 0) {
@@ -263,7 +289,7 @@ final class CoinbaseRestClient
     return Trade(
       price: price,
       amount: amount,
-      side: sideString.toLowerCase() == 'buy' ? TradeSide.buy : TradeSide.sell,
+      side: side,
       timestamp: DateTime.parse(json['time'] as String).toUtc(),
       tradeId: json['trade_id']?.toString(),
     );

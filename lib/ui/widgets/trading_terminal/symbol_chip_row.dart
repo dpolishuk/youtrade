@@ -2,24 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/symbol.dart';
+import '../../../domain/entities/symbol_metadata.dart';
 import '../../../domain/entities/venue.dart';
 import '../../../presentation/providers/selected_symbol_provider.dart';
+import '../../../presentation/theme/app_theme.dart';
 import '../../../presentation/theme/theme_extensions.dart';
 
-final _chips = [
-  const _ChipData(base: 'BTC', quote: 'USDT'),
-  const _ChipData(base: 'ETH', quote: 'USDT'),
-  const _ChipData(base: 'SOL', quote: 'USDT'),
-  const _ChipData(base: 'XRP', quote: 'USDT'),
-  const _ChipData(base: 'DOGE', quote: 'USDT'),
+final _chipSymbols = [
+  TradingSymbol(
+    base: 'BTC',
+    quote: 'USDT',
+    venue: Venue.binance,
+    rawSymbol: 'BTCUSDT',
+  ),
+  TradingSymbol(
+    base: 'ETH',
+    quote: 'USDT',
+    venue: Venue.binance,
+    rawSymbol: 'ETHUSDT',
+  ),
+  TradingSymbol(
+    base: 'SOL',
+    quote: 'USDT',
+    venue: Venue.binance,
+    rawSymbol: 'SOLUSDT',
+  ),
+  TradingSymbol(
+    base: 'AAPL',
+    quote: 'USD',
+    venue: Venue.coinbase,
+    rawSymbol: 'AAPL',
+  ),
+  TradingSymbol(
+    base: 'GOLD',
+    quote: 'USD',
+    venue: Venue.okx,
+    rawSymbol: 'GC=F',
+  ),
 ];
-
-class _ChipData {
-  const _ChipData({required this.base, required this.quote});
-
-  final String base;
-  final String quote;
-}
 
 class SymbolChipRow extends ConsumerWidget {
   const SymbolChipRow({super.key});
@@ -27,33 +47,23 @@ class SymbolChipRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(selectedSymbolProvider);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
       child: Row(
         children: [
-          for (final chip in _chips)
+          for (final chip in _chipSymbols)
             Padding(
               padding: const EdgeInsets.only(right: 6),
               child: _SymbolChip(
-                label: '${chip.base}/${chip.quote}',
+                label: chipLabel(chip.rawSymbol),
                 isSelected:
                     selected.base == chip.base && selected.quote == chip.quote,
                 onTap: () {
-                  ref
-                      .read(selectedSymbolProvider.notifier)
-                      .state = TradingSymbol(
-                    base: chip.base,
-                    quote: chip.quote,
-                    venue: Venue.binance,
-                    rawSymbol: '${chip.base}${chip.quote}',
-                  );
+                  ref.read(selectedSymbolProvider.notifier).state = chip;
                 },
-                colorScheme: colorScheme,
                 appColors: appColors,
               ),
             ),
@@ -68,22 +78,27 @@ class _SymbolChip extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
-    required this.colorScheme,
     required this.appColors,
   });
 
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
-  final ColorScheme colorScheme;
   final AppColorTheme appColors;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final accent = appColors.accent;
+    final bg = isSelected
+        ? accent.withValues(alpha: 0.15)
+        : const Color(0xFF10151F);
+    final border = isSelected
+        ? accent.withValues(alpha: 0.4)
+        : const Color(0x12FFFFFF);
+    final fg = isSelected ? accent : const Color(0x8CFFFFFF);
 
     return Material(
-      color: isSelected ? colorScheme.primary : colorScheme.surface,
+      color: bg,
       borderRadius: BorderRadius.circular(7),
       child: InkWell(
         onTap: onTap,
@@ -92,16 +107,14 @@ class _SymbolChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(7),
-            border: Border.all(
-              color: isSelected ? colorScheme.primary : appColors.borderSubtle,
-            ),
+            border: Border.all(color: border),
           ),
           child: Text(
             label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTheme.mono(
+              color: fg,
+              fontSize: 11,
+            ).copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.02),
           ),
         ),
       ),

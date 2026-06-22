@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pointycastle/export.dart';
 
 import '../../core/failures.dart';
 import '../../core/result.dart';
@@ -18,6 +19,8 @@ class SecurePinAuthService implements PinAuthService {
   static const String _pinHashKey = 'pin_hash';
   static const String _pinSaltKey = 'pin_salt';
   static const int _minPinLength = 4;
+  static const int _pbkdf2Iterations = 100000;
+  static const int _derivedKeyLength = 32;
   static final RegExp _pinRegex = RegExp(r'^\d+$');
 
   @override
@@ -101,7 +104,20 @@ class SecurePinAuthService implements PinAuthService {
   }
 
   String _hashPin(String pin, String salt) {
-    final bytes = utf8.encode('$salt$pin');
-    return sha256.convert(bytes).toString();
+    final saltBytes = base64Decode(salt);
+    final pinBytes = Uint8List.fromList(utf8.encode(pin));
+    final params = Pbkdf2Parameters(
+      Uint8List.fromList(saltBytes),
+      _pbkdf2Iterations,
+      _derivedKeyLength,
+    );
+    final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64));
+    pbkdf2.init(params);
+    final key = pbkdf2.process(pinBytes);
+    return _bytesToHex(key);
+  }
+
+  String _bytesToHex(List<int> bytes) {
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   }
 }

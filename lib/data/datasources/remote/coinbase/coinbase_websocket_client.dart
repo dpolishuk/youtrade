@@ -13,13 +13,14 @@ import '../../../../domain/sources/market_stream_source.dart';
 
 typedef WebSocketChannelFactory = WebSocketChannel Function(String url);
 
-final class CoinbaseWebSocketClient implements MarketStreamSource {
+class CoinbaseWebSocketClient implements MarketStreamSource {
   CoinbaseWebSocketClient({
     WebSocketChannelFactory? channelFactory,
     String? baseUrl,
   }) : _channelFactory = channelFactory ?? _defaultFactory(baseUrl);
 
   final WebSocketChannelFactory _channelFactory;
+  final List<Future<void> Function()> _sessions = [];
 
   static WebSocketChannelFactory _defaultFactory(String? baseUrl) {
     final url = baseUrl ?? 'wss://ws-feed.exchange.coinbase.com';
@@ -52,10 +53,7 @@ final class CoinbaseWebSocketClient implements MarketStreamSource {
   Stream<Result<OrderBook>> watchOrderBook(TradingSymbol symbol) {
     return _watch(
       _subscribeMessage('level2', symbol),
-      (json) {
-        final type = json['type'] as String?;
-        return type == 'snapshot' || type == 'l2update';
-      },
+      (json) => json['type'] == 'snapshot',
       (json) => Success(_parseOrderBook(json)),
       (e) => Err(ParseFailure('Coinbase WS order book parse failed: $e')),
       (e) => Err(UnknownFailure('Coinbase WS order book error', error: e)),
@@ -82,18 +80,33 @@ final class CoinbaseWebSocketClient implements MarketStreamSource {
   ) {
     final channel = _channelFactory('');
     StreamSubscription<dynamic>? subscription;
+    var disposed = false;
+
+    Future<void> disposeSession() async {
+      if (disposed) return;
+      disposed = true;
+      await subscription?.cancel();
+      await channel.sink.close();
+    }
+
+    _sessions.add(disposeSession);
 
     final controller = StreamController<T>(
       onCancel: () async {
-        await subscription?.cancel();
-        await channel.sink.close();
+        await disposeSession();
+        _sessions.remove(disposeSession);
       },
     );
 
     channel.ready
         .then((_) {
-          if (controller.isClosed) return;
-          channel.sink.add(subscribeMessage);
+          if (disposed || controller.isClosed) return;
+          try {
+            channel.sink.add(subscribeMessage);
+          } on StateError {
+            if (disposed) return;
+            rethrow;
+          }
           subscription = channel.stream.listen(
             (message) {
               try {
@@ -111,10 +124,6 @@ final class CoinbaseWebSocketClient implements MarketStreamSource {
                 controller.add(onParseError(e));
               } on ArgumentError catch (e) {
                 controller.add(onParseError(e));
-              } on Exception catch (e) {
-                controller.add(onError(e));
-              } on Error catch (e) {
-                controller.add(onError(e));
               }
             },
             onError: (Object error) => controller.add(onError(error)),
@@ -122,6 +131,7 @@ final class CoinbaseWebSocketClient implements MarketStreamSource {
           );
         })
         .catchError((Object error, StackTrace stackTrace) {
+          if (disposed || controller.isClosed) return;
           if (!controller.isClosed) {
             controller.add(onError(error));
             controller.close();
@@ -129,6 +139,13 @@ final class CoinbaseWebSocketClient implements MarketStreamSource {
         });
 
     return controller.stream;
+  }
+
+  void closeAll() {
+    for (final dispose in _sessions.toList()) {
+      unawaited(dispose());
+    }
+    _sessions.clear();
   }
 
   Ticker _parseTicker(TradingSymbol symbol, Map<String, dynamic> json) {
@@ -150,35 +167,12 @@ final class CoinbaseWebSocketClient implements MarketStreamSource {
   }
 
   OrderBook _parseOrderBook(Map<String, dynamic> json) {
-    final type = json['type'] as String?;
-    if (type == 'snapshot') {
-      final bids = (json['bids'] as List<dynamic>? ?? [])
-          .map((e) => _parseLevel(e as List<dynamic>))
-          .toList();
-      final asks = (json['asks'] as List<dynamic>? ?? [])
-          .map((e) => _parseLevel(e as List<dynamic>))
-          .toList();
-      return OrderBook(
-        bids: bids,
-        asks: asks,
-        timestamp: DateTime.now().toUtc(),
-      );
-    }
-
-    // l2update: changes are [side, price, size]
-    final changes = json['changes'] as List<dynamic>? ?? [];
-    final bids = <OrderBookLevel>[];
-    final asks = <OrderBookLevel>[];
-    for (final change in changes) {
-      final parts = change as List<dynamic>;
-      final side = parts[0] as String;
-      final level = _parseLevel(parts);
-      if (side.toLowerCase() == 'buy') {
-        bids.add(level);
-      } else {
-        asks.add(level);
-      }
-    }
+    final bids = (json['bids'] as List<dynamic>? ?? [])
+        .map((e) => _parseLevel(e as List<dynamic>))
+        .toList();
+    final asks = (json['asks'] as List<dynamic>? ?? [])
+        .map((e) => _parseLevel(e as List<dynamic>))
+        .toList();
     return OrderBook(bids: bids, asks: asks, timestamp: DateTime.now().toUtc());
   }
 

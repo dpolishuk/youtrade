@@ -5,36 +5,36 @@ This document describes every screen, its purpose, data requirements, states, tr
 ## Navigation Overview
 
 ```
-┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-│   Home /    │─────▶│   Market    │─────▶│  Terminal   │
-│  Portfolio  │      │  Screener   │      │             │
-└─────────────┘      └─────────────┘      └──────┬──────┘
-       │                                          │
-       │                                          ▼
-       │                                    ┌─────────────┐
-       │                                    │   Compare   │
-       │                                    └─────────────┘
-       ▼
-┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-│  Exchange   │◀────▶│   Orders    │      │   Options   │
-│   Detail    │      │  & History  │      │    Chain    │
-└─────────────┘      └─────────────┘      └─────────────┘
-       ▲
-       │
-       ▼
-┌─────────────┐      ┌─────────────────────┐
-│   Account   │─────▶│ Exchange Management │
-│  / Settings │      │    (API key input)  │
-└─────────────┘      └─────────────────────┘
+┌─────────────┐      ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+│   Home /    │─────▶│   Market    │─────▶│  Terminal   │      │   Options   │
+│  Portfolio  │      │  Screener   │      │  /trading   │      │    Chain    │
+└─────────────┘      └──────┬──────┘      └─────────────┘      └─────────────┘
+                            │                                         ▲
+                            │                                         │
+                            ▼                                         │
+                     ┌─────────────┐      ┌─────────────┐            │
+                     │   Compare   │      │  Exchange   │            │
+                     │ /markets/   │      │   Detail    │            │
+                     │  compare    │      │/markets/ex- │            │
+                     └─────────────┘      │ change/:id  │            │
+                                          └─────────────┘            │
+                                                                       │
+                                                                       │
+                                          ┌─────────────┐      ┌─────────────┐
+                                          │   Orders    │      │   Account   │
+                                          │  & History  │      │  / Settings │
+                                          └─────────────┘      └─────────────┘
 ```
 
-Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Options, More.
+Bottom tab bar is always visible on main screens: Portfolio, Markets, Trading, Orders, Account.
+
+Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes require authentication. Compare and Exchange Detail are nested under `/markets`; Options Chain is at `/markets/options/:symbol`. The Trading Terminal route is `/trading?symbol=<symbol>`.
 
 ---
 
 ## 1. Home / Aggregated Portfolio
 
-**Purpose:** Show the user's total net worth across all connected venues, allocation, and open positions.
+**Purpose:** Show the user's total net worth across selected venues, allocation, and open positions.
 
 **Layout:**
 - iOS status bar
@@ -50,19 +50,18 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 - Bottom tab bar
 
 **Data:**
-- `portfolioProvider`: total value, 24h delta, equity curve points
-- `exchangeProvider`: list of connected venues with value and share
-- `positionsProvider`: open positions per venue
+- `marketScreenerItemsProvider`: list of market rows used for portfolio composition
+- Synthetic positions and balances from `MockMarketDataStore`
 
 **States:**
 - Loading: skeleton placeholders for value, chart, lists
-- Empty: no connected exchanges → prompt to add exchange
+- Empty: no positions → prompt to explore Markets
 - Error: network/data failure → retry banner
 - Offline: show cached/mock data with "Demo data" badge
 
 **Interactions:**
-- Tap exchange card → Exchange Detail
-- Tap position row → Terminal for that symbol
+- Tap exchange card → Exchange Detail (`/markets/exchange/:id`)
+- Tap position row → Terminal (`/trading?symbol=...`)
 - Tap range button → update equity curve range
 - Tap Orders link → Orders & History
 
@@ -111,12 +110,11 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 - Pivot levels grid (R2, R1, Pivot, S1, S2)
 
 **Data:**
-- `tickerProvider(symbol, venue)`: last price, change, stats
-- `candlesProvider(symbol, venue, timeframe)`: OHLCV history
-- `orderBookProvider(symbol, venue)`: asks/bids
-- `tradesProvider(symbol, venue)`: recent trades tape
-- `signalsProvider(symbol, venue)`: computed TA signals
-- `fundamentalsProvider(symbol)`: about + stats + tags
+- `tickerStreamProvider(symbol)`: last price, change, stats
+- `candlesProvider(symbol, timeframe)`: OHLCV history
+- `orderBookStreamProvider(symbol)`: asks/bids
+- `tradesStreamProvider(symbol)`: recent trades tape
+- `tradingTerminalProvider(symbol)`: order ticket state
 
 **States:**
 - Loading: chart placeholder, gray price
@@ -127,7 +125,7 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 **Interactions:**
 - Tap symbol chip → switch symbol
 - Tap timeframe → reload candles
-- Tap compare button → Compare screen
+- Tap compare button → Compare screen (`/markets/compare`)
 - Tap lower tab → switch tab
 - Drag leverage slider → update cost estimate
 - Tap size-percent → update size
@@ -152,7 +150,8 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 - Market rows with symbol, class badge, name, venue, sparkline, price, change
 
 **Data:**
-- `marketsProvider(filter)`: list of market rows
+- `marketScreenerItemsProvider`: list of market rows
+- `filteredMarketScreenerItemsProvider(filter)`: filtered rows
 - Sparkline data per row (mini last-30 closes)
 
 **States:**
@@ -164,8 +163,8 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 **Interactions:**
 - Type in search → filter rows by symbol/name
 - Tap filter chip → filter by asset class
-- Tap row with sparkline → Terminal for that symbol
-- Tap row without sparkline (options) → Options screen
+- Tap row with sparkline → Terminal (`/trading?symbol=...`)
+- Tap row without sparkline (options) → Options Chain (`/markets/options/:symbol`)
 
 **Edge cases:**
 - Search returns zero results → suggest clearing filters
@@ -176,35 +175,33 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 
 ## 4. Exchange Detail
 
-**Purpose:** Drill into a single venue's balance, P&L, and asset allocation.
+**Purpose:** Drill into a single venue's capabilities and show public market data highlights.
 
 **Layout:**
-- Back button to Home
+- Back button to Markets (`/markets`)
 - Venue selector chips (Binance, Bybit, OKX, Coinbase)
-- Exchange name + "API LIVE" indicator
+- Exchange name + supported features indicator
 - Kinds label (Spot · Perp · Options)
-- Balance card + 24h P&L card
+- Balance card + 24h P&L card (demo data)
 - Balances header
 - Asset rows: glyph, symbol, value, allocation bar
 
 **Data:**
-- `exchangeDetailProvider(venue)`: balance, P&L, assets
-- Prices for each asset to compute value
+- `exchangeCapabilityRegistryProvider`: supported features per venue
+- Synthetic balances and P&L from `MockMarketDataStore`
 
 **States:**
 - Loading: skeleton cards and rows
-- No API key → prompt to connect on Exchange Management screen
 - Error: retry banner
 - Offline: cached/demo data
 
 **Interactions:**
 - Tap venue chip → switch exchange
-- Tap back → Home
-- Tap asset row → Terminal for that asset
+- Tap back → Markets (`/markets`)
+- Tap asset row → Terminal (`/trading?symbol=...`)
 
 **Edge cases:**
 - Venue has zero balances → show "No assets"
-- API key missing or invalid → show locked state
 
 ---
 
@@ -221,7 +218,7 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 - Footer: ATM strike info
 
 **Data:**
-- `optionsProvider(expiration)`: strikes, calls, puts
+- Synthetic options chain from `MockMarketDataStore`
 - Spot price from ticker
 
 **States:**
@@ -230,7 +227,7 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 
 **Interactions:**
 - Tap expiration → reload chain
-- Tap row → Terminal pre-filled with symbol (deferred trading)
+- Tap row → Terminal pre-filled with symbol (`/trading?symbol=...`)
 
 **Edge cases:**
 - Spot price unavailable → use last known or mock
@@ -250,8 +247,8 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 - 30-period stats table (Symbol, Return, Volatility)
 
 **Data:**
-- `compareProvider(symbols)`: normalized returns and stats
 - `candlesProvider` for each selected symbol
+- Computed normalized returns and volatility
 
 **States:**
 - Loading: chart placeholder
@@ -280,9 +277,9 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 - Positions tab: position rows (same as Home)
 
 **Data:**
-- `openOrdersProvider`: mock open orders
-- `orderHistoryProvider`: mock history
-- `positionsProvider`: current positions
+- Mock open orders from `MockMarketDataStore`
+- Mock order history from `MockMarketDataStore`
+- Current positions from `MockMarketDataStore`
 
 **States:**
 - Loading: shimmer
@@ -302,77 +299,28 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 
 ## 8. Account / Settings
 
-**Purpose:** Manage connected exchanges, appearance, and app info.
+**Purpose:** Manage appearance, connected exchanges, security, and app info.
 
 **Layout:**
-- Title "Account"
-- Connected exchanges list with status indicators
+- Title "Settings"
 - Appearance section: Theme toggle, Visual direction toggle
+- Connected exchanges section: read-only list of venue capabilities
+- Security section: Biometric/PIN toggle, Sign out action
 - Footer: app version + venue count
 
 **Data:**
-- `connectedExchangesProvider`: list and connection status
-- `themeProvider`: current theme and direction
+- `themeSettingsProvider`: current theme and direction
+- `authNotifierProvider`: auth state for biometric/PIN and sign-out
+- `exchangeCapabilityRegistryProvider`: supported features per venue
 
 **States:**
-- Loading: shimmer
-- All exchanges connected → green indicators
-- Some disconnected → amber/red indicators
+- Standard settings screen
 
 **Interactions:**
-- Tap exchange row → Exchange Management
 - Tap Theme button → toggle dark/light
 - Tap Visual direction button → toggle Flux/Carbon
-
----
-
-## 9. Exchange Management (new)
-
-**Purpose:** Add, edit, or remove exchange connections. First build supports read-only API keys for private balance/positions data.
-
-**Layout:**
-- Title + back button
-- List of supported venues with current status
-- Tap venue → detail screen/modal:
-  - Exchange logo/name
-  - Toggle: Enabled
-  - Read-only API key input (obscured)
-  - Read-only secret input (obscured)
-  - Optional password/passphrase for exchanges that need it
-  - Test connection button
-  - Delete connection button
-- Help text about API key permissions and security
-
-**Data:**
-- `exchangeCredentialsProvider`: secure storage of API keys
-- `exchangeConnectionTester`: validates keys via public/private endpoint
-- `exchangeCapabilityRepository`: tells UI what each venue needs
-
-**States:**
-- Loading: fetch saved credentials
-- Connected: green indicator, show balance preview
-- Invalid key: red error message
-- Network error: retry
-- No keys: prompt to enter
-
-**Interactions:**
-- Toggle enabled → save preference
-- Enter key/secret → validate on blur or test tap
-- Test connection → call private balance endpoint
-- Save → encrypt and store in secure storage
-- Delete → remove keys and disable venue
-
-**Security:**
-- Keys never logged or sent to analytics
-- Stored in `flutter_secure_storage` (iOS Keychain / Android Keystore)
-- UI defaults to obscured input with reveal toggle
-- Read-only keys only: warn if key has trading/withdrawal permissions
-
-**Edge cases:**
-- User enters key with whitespace → trim
-- Key rejected → show exchange-specific error hint
-- No internet → queue save and retry later
-- Biometric/PIN gate may re-prompt before revealing keys
+- Tap Biometric/PIN toggle → enable/disable local auth gate
+- Tap Sign out → clear local auth and return to Auth Gate
 
 ---
 
@@ -382,23 +330,22 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 - Detect connectivity via `connectivity_plus`.
 - When offline, show persistent "Demo data" banner.
 - All screens fall back to mock data store.
-- Disabled actions: submit order, cancel order, test connection, refresh real data.
+- Disabled actions: submit order, cancel order, refresh real data.
 
 ### Local Auth Gate
-- On cold start, require biometric/PIN before showing Portfolio, Terminal, Exchange Detail, Orders, or Exchange Management.
+- On cold start, require biometric/PIN before showing Portfolio, Terminal, Exchange Detail, Orders, or Account.
 - Markets and Compare can be viewed without auth (public market data).
 - Lock when app goes to background for > 2 minutes.
-- Store auth state in `AuthGuardNotifier`.
+- Store auth state in `AuthNotifier`.
 
 ### Theme
 - System default = dark.
 - Visual direction: Flux (dir:b) default, Carbon (dir:a) alternative.
-- Theme tokens exposed via `ThemeExtension<YouTradeTheme>`.
+- Theme tokens exposed via `AppColorTheme` (`ThemeExtension`).
 
 ### Error Handling
 - Network errors → inline banner with retry
 - Parse errors → log details, show generic retry
-- Auth failures on exchange API → prompt to reconnect
 - Unexpected errors → fallback screen with report option
 
 ### Accessibility
@@ -415,4 +362,4 @@ Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Opt
 2. Should pull-to-refresh be available on every screen or only selected screens?
 3. Should the app remember last selected symbol and timeframe across sessions?
 4. How many candles should be cached locally per symbol/timeframe?
-5. Should Exchange Management be a full screen or a modal bottom sheet?
+5. Should Account settings be a full screen or a modal bottom sheet?

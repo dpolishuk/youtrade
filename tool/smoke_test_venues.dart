@@ -1,3 +1,5 @@
+// Manual smoke test only — hits live public endpoints; do not run in CI.
+
 import 'dart:async';
 import 'dart:developer';
 

@@ -141,7 +141,14 @@ void main() {
       expect(result, isA<Err<List<Candle>>>());
       result.when(
         success: (_) => fail('expected failure'),
-        failure: (failure) => expect(failure, isA<ParseFailure>()),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('OKX candles parse failed:'));
+          expect(
+            failure.message,
+            contains("is not a subtype of type 'List<dynamic>'"),
+          );
+        },
       );
     });
 
@@ -234,7 +241,11 @@ void main() {
       expect(result, isA<Err<List<Trade>>>());
       result.when(
         success: (_) => fail('expected failure'),
-        failure: (failure) => expect(failure, isA<ParseFailure>()),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('OKX trades parse failed:'));
+          expect(failure.message, contains("type 'Null'"));
+        },
       );
     });
 
@@ -441,7 +452,7 @@ void main() {
       );
     });
 
-    test('fetchTrades maps unknown side to sell', () async {
+    test('fetchTrades returns ParseFailure on unknown side', () async {
       final client = OKXRestClient(
         httpClient: MockClient(
           (_) async => http.Response(
@@ -452,13 +463,18 @@ void main() {
       );
 
       final result = await client.fetchTrades(symbol);
-      expect(result, isA<Success<List<Trade>>>());
+      expect(result, isA<Err<List<Trade>>>());
       result.when(
-        success: (trades) {
-          expect(trades.length, 1);
-          expect(trades.first.side, TradeSide.sell);
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith(
+              'OKX trades parse failed: FormatException: Unknown trade side: unknown',
+            ),
+          );
         },
-        failure: (_) => fail('expected success'),
       );
     });
 
@@ -588,7 +604,11 @@ void main() {
       expect(result, isA<Err<List<Trade>>>());
       result.when(
         success: (_) => fail('expected failure'),
-        failure: (failure) => expect(failure, isA<ParseFailure>()),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('OKX trades parse failed:'));
+          expect(failure.message, contains('negative trade value'));
+        },
       );
     });
 
@@ -606,7 +626,11 @@ void main() {
       expect(result, isA<Err<List<Trade>>>());
       result.when(
         success: (_) => fail('expected failure'),
-        failure: (failure) => expect(failure, isA<ParseFailure>()),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('OKX trades parse failed:'));
+          expect(failure.message, contains('negative trade value'));
+        },
       );
     });
 
@@ -620,8 +644,7 @@ void main() {
         success: (_) => fail('expected failure'),
         failure: (failure) {
           expect(failure, isA<NetworkFailure>());
-          expect(failure.message, contains('TimeoutException'));
-          expect(failure.message, contains('timeout'));
+          expect(failure.message, 'OKX ticker request timed out');
         },
       );
     });
@@ -636,8 +659,7 @@ void main() {
         success: (_) => fail('expected failure'),
         failure: (failure) {
           expect(failure, isA<NetworkFailure>());
-          expect(failure.message, contains('TimeoutException'));
-          expect(failure.message, contains('timeout'));
+          expect(failure.message, 'OKX candles request timed out');
         },
       );
     });
@@ -652,8 +674,7 @@ void main() {
         success: (_) => fail('expected failure'),
         failure: (failure) {
           expect(failure, isA<NetworkFailure>());
-          expect(failure.message, contains('TimeoutException'));
-          expect(failure.message, contains('timeout'));
+          expect(failure.message, 'OKX order book request timed out');
         },
       );
     });
@@ -668,8 +689,7 @@ void main() {
         success: (_) => fail('expected failure'),
         failure: (failure) {
           expect(failure, isA<NetworkFailure>());
-          expect(failure.message, contains('TimeoutException'));
-          expect(failure.message, contains('timeout'));
+          expect(failure.message, 'OKX trades request timed out');
         },
       );
     });

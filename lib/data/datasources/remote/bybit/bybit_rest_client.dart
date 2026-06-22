@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -39,12 +40,14 @@ final class BybitRestClient
   @override
   Future<Result<Ticker>> fetchTicker(TradingSymbol symbol) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/v5/market/tickers', {
-          'category': 'spot',
-          'symbol': symbol.rawSymbol,
-        }),
-      );
+      final response = await _httpClient
+          .get(
+            _uri('/v5/market/tickers', {
+              'category': 'spot',
+              'symbol': symbol.rawSymbol,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('Bybit ticker ${response.statusCode}'));
       }
@@ -57,6 +60,8 @@ final class BybitRestClient
       final list = result['list'] as List<dynamic>;
       final tickerJson = list.first as Map<String, dynamic>;
       return Success(_parseTicker(symbol, tickerJson));
+    } on TimeoutException {
+      return const Err(NetworkFailure('Bybit ticker request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('Bybit ticker parse failed: $e'));
     } on TypeError catch (e) {
@@ -77,14 +82,16 @@ final class BybitRestClient
     int? limit,
   }) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/v5/market/kline', {
-          'category': 'spot',
-          'symbol': symbol.rawSymbol,
-          'interval': _timeframeCode(timeframe),
-          if (limit != null) 'limit': limit.toString(),
-        }),
-      );
+      final response = await _httpClient
+          .get(
+            _uri('/v5/market/kline', {
+              'category': 'spot',
+              'symbol': symbol.rawSymbol,
+              'interval': _timeframeCode(timeframe),
+              if (limit != null) 'limit': limit.toString(),
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('Bybit candles ${response.statusCode}'));
       }
@@ -98,6 +105,8 @@ final class BybitRestClient
       return Success(
         list.map((e) => _parseCandle(e as List<dynamic>)).toList(),
       );
+    } on TimeoutException {
+      return const Err(NetworkFailure('Bybit candles request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('Bybit candles parse failed: $e'));
     } on TypeError catch (e) {
@@ -117,13 +126,15 @@ final class BybitRestClient
     int? depth,
   }) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/v5/market/orderbook', {
-          'category': 'spot',
-          'symbol': symbol.rawSymbol,
-          if (depth != null) 'limit': depth.toString(),
-        }),
-      );
+      final response = await _httpClient
+          .get(
+            _uri('/v5/market/orderbook', {
+              'category': 'spot',
+              'symbol': symbol.rawSymbol,
+              if (depth != null) 'limit': depth.toString(),
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('Bybit order book ${response.statusCode}'));
       }
@@ -134,6 +145,8 @@ final class BybitRestClient
       }
       final result = json['result'] as Map<String, dynamic>;
       return Success(_parseOrderBook(result));
+    } on TimeoutException {
+      return const Err(NetworkFailure('Bybit order book request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('Bybit order book parse failed: $e'));
     } on TypeError catch (e) {
@@ -153,13 +166,15 @@ final class BybitRestClient
     int? limit,
   }) async {
     try {
-      final response = await _httpClient.get(
-        _uri('/v5/market/recent-trade', {
-          'category': 'spot',
-          'symbol': symbol.rawSymbol,
-          if (limit != null) 'limit': limit.toString(),
-        }),
-      );
+      final response = await _httpClient
+          .get(
+            _uri('/v5/market/recent-trade', {
+              'category': 'spot',
+              'symbol': symbol.rawSymbol,
+              if (limit != null) 'limit': limit.toString(),
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         return Err(NetworkFailure('Bybit trades ${response.statusCode}'));
       }
@@ -173,6 +188,8 @@ final class BybitRestClient
       return Success(
         list.map((e) => _parseTrade(e as Map<String, dynamic>)).toList(),
       );
+    } on TimeoutException {
+      return const Err(NetworkFailure('Bybit trades request timed out'));
     } on FormatException catch (e) {
       return Err(ParseFailure('Bybit trades parse failed: $e'));
     } on TypeError catch (e) {
@@ -216,10 +233,10 @@ final class BybitRestClient
   }
 
   OrderBook _parseOrderBook(Map<String, dynamic> json) {
-    final bids = (json['b'] as List<dynamic>)
+    final bids = (json['b'] as List<dynamic>? ?? [])
         .map((e) => _parseLevel(e as List<dynamic>))
         .toList();
-    final asks = (json['a'] as List<dynamic>)
+    final asks = (json['a'] as List<dynamic>? ?? [])
         .map((e) => _parseLevel(e as List<dynamic>))
         .toList();
     return OrderBook(bids: bids, asks: asks, timestamp: DateTime.now().toUtc());
@@ -234,10 +251,15 @@ final class BybitRestClient
 
   Trade _parseTrade(Map<String, dynamic> json) {
     final sideString = json['side'] as String;
+    final side = switch (sideString.toLowerCase()) {
+      'buy' => TradeSide.buy,
+      'sell' => TradeSide.sell,
+      _ => throw FormatException('Unknown trade side: $sideString'),
+    };
     return Trade(
       price: double.parse(json['price'] as String),
       amount: double.parse(json['size'] as String),
-      side: sideString.toLowerCase() == 'buy' ? TradeSide.buy : TradeSide.sell,
+      side: side,
       timestamp: DateTime.fromMillisecondsSinceEpoch(
         int.parse(json['time'] as String),
         isUtc: true,

@@ -22,7 +22,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   DateTime? _pinLockoutEnd;
 
   static const int _maxPinAttempts = 5;
-  static const Duration _pinLockoutDuration = Duration(minutes: 1);
+  static const Duration _pinLockoutDuration = Duration(minutes: 15);
 
   bool get isPinSet => _pinSet;
 

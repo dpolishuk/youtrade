@@ -192,6 +192,15 @@ abstract final class AppTheme {
     );
   }
 
+  /// Returns a display type style using Space Grotesk.
+  static TextStyle display({required Color color, double fontSize = 18}) =>
+      TextStyle(
+        fontFamily: 'Space Grotesk',
+        fontSize: fontSize,
+        color: color,
+        fontWeight: FontWeight.w500,
+      );
+
   /// Returns a monospace text style for prices, addresses and hashes.
   static TextStyle mono({required Color color, double fontSize = 14}) =>
       TextStyle(

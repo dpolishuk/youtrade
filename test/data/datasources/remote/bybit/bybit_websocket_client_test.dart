@@ -15,10 +15,13 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 class _FakeWebSocketChannel extends StreamChannelMixin<dynamic>
     implements WebSocketChannel {
-  _FakeWebSocketChannel() : _outgoing = StreamController<dynamic>.broadcast() {
+  _FakeWebSocketChannel({Future<void>? ready})
+    : _ready = ready ?? Future.value(),
+      _outgoing = StreamController<dynamic>.broadcast() {
     _sink = _FakeWebSocketSink(_outgoing.sink);
   }
 
+  final Future<void> _ready;
   final StreamController<dynamic> _incoming = StreamController<dynamic>();
   final StreamController<dynamic> _outgoing;
   late final _FakeWebSocketSink _sink;
@@ -37,7 +40,7 @@ class _FakeWebSocketChannel extends StreamChannelMixin<dynamic>
   _FakeWebSocketSink get sink => _sink;
 
   @override
-  Future<void> get ready => Future.value();
+  Future<void> get ready => _ready;
 
   @override
   String? get protocol => null;
@@ -60,6 +63,61 @@ class _FakeWebSocketSink extends DelegatingStreamSink<dynamic>
     closed = true;
     return super.close();
   }
+}
+
+class _StateErrorSink extends DelegatingStreamSink<dynamic>
+    implements WebSocketSink {
+  _StateErrorSink(super.sink);
+
+  bool closed = false;
+
+  @override
+  Future close([int? closeCode, String? closeReason]) {
+    closed = true;
+    return super.close();
+  }
+
+  @override
+  void add(dynamic value) {
+    throw StateError('sink is closed');
+  }
+}
+
+class _StateErrorChannel extends StreamChannelMixin<dynamic>
+    implements WebSocketChannel {
+  _StateErrorChannel({Future<void>? ready})
+    : _ready = ready ?? Future.value(),
+      _outgoing = StreamController<dynamic>.broadcast() {
+    _sink = _StateErrorSink(_outgoing.sink);
+  }
+
+  final Future<void> _ready;
+  final StreamController<dynamic> _incoming = StreamController<dynamic>();
+  final StreamController<dynamic> _outgoing;
+  late final _StateErrorSink _sink;
+
+  void add(dynamic value) => _incoming.add(value);
+
+  void addError(Object error, [StackTrace? stackTrace]) =>
+      _incoming.addError(error, stackTrace);
+
+  @override
+  Stream<dynamic> get stream => _incoming.stream;
+
+  @override
+  _StateErrorSink get sink => _sink;
+
+  @override
+  Future<void> get ready => _ready;
+
+  @override
+  String? get protocol => null;
+
+  @override
+  int? get closeCode => null;
+
+  @override
+  String? get closeReason => null;
 }
 
 void main() {
@@ -371,7 +429,80 @@ void main() {
           expect(orderBook.bids.first.price, 99.0);
           expect(orderBook.asks.first.price, 101.0);
         },
-        failure: (_) => fail('expected success'),
+        failure: (_) => fail('expected failure'),
+      );
+    });
+
+    test('closeAll closes every active subscription sink', () async {
+      final channels = <_FakeWebSocketChannel>[];
+      final client = BybitWebSocketClient(
+        channelFactory: (url) {
+          final channel = _FakeWebSocketChannel();
+          channels.add(channel);
+          return channel;
+        },
+      );
+
+      client.watchTicker(symbol).listen(null);
+      client.watchOrderBook(symbol).listen(null);
+      client.watchTrades(symbol).listen(null);
+      await Future.delayed(Duration.zero);
+
+      expect(channels.length, 3);
+      for (final channel in channels) {
+        expect(channel.sink.closed, isFalse);
+      }
+
+      client.closeAll();
+      await pumpEventQueue();
+
+      for (final channel in channels) {
+        expect(channel.sink.closed, isTrue);
+      }
+    });
+
+    test(
+      'cancel subscription before ready completes closes sink cleanly',
+      () async {
+        final readyCompleter = Completer<void>();
+        late _FakeWebSocketChannel channel;
+        final client = BybitWebSocketClient(
+          channelFactory: (url) {
+            channel = _FakeWebSocketChannel(ready: readyCompleter.future);
+            return channel;
+          },
+        );
+
+        final subscription = client.watchTicker(symbol).listen(null);
+        await Future.delayed(Duration.zero);
+
+        expect(channel.sink.closed, isFalse);
+        await subscription.cancel();
+        expect(channel.sink.closed, isTrue);
+
+        readyCompleter.complete();
+        await pumpEventQueue();
+
+        expect(channel.sink.closed, isTrue);
+      },
+    );
+
+    test('sink.add throwing StateError after disposal is handled', () async {
+      final client = BybitWebSocketClient(
+        channelFactory: (url) => _StateErrorChannel(),
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+
+      final result = await future;
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'Bybit WS ticker error');
+        },
       );
     });
   });

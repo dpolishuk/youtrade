@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -151,7 +153,11 @@ void main() {
       expect(result, isA<Err<Ticker>>());
       result.when(
         success: (_) => fail('expected failure'),
-        failure: (failure) => expect(failure, isA<ParseFailure>()),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Bybit ticker parse failed:'));
+          expect(failure.message, contains('No element'));
+        },
       );
     });
 
@@ -170,7 +176,14 @@ void main() {
       expect(result, isA<Err<List<Candle>>>());
       result.when(
         success: (_) => fail('expected failure'),
-        failure: (failure) => expect(failure, isA<ParseFailure>()),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('Bybit candles parse failed:'));
+          expect(
+            failure.message,
+            contains("type 'String' is not a subtype of type 'List<dynamic>'"),
+          );
+        },
       );
     });
 
@@ -311,6 +324,32 @@ void main() {
       );
     });
 
+    test('fetchTrades returns ParseFailure on unknown side', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[{"execId":"1","symbol":"BTCUSDT","price":"100.0","size":"1.0","side":"unknown","time":"1718952000000"}]}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchTrades(symbol, limit: 1);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith(
+              'Bybit trades parse failed: FormatException: Unknown trade side: unknown',
+            ),
+          );
+        },
+      );
+    });
+
     test('fetchTicker returns NetworkFailure on request exception', () async {
       final client = BybitRestClient(
         httpClient: MockClient((_) async => throw Exception('timeout')),
@@ -371,26 +410,29 @@ void main() {
       );
     });
 
-    test('fetchOrderBook returns ParseFailure on missing bids key', () async {
-      final client = BybitRestClient(
-        httpClient: MockClient(
-          (_) async => http.Response(
-            '{"retCode":0,"retMsg":"OK","result":{"s":"BTCUSDT","a":[["101.0","1.0"]]}}',
-            200,
+    test(
+      'fetchOrderBook returns Success with empty bids when key missing',
+      () async {
+        final client = BybitRestClient(
+          httpClient: MockClient(
+            (_) async => http.Response(
+              '{"retCode":0,"retMsg":"OK","result":{"s":"BTCUSDT","a":[["101.0","1.0"]]}}',
+              200,
+            ),
           ),
-        ),
-      );
+        );
 
-      final result = await client.fetchOrderBook(symbol, depth: 5);
-      expect(result, isA<Err<OrderBook>>());
-      result.when(
-        success: (_) => fail('expected failure'),
-        failure: (failure) {
-          expect(failure, isA<ParseFailure>());
-          expect(failure.message, startsWith('Bybit order book parse failed:'));
-        },
-      );
-    });
+        final result = await client.fetchOrderBook(symbol, depth: 5);
+        expect(result, isA<Success<OrderBook>>());
+        result.when(
+          success: (orderBook) {
+            expect(orderBook.bids, isEmpty);
+            expect(orderBook.asks.first.price, 101.0);
+          },
+          failure: (_) => fail('expected success'),
+        );
+      },
+    );
 
     test('fetchTrades returns ParseFailure on missing fields', () async {
       final client = BybitRestClient(
@@ -410,6 +452,66 @@ void main() {
           expect(failure, isA<ParseFailure>());
           expect(failure.message, startsWith('Bybit trades parse failed:'));
           expect(failure.message, contains("type 'Null'"));
+        },
+      );
+    });
+
+    test('fetchTicker returns NetworkFailure on timeout', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Bybit ticker request timed out');
+        },
+      );
+    });
+
+    test('fetchCandles returns NetworkFailure on timeout', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchCandles(symbol, Timeframe.h1);
+      expect(result, isA<Err<List<Candle>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Bybit candles request timed out');
+        },
+      );
+    });
+
+    test('fetchOrderBook returns NetworkFailure on timeout', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchOrderBook(symbol);
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Bybit order book request timed out');
+        },
+      );
+    });
+
+    test('fetchTrades returns NetworkFailure on timeout', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchTrades(symbol);
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Bybit trades request timed out');
         },
       );
     });

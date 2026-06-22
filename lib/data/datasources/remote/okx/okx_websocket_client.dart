@@ -13,11 +13,12 @@ import '../../../../domain/sources/market_stream_source.dart';
 
 typedef WebSocketChannelFactory = WebSocketChannel Function(String url);
 
-final class OKXWebSocketClient implements MarketStreamSource {
+class OKXWebSocketClient implements MarketStreamSource {
   OKXWebSocketClient({WebSocketChannelFactory? channelFactory, String? baseUrl})
     : _channelFactory = channelFactory ?? _defaultFactory(baseUrl);
 
   final WebSocketChannelFactory _channelFactory;
+  final List<Future<void> Function()> _sessions = [];
 
   static WebSocketChannelFactory _defaultFactory(String? baseUrl) {
     final url = baseUrl ?? 'wss://ws.okx.com:8443/ws/v5/public';
@@ -95,18 +96,33 @@ final class OKXWebSocketClient implements MarketStreamSource {
   ) {
     final channel = _channelFactory('');
     StreamSubscription<dynamic>? subscription;
+    var disposed = false;
+
+    Future<void> disposeSession() async {
+      if (disposed) return;
+      disposed = true;
+      await subscription?.cancel();
+      await channel.sink.close();
+    }
+
+    _sessions.add(disposeSession);
 
     final controller = StreamController<T>(
       onCancel: () async {
-        await subscription?.cancel();
-        await channel.sink.close();
+        await disposeSession();
+        _sessions.remove(disposeSession);
       },
     );
 
     channel.ready
         .then((_) {
-          if (controller.isClosed) return;
-          channel.sink.add(subscribeMessage);
+          if (disposed || controller.isClosed) return;
+          try {
+            channel.sink.add(subscribeMessage);
+          } on StateError {
+            if (disposed) return;
+            rethrow;
+          }
           subscription = channel.stream.listen(
             (message) {
               try {
@@ -129,10 +145,6 @@ final class OKXWebSocketClient implements MarketStreamSource {
                 controller.add(onParseError(e));
               } on ArgumentError catch (e) {
                 controller.add(onParseError(e));
-              } on Exception catch (e) {
-                controller.add(onError(e));
-              } on Error catch (e) {
-                controller.add(onError(e));
               }
             },
             onError: (Object error) => controller.add(onError(error)),
@@ -140,6 +152,7 @@ final class OKXWebSocketClient implements MarketStreamSource {
           );
         })
         .catchError((Object error, StackTrace stackTrace) {
+          if (disposed || controller.isClosed) return;
           if (!controller.isClosed) {
             controller.add(onError(error));
             controller.close();
@@ -147,6 +160,13 @@ final class OKXWebSocketClient implements MarketStreamSource {
         });
 
     return controller.stream;
+  }
+
+  void closeAll() {
+    for (final dispose in _sessions.toList()) {
+      unawaited(dispose());
+    }
+    _sessions.clear();
   }
 
   Ticker _parseTicker(TradingSymbol symbol, Map<String, dynamic> json) {

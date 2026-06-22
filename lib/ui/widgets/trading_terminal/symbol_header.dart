@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/candle.dart';
 import '../../../domain/entities/symbol.dart';
+import '../../../domain/entities/symbol_metadata.dart';
 import '../../../domain/entities/ticker.dart';
+import '../../../presentation/theme/app_theme.dart';
 import '../../../presentation/theme/theme_extensions.dart';
 import 'formatting.dart';
 
@@ -22,11 +24,11 @@ class SymbolHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final appColors = theme.extension<AppColorTheme>()!;
 
     final ticker = tickerAsync.valueOrNull;
     final candles = candlesAsync.valueOrNull ?? const <Candle>[];
+    final meta = resolveSymbolMetadata(symbol);
 
     final price = ticker?.lastPrice ?? 0.0;
     final change = ticker?.change24h ?? 0.0;
@@ -34,14 +36,17 @@ class SymbolHeader extends ConsumerWidget {
     final isUp = changePct >= 0;
     final changeColor = isUp ? appColors.bullish : appColors.bearish;
 
-    final high = candles.isEmpty
+    final last24 = candles.length >= 24
+        ? candles.sublist(candles.length - 24)
+        : candles;
+    final high = last24.isEmpty
         ? 0.0
-        : candles.map((c) => c.high).reduce((a, b) => a > b ? a : b);
-    final low = candles.isEmpty
+        : last24.map((c) => c.high).reduce((a, b) => a > b ? a : b);
+    final low = last24.isEmpty
         ? 0.0
-        : candles.map((c) => c.low).reduce((a, b) => a < b ? a : b);
+        : last24.map((c) => c.low).reduce((a, b) => a < b ? a : b);
     final volume = ticker?.volume ?? 0.0;
-    final funding = _syntheticFunding(changePct);
+    final volFormatted = '${(volume).toStringAsFixed(1)}M';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -58,40 +63,28 @@ class SymbolHeader extends ConsumerWidget {
                   Row(
                     children: [
                       Text(
-                        symbol.id,
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.02,
-                        ),
+                        meta.base,
+                        style:
+                            AppTheme.display(
+                              color: theme.colorScheme.onSurface,
+                            ).copyWith(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: -0.02 * 19,
+                              height: 1.0,
+                            ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surface,
-                          borderRadius: BorderRadius.circular(3),
-                          border: Border.all(color: appColors.borderSubtle),
-                        ),
-                        child: Text(
-                          'PERP',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: appColors.subtleText,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.08,
-                          ),
-                        ),
-                      ),
+                      _ClassTag(label: meta.symbolClass.label),
                     ],
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${symbol.base} · ${symbol.venue.displayName}',
+                    '${meta.name} · ${meta.venue.displayName}',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: appColors.subtleText,
+                      color: const Color(0x57FFFFFF),
                       fontSize: 11,
+                      height: 1.0,
                     ),
                   ),
                 ],
@@ -100,20 +93,21 @@ class SymbolHeader extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    formatPrice(price, maxDecimals: 2),
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      color: changeColor,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.01,
-                    ),
+                    formatFixedPrice(price, meta.decimals),
+                    style: AppTheme.mono(color: changeColor, fontSize: 24)
+                        .copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.01 * 24,
+                          height: 1.0,
+                        ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${isUp ? '+' : ''}${formatPrice(change, maxDecimals: 2)} · ${formatPercent(changePct * 100)}',
-                    style: theme.textTheme.labelLarge?.copyWith(
+                    '${isUp ? '+' : ''}${formatFixedPrice(change, meta.decimals)} · ${formatPercent(changePct)}',
+                    style: AppTheme.mono(
                       color: changeColor,
-                      fontWeight: FontWeight.w600,
-                    ),
+                      fontSize: 12,
+                    ).copyWith(fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -123,19 +117,40 @@ class SymbolHeader extends ConsumerWidget {
           _StatStrip(
             high: high,
             low: low,
-            volume: volume,
-            funding: funding,
+            volume: volFormatted,
+            funding: '+0.0102%',
+            showFunding: meta.showsFunding,
             appColors: appColors,
-            theme: theme,
+            onSurface: theme.colorScheme.onSurface,
           ),
         ],
       ),
     );
   }
+}
 
-  double _syntheticFunding(double changePct) {
-    final base = 0.01;
-    return changePct >= 0 ? base : -base;
+class _ClassTag extends StatelessWidget {
+  const _ClassTag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF10151F),
+        borderRadius: BorderRadius.circular(3),
+        border: Border.all(color: const Color(0x12FFFFFF)),
+      ),
+      child: Text(
+        label,
+        style: AppTheme.mono(
+          color: const Color(0x8CFFFFFF),
+          fontSize: 8,
+        ).copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.08),
+      ),
+    );
   }
 }
 
@@ -145,33 +160,32 @@ class _StatStrip extends StatelessWidget {
     required this.low,
     required this.volume,
     required this.funding,
+    required this.showFunding,
     required this.appColors,
-    required this.theme,
+    required this.onSurface,
   });
 
   final double high;
   final double low;
-  final double volume;
-  final double funding;
+  final String volume;
+  final String funding;
+  final bool showFunding;
   final AppColorTheme appColors;
-  final ThemeData theme;
+  final Color onSurface;
 
   @override
   Widget build(BuildContext context) {
-    final items = [
+    final items = <_Stat>[
       _Stat(label: '24h High', value: formatPrice(high, maxDecimals: 2)),
       _Stat(label: '24h Low', value: formatPrice(low, maxDecimals: 2)),
-      _Stat(label: 'Vol', value: formatCompact(volume)),
-      _Stat(
-        label: 'Funding',
-        value: formatPercent(funding),
-        valueColor: funding >= 0 ? appColors.bullish : appColors.bearish,
-      ),
+      _Stat(label: 'Vol', value: volume),
+      if (showFunding)
+        _Stat(label: 'Funding', value: funding, valueColor: appColors.bullish),
     ];
 
     return Container(
       decoration: BoxDecoration(
-        color: appColors.borderSubtle,
+        color: const Color(0x12FFFFFF),
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -184,26 +198,25 @@ class _StatStrip extends StatelessWidget {
                   horizontal: 10,
                   vertical: 8,
                 ),
-                color: theme.colorScheme.surface,
+                color: const Color(0xFF0E131F),
                 margin: EdgeInsets.only(left: i == 0 ? 0 : 1),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       items[i].label,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: appColors.subtleText,
-                        letterSpacing: 0.08,
-                      ),
+                      style: AppTheme.mono(
+                        color: const Color(0x57FFFFFF),
+                        fontSize: 8.5,
+                      ).copyWith(letterSpacing: 0.08),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       items[i].value,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color:
-                            items[i].valueColor ?? theme.colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: AppTheme.mono(
+                        color: items[i].valueColor ?? onSurface,
+                        fontSize: 12,
+                      ).copyWith(fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),

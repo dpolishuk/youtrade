@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/core/result.dart';
@@ -388,7 +390,7 @@ void main() {
       );
     });
 
-    test('watchOrderBook parses l2update message', () async {
+    test('watchOrderBook ignores l2update message', () async {
       late FakeWebSocketChannel channel;
       final client = CoinbaseWebSocketClient(
         channelFactory: (url) {
@@ -401,6 +403,36 @@ void main() {
       await Future.delayed(Duration.zero);
       channel.add(
         '{"type":"l2update","product_id":"BTC-USD","changes":[["buy","99.5","1"],["sell","100.5","1"]]}',
+      );
+      channel.add(
+        '{"type":"snapshot","product_id":"BTC-USD","bids":[["99.5","1"]],"asks":[["100.5","1"]]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<OrderBook>>());
+      result.when(
+        success: (orderBook) {
+          expect(orderBook.bids.first.price, 99.5);
+          expect(orderBook.asks.first.price, 100.5);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchOrderBook ignores empty changes in l2update', () async {
+      late FakeWebSocketChannel channel;
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchOrderBook(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add('{"type":"l2update","product_id":"BTC-USD","changes":[]}');
+      channel.add(
+        '{"type":"snapshot","product_id":"BTC-USD","bids":[["99.5","1"]],"asks":[["100.5","1"]]}',
       );
 
       final result = await future;
@@ -496,30 +528,6 @@ void main() {
       );
     });
 
-    test('watchOrderBook handles empty changes in l2update', () async {
-      late FakeWebSocketChannel channel;
-      final client = CoinbaseWebSocketClient(
-        channelFactory: (url) {
-          channel = FakeWebSocketChannel();
-          return channel;
-        },
-      );
-
-      final future = client.watchOrderBook(symbol).first;
-      await Future.delayed(Duration.zero);
-      channel.add('{"type":"l2update","product_id":"BTC-USD","changes":[]}');
-
-      final result = await future;
-      expect(result, isA<Success<OrderBook>>());
-      result.when(
-        success: (orderBook) {
-          expect(orderBook.bids, isEmpty);
-          expect(orderBook.asks, isEmpty);
-        },
-        failure: (_) => fail('expected success'),
-      );
-    });
-
     test('watchTicker emits error then recovery', () async {
       late FakeWebSocketChannel channel;
       final client = CoinbaseWebSocketClient(
@@ -541,6 +549,79 @@ void main() {
       expect(results.length, 2);
       expect(results[0], isA<Err<Ticker>>());
       expect(results[1], isA<Success<Ticker>>());
+    });
+
+    test('closeAll closes every active subscription sink', () async {
+      final channels = <FakeWebSocketChannel>[];
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) {
+          final channel = FakeWebSocketChannel();
+          channels.add(channel);
+          return channel;
+        },
+      );
+
+      client.watchTicker(symbol).listen(null);
+      client.watchOrderBook(symbol).listen(null);
+      client.watchTrades(symbol).listen(null);
+      await Future.delayed(Duration.zero);
+
+      expect(channels.length, 3);
+      for (final channel in channels) {
+        expect(channel.sink.closed, isFalse);
+      }
+
+      client.closeAll();
+      await pumpEventQueue();
+
+      for (final channel in channels) {
+        expect(channel.sink.closed, isTrue);
+      }
+    });
+
+    test(
+      'cancel subscription before ready completes closes sink cleanly',
+      () async {
+        final readyCompleter = Completer<void>();
+        late FakeWebSocketChannel channel;
+        final client = CoinbaseWebSocketClient(
+          channelFactory: (url) {
+            channel = FakeWebSocketChannel(ready: readyCompleter.future);
+            return channel;
+          },
+        );
+
+        final subscription = client.watchTicker(symbol).listen(null);
+        await Future.delayed(Duration.zero);
+
+        expect(channel.sink.closed, isFalse);
+        await subscription.cancel();
+        expect(channel.sink.closed, isTrue);
+
+        readyCompleter.complete();
+        await pumpEventQueue();
+
+        expect(channel.sink.closed, isTrue);
+      },
+    );
+
+    test('sink.add throwing StateError after disposal is handled', () async {
+      final client = CoinbaseWebSocketClient(
+        channelFactory: (url) => FakeWebSocketChannel(throwsOnAdd: true),
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+
+      final result = await future;
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'Coinbase WS ticker error');
+        },
+      );
     });
   });
 }

@@ -1,10 +1,14 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/order_book.dart';
 import '../../../domain/entities/symbol.dart';
+import '../../../domain/entities/symbol_metadata.dart';
 import '../../../domain/entities/ticker.dart';
 import '../../../presentation/providers/market_data_providers.dart';
+import '../../../presentation/theme/app_theme.dart';
 import '../../../presentation/theme/theme_extensions.dart';
 import 'formatting.dart';
 
@@ -21,17 +25,10 @@ class OrderBookPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final orderBookAsync = ref.watch(orderBookStreamProvider(symbol));
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>()!;
 
     return orderBookAsync.when(
-      data: (book) => _BookContent(
-        book: book,
-        tickerAsync: tickerAsync,
-        appColors: appColors,
-        theme: theme,
-        symbol: symbol,
-      ),
+      data: (book) =>
+          _BookContent(book: book, tickerAsync: tickerAsync, symbol: symbol),
       loading: () => const Center(
         child: Padding(
           padding: EdgeInsets.all(32),
@@ -43,8 +40,8 @@ class OrderBookPanel extends ConsumerWidget {
           padding: const EdgeInsets.all(24),
           child: Text(
             'Order book unavailable',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: appColors.subtleText,
+            style: themeBodySmall(context)?.copyWith(
+              color: Theme.of(context).extension<AppColorTheme>()!.subtleText,
             ),
           ),
         ),
@@ -57,19 +54,18 @@ class _BookContent extends StatelessWidget {
   const _BookContent({
     required this.book,
     required this.tickerAsync,
-    required this.appColors,
-    required this.theme,
     required this.symbol,
   });
 
   final OrderBook book;
   final AsyncValue<Ticker> tickerAsync;
-  final AppColorTheme appColors;
-  final ThemeData theme;
   final TradingSymbol symbol;
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
+    final meta = resolveSymbolMetadata(symbol);
+
     final price =
         tickerAsync.valueOrNull?.lastPrice ??
         (book.bestBid ?? 0) + (book.spread ?? 0) / 2;
@@ -79,12 +75,16 @@ class _BookContent extends StatelessWidget {
         ? spread / bestBid * 100
         : 0.0;
 
-    final visibleAsks = book.asks.take(6).toList();
+    final visibleAsks = book.asks.take(6).toList().reversed.toList();
     final visibleBids = book.bids.take(6).toList();
-    final maxAmount = [
-      ...visibleAsks.map((l) => l.amount),
-      ...visibleBids.map((l) => l.amount),
-    ].fold(0.0, (a, b) => a > b ? a : b);
+
+    final askCum = _cumulative(visibleAsks);
+    final bidCum = _cumulative(visibleBids);
+    final dmax = askCum.isEmpty
+        ? (bidCum.isEmpty ? 1.0 : bidCum.last)
+        : bidCum.isEmpty
+        ? askCum.last
+        : max(askCum.last, bidCum.last);
 
     return Column(
       children: [
@@ -95,52 +95,53 @@ class _BookContent extends StatelessWidget {
             children: [
               Text(
                 'Price',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: appColors.subtleText,
-                  letterSpacing: 0.08,
-                ),
+                style: AppTheme.mono(
+                  color: const Color(0x57FFFFFF),
+                  fontSize: 8.5,
+                ).copyWith(letterSpacing: 0.08),
               ),
               Text(
-                'Size (${symbol.base})',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: appColors.subtleText,
-                  letterSpacing: 0.08,
-                ),
+                'Size (${meta.base})',
+                style: AppTheme.mono(
+                  color: const Color(0x57FFFFFF),
+                  fontSize: 8.5,
+                ).copyWith(letterSpacing: 0.08),
               ),
             ],
           ),
         ),
         _LevelList(
           levels: visibleAsks,
+          cumulatives: askCum,
           color: appColors.bearish,
-          barColor: appColors.bearish.withValues(alpha: 0.18),
-          maxAmount: maxAmount,
-          theme: theme,
+          barColor: appColors.bearish.withValues(alpha: 0.12),
+          dmax: dmax,
+          meta: meta,
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
           margin: const EdgeInsets.symmetric(vertical: 4),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             border: Border(
-              top: BorderSide(color: appColors.borderSubtle),
-              bottom: BorderSide(color: appColors.borderSubtle),
+              top: BorderSide(color: Color(0x12FFFFFF)),
+              bottom: BorderSide(color: Color(0x12FFFFFF)),
             ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                formatPrice(price, maxDecimals: 2),
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                formatFixedPrice(price, meta.decimals),
+                style: AppTheme.mono(
                   color: appColors.bullish,
-                ),
+                  fontSize: 15,
+                ).copyWith(fontWeight: FontWeight.w600),
               ),
               Text(
-                'spread ${formatPrice(spread, maxDecimals: 2)} · ${formatPercent(spreadPct)}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: appColors.subtleText,
+                'spread ${formatFixedPrice(spread, meta.decimals)} · ${formatPercent(spreadPct)}',
+                style: AppTheme.mono(
+                  color: const Color(0x57FFFFFF),
+                  fontSize: 10,
                 ),
               ),
             ],
@@ -148,42 +149,51 @@ class _BookContent extends StatelessWidget {
         ),
         _LevelList(
           levels: visibleBids,
+          cumulatives: bidCum,
           color: appColors.bullish,
-          barColor: appColors.bullish.withValues(alpha: 0.18),
-          maxAmount: maxAmount,
-          theme: theme,
+          barColor: appColors.bullish.withValues(alpha: 0.12),
+          dmax: dmax,
+          meta: meta,
         ),
       ],
     );
+  }
+
+  List<double> _cumulative(List<OrderBookLevel> levels) {
+    var sum = 0.0;
+    return [for (final level in levels) sum += level.amount];
   }
 }
 
 class _LevelList extends StatelessWidget {
   const _LevelList({
     required this.levels,
+    required this.cumulatives,
     required this.color,
     required this.barColor,
-    required this.maxAmount,
-    required this.theme,
+    required this.dmax,
+    required this.meta,
   });
 
   final List<OrderBookLevel> levels;
+  final List<double> cumulatives;
   final Color color;
   final Color barColor;
-  final double maxAmount;
-  final ThemeData theme;
+  final double dmax;
+  final SymbolMetadata meta;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        for (final level in levels)
+        for (var i = 0; i < levels.length; i++)
           _LevelRow(
-            level: level,
+            level: levels[i],
+            cumulative: cumulatives[i],
             color: color,
             barColor: barColor,
-            maxAmount: maxAmount,
-            theme: theme,
+            dmax: dmax,
+            meta: meta,
           ),
       ],
     );
@@ -193,21 +203,23 @@ class _LevelList extends StatelessWidget {
 class _LevelRow extends StatelessWidget {
   const _LevelRow({
     required this.level,
+    required this.cumulative,
     required this.color,
     required this.barColor,
-    required this.maxAmount,
-    required this.theme,
+    required this.dmax,
+    required this.meta,
   });
 
   final OrderBookLevel level;
+  final double cumulative;
   final Color color;
   final Color barColor;
-  final double maxAmount;
-  final ThemeData theme;
+  final double dmax;
+  final SymbolMetadata meta;
 
   @override
   Widget build(BuildContext context) {
-    final depth = maxAmount > 0 ? level.amount / maxAmount : 0.0;
+    final depth = dmax > 0 ? cumulative / dmax : 0.0;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
@@ -224,16 +236,17 @@ class _LevelRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                formatPrice(level.price, maxDecimals: 2),
-                style: theme.textTheme.labelMedium?.copyWith(
+                formatFixedPrice(level.price, meta.decimals),
+                style: AppTheme.mono(
                   color: color,
-                  fontWeight: FontWeight.w500,
-                ),
+                  fontSize: 11,
+                ).copyWith(fontWeight: FontWeight.w500),
               ),
               Text(
-                level.amount.toStringAsFixed(4),
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                level.amount.toStringAsFixed(3),
+                style: AppTheme.mono(
+                  color: const Color(0x8CFFFFFF),
+                  fontSize: 11,
                 ),
               ),
             ],
@@ -243,3 +256,6 @@ class _LevelRow extends StatelessWidget {
     );
   }
 }
+
+TextStyle? themeBodySmall(BuildContext context) =>
+    Theme.of(context).textTheme.bodySmall;

@@ -12,13 +12,15 @@ import '../../../domain/entities/timeframe.dart';
 import '../../../domain/entities/trade.dart';
 import '../../../domain/entities/venue.dart';
 
+import '../../../domain/sources/market_data_store.dart';
+
 /// Deterministic replacement for [MockMarketDataStore].
 ///
 /// Uses the same Park-Miller PRNG and `series()` algorithm as
 /// `mockups/YouTrade.dc.html` so every returned value matches the mockup
 /// exactly. The public API is identical to [MockMarketDataStore]; existing
 /// tests for that class continue to pass unchanged.
-final class DeterministicMarketDataStore {
+final class DeterministicMarketDataStore implements MarketDataStore {
   const DeterministicMarketDataStore();
 
   static const int _modulus = 2147483647;
@@ -232,6 +234,7 @@ final class DeterministicMarketDataStore {
     return vol * lastPrice / 1e6;
   }
 
+  @override
   Future<Ticker> getTicker(TradingSymbol symbol) async {
     final data = _rawCandlesFor(symbol);
     final last = data.last.close;
@@ -252,6 +255,7 @@ final class DeterministicMarketDataStore {
     );
   }
 
+  @override
   Future<List<Candle>> getCandles(
     TradingSymbol symbol,
     Timeframe timeframe, {
@@ -277,6 +281,7 @@ final class DeterministicMarketDataStore {
         .toList();
   }
 
+  @override
   Future<OrderBook> getOrderBook(TradingSymbol symbol, {int? depth}) async {
     final data = _rawCandlesFor(symbol);
     final last = data.last.close;
@@ -298,6 +303,7 @@ final class DeterministicMarketDataStore {
     return OrderBook(bids: bids, asks: asks, timestamp: _mockTimestamp);
   }
 
+  @override
   Future<List<Trade>> getTrades(TradingSymbol symbol, {int? limit}) async {
     final data = _rawCandlesFor(symbol);
     final last = data.last.close;
@@ -322,6 +328,7 @@ final class DeterministicMarketDataStore {
     return trades;
   }
 
+  @override
   Stream<Ticker> watchTicker(TradingSymbol symbol) {
     Timer? timer;
     final controller = StreamController<Ticker>(
@@ -333,6 +340,7 @@ final class DeterministicMarketDataStore {
     return controller.stream;
   }
 
+  @override
   Stream<OrderBook> watchOrderBook(TradingSymbol symbol) {
     Timer? timer;
     final controller = StreamController<OrderBook>(
@@ -344,6 +352,7 @@ final class DeterministicMarketDataStore {
     return controller.stream;
   }
 
+  @override
   Stream<List<Trade>> watchTrades(TradingSymbol symbol) {
     Timer? timer;
     final controller = StreamController<List<Trade>>(
