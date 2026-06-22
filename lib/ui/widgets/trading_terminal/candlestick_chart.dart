@@ -27,7 +27,7 @@ class CandlestickChart extends StatelessWidget {
           border: Border.all(color: appColors.borderSubtle),
           boxShadow: [
             BoxShadow(
-              color: appColors.accent.withValues(alpha: 0.12),
+              color: appColors.accentGlow,
               blurRadius: 22,
               spreadRadius: -10,
             ),

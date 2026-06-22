@@ -48,6 +48,7 @@ abstract final class AppTheme {
     final card = const Color(0xFF0E131F);
     final bullish = isCarbon ? _carbonUp : _emeraldVivid;
     final bearish = isCarbon ? _carbonDown : _rose;
+    final accentGlow = isCarbon ? Colors.transparent : const Color(0x8000E6D2);
 
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primary,
@@ -70,6 +71,7 @@ abstract final class AppTheme {
         bullish: bullish,
         bearish: bearish,
         accent: primary,
+        accentGlow: accentGlow,
         foreground: const Color(0xFFF2F5FA),
         surfaceGlass: _white8,
         subtleText: _white55,
@@ -90,6 +92,7 @@ abstract final class AppTheme {
     const card = _lightSurface;
     final bullish = isCarbon ? _emeraldBold : _emeraldLight;
     final bearish = isCarbon ? _roseBold : _roseLight;
+    final accentGlow = isCarbon ? Colors.transparent : const Color(0x590094A8);
 
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primary,
@@ -112,6 +115,7 @@ abstract final class AppTheme {
         bullish: bullish,
         bearish: bearish,
         accent: accent,
+        accentGlow: accentGlow,
         foreground: _carbon,
         surfaceGlass: _carbon8,
         subtleText: _carbon60,

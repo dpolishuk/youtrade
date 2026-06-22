@@ -80,7 +80,7 @@ class _EquityCurveState extends State<EquityCurve> {
                 lineBarsData: [
                   LineChartBarData(
                     spots: spots,
-                    isCurved: true,
+                    isCurved: false,
                     color: accent,
                     barWidth: 2,
                     isStrokeCapRound: true,

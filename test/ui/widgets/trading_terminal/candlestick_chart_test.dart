@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/domain/entities/candle.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
+import 'package:youtrade/presentation/theme/theme_extensions.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/widgets/trading_terminal/candlestick_chart.dart';
 
@@ -55,6 +56,23 @@ void main() {
       expect(customPaint.size.height, 248);
       expect(customPaint.size.width, greaterThan(0));
       expect(customPaint.painter, isNotNull);
+
+      // Prevents regression where the glow token is hard-coded instead of using
+      // the theme directional glow color.
+      final container = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(CandlestickChart),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      final decoration = container.decoration! as BoxDecoration;
+      final boxShadow = decoration.boxShadow!.first;
+      final accentGlow = AppTheme.dark(
+        AppVisualDirection.flux,
+      ).extension<AppColorTheme>()!.accentGlow;
+      expect(boxShadow.color, accentGlow);
     });
 
     testWidgets('shows progress indicator when candles are empty', (
