@@ -73,8 +73,8 @@ class PortfolioScreen extends ConsumerWidget {
     ThemeSettings settings,
   ) {
     final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>();
-    final accent = appColors?.accent ?? theme.colorScheme.primary;
+    final appColors = theme.extension<AppColorTheme>()!;
+    final accent = appColors.accent;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 6, 18, 12),
@@ -111,7 +111,7 @@ class PortfolioScreen extends ConsumerWidget {
                   fontSize: 16,
                   letterSpacing: -0.04 * 16,
                   height: 1,
-                  color: theme.colorScheme.onSurface,
+                  color: appColors.foreground,
                 ),
               ),
               const SizedBox(height: 3),
@@ -121,7 +121,7 @@ class PortfolioScreen extends ConsumerWidget {
                     : 'Carbon Terminal',
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontFamily: 'JetBrains Mono',
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: appColors.tertiaryText,
                   letterSpacing: 0.14 * 8.5,
                   fontSize: 8.5,
                 ),
@@ -420,6 +420,10 @@ class _IconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>();
+    final chipColor = appColors?.chip ?? theme.colorScheme.secondary;
+    final iconColor =
+        appColors?.subtleText ?? theme.colorScheme.onSurfaceVariant;
 
     return Tooltip(
       message: tooltip ?? '',
@@ -430,16 +434,12 @@ class _IconButton extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
+            color: chipColor,
             borderRadius: BorderRadius.circular(9),
             border: Border.all(color: theme.dividerColor),
           ),
           alignment: Alignment.center,
-          child: Icon(
-            icon,
-            size: 16,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          child: Icon(icon, size: 16, color: iconColor),
         ),
       ),
     );
@@ -465,7 +465,7 @@ class _DirectionButton extends StatelessWidget {
         height: 34,
         padding: const EdgeInsets.symmetric(horizontal: 11),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
+          color: appColors?.chip ?? theme.colorScheme.secondary,
           borderRadius: BorderRadius.circular(9),
           border: Border.all(color: theme.dividerColor),
         ),

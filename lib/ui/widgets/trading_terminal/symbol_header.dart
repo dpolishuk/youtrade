@@ -64,10 +64,8 @@ class SymbolHeader extends ConsumerWidget {
                     children: [
                       Text(
                         meta.base,
-                        style:
-                            AppTheme.display(
-                              color: theme.colorScheme.onSurface,
-                            ).copyWith(
+                        style: AppTheme.display(color: appColors.foreground)
+                            .copyWith(
                               fontSize: 19,
                               fontWeight: FontWeight.w600,
                               letterSpacing: -0.02 * 19,

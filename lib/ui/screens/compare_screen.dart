@@ -58,8 +58,6 @@ class _CompareScreenState extends State<CompareScreen> {
   }
 
   Widget _buildHeader(BuildContext context, AppColorTheme appColors) {
-    final theme = Theme.of(context);
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -68,7 +66,7 @@ class _CompareScreenState extends State<CompareScreen> {
         Text(
           'Compare',
           style: AppTheme.display(
-            color: theme.colorScheme.onSurface,
+            color: appColors.foreground,
             fontSize: 18,
           ).copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.02 * 18),
         ),

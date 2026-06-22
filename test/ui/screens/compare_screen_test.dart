@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
+import 'package:youtrade/presentation/theme/theme_extensions.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/screens/compare_screen.dart';
 import 'package:youtrade/ui/widgets/compare/compare_chart.dart';
@@ -11,6 +12,10 @@ import 'package:youtrade/ui/widgets/compare/symbol_selector.dart';
 
 void main() {
   group('CompareScreen', () {
+    final appColors = AppTheme.dark(
+      AppVisualDirection.flux,
+    ).extension<AppColorTheme>()!;
+
     Widget buildScreen() {
       return MaterialApp(
         theme: AppTheme.dark(AppVisualDirection.flux),
@@ -82,6 +87,7 @@ void main() {
       expect(title.style?.fontSize, 18);
       expect(title.style?.fontWeight, FontWeight.w600);
       expect(title.style?.letterSpacing, closeTo(-0.02 * 18, 0.01));
+      expect(title.style?.color, appColors.foreground);
 
       final count = tester.widget<Text>(find.text('3/4 · normalized %'));
       expect(count.style?.fontFamily, 'JetBrains Mono');
