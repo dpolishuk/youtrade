@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/local/app_database.dart';
 import '../../data/datasources/local/market_cache_data_source.dart';
-import '../../data/datasources/mock/demo_market_data_store.dart';
+import '../../data/datasources/mock/deterministic_market_data_store.dart';
 import '../../data/datasources/remote/binance/binance_rest_client.dart';
 import '../../data/datasources/remote/binance/binance_websocket_client.dart';
 import '../../data/datasources/remote/bybit/bybit_rest_client.dart';
@@ -144,7 +144,7 @@ final marketDataRepositoryProvider = Provider<MarketDataRepository>((ref) {
 
   return MarketDataRepositoryImpl(
     registry: const _StaticExchangeCapabilityRegistry(),
-    fallbackStore: DemoMarketDataStore(),
+    fallbackStore: const DeterministicMarketDataStore(),
     cache: cache,
     venueSources: isOnline
         ? {

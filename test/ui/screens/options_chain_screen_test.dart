@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:youtrade/data/datasources/mock/deterministic_market_data_store.dart';
+import 'package:youtrade/domain/entities/options_chain_strike.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/screens/options_chain_screen.dart';
 
 void main() {
   group('OptionsChainScreen', () {
-    Widget buildScreen({String? symbol}) {
+    Widget buildScreen({String? symbol, List<OptionChainStrike>? rows}) {
       return MaterialApp(
         theme: AppTheme.dark(AppVisualDirection.flux),
-        home: OptionsChainScreen(symbol: symbol),
+        home: OptionsChainScreen(symbol: symbol, rows: rows),
       );
     }
 
@@ -75,13 +75,7 @@ void main() {
     });
 
     testWidgets('empty chain shows no strikes message', (tester) async {
-      final originalChain = DeterministicMarketDataStore.btcOptionsChain;
-      DeterministicMarketDataStore.btcOptionsChain = [];
-      addTearDown(() {
-        DeterministicMarketDataStore.btcOptionsChain = originalChain;
-      });
-
-      await tester.pumpWidget(buildScreen(symbol: 'BTC'));
+      await tester.pumpWidget(buildScreen(symbol: 'BTC', rows: []));
       await tester.pumpAndSettle();
 
       expect(find.text('No strikes available'), findsOneWidget);

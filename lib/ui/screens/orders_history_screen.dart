@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/datasources/mock/deterministic_market_data_store.dart';
 import '../../domain/entities/order.dart';
+import '../../domain/entities/position.dart';
 import '../../presentation/theme/theme_extensions.dart';
 import '../widgets/orders/history_order_tile.dart';
 import '../widgets/orders/order_list_tile.dart';
@@ -9,7 +10,9 @@ import '../widgets/orders/position_list_tile.dart';
 
 /// Orders & History screen with Open / History / Positions tabs.
 class OrdersHistoryScreen extends StatefulWidget {
-  const OrdersHistoryScreen({super.key});
+  const OrdersHistoryScreen({this.positions, super.key});
+
+  final List<Position>? positions;
 
   @override
   State<OrdersHistoryScreen> createState() => _OrdersHistoryScreenState();
@@ -149,6 +152,8 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
   }
 
   Widget _buildPositionsList(AppColorTheme appColors) {
+    final positions =
+        widget.positions ?? DeterministicMarketDataStore.portfolioPositions;
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -156,16 +161,14 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
         border: Border.all(color: appColors.borderSubtle),
       ),
       child: ListView.separated(
-        itemCount: DeterministicMarketDataStore.portfolioPositions.length,
+        itemCount: positions.length,
         separatorBuilder: (_, _) => Divider(
           height: 1,
           color: appColors.borderSubtle,
           indent: 14,
           endIndent: 14,
         ),
-        itemBuilder: (_, index) => PositionListTile(
-          position: DeterministicMarketDataStore.portfolioPositions[index],
-        ),
+        itemBuilder: (_, index) => PositionListTile(position: positions[index]),
       ),
     );
   }

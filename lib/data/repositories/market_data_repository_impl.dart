@@ -18,7 +18,7 @@ import '../../domain/sources/order_book_source.dart';
 import '../../domain/sources/ticker_source.dart';
 import '../../domain/sources/trade_source.dart';
 import '../../domain/sources/market_data_store.dart';
-import '../datasources/mock/demo_market_data_store.dart';
+import '../datasources/mock/deterministic_market_data_store.dart';
 
 final class VenueSources {
   const VenueSources({
@@ -42,7 +42,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
     MarketDataStore? fallbackStore,
     Map<Venue, VenueSources>? venueSources,
     this.cache,
-  }) : _fallbackStore = fallbackStore ?? DemoMarketDataStore(),
+  }) : _fallbackStore = fallbackStore ?? const DeterministicMarketDataStore(),
        _venueSources = venueSources ?? const {};
 
   final ExchangeCapabilityRegistry registry;
@@ -50,11 +50,9 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
   final Map<Venue, VenueSources> _venueSources;
   final MarketCache? cache;
 
-  /// Exposed for tests to verify offline fallback wiring.
-  MarketDataStore get fallbackStore => _fallbackStore;
+  Map<Venue, VenueSources> get venueSources => _venueSources;
 
-  /// Exposed for tests to verify venue source wiring.
-  Map<Venue, VenueSources> get venueSources => Map.unmodifiable(_venueSources);
+  MarketDataStore get fallbackStore => _fallbackStore;
 
   static const _tickerTtl = Duration(seconds: 30);
   static const _candlesTtl = Duration(minutes: 5);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/data/datasources/mock/deterministic_market_data_store.dart';
+import 'package:youtrade/domain/entities/position.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/screens/orders_history_screen.dart';
@@ -9,11 +10,14 @@ import 'package:youtrade/ui/widgets/orders/position_list_tile.dart';
 
 void main() {
   group('OrdersHistoryScreen', () {
-    Future<void> pumpScreen(WidgetTester tester) async {
+    Future<void> pumpScreen(
+      WidgetTester tester, {
+      List<Position>? positions,
+    }) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.dark(AppVisualDirection.flux),
-          home: const OrdersHistoryScreen(),
+          home: OrdersHistoryScreen(positions: positions),
         ),
       );
       await tester.pumpAndSettle();
@@ -223,13 +227,7 @@ void main() {
     });
 
     testWidgets('empty Positions tab renders without items', (tester) async {
-      final originalPositions = DeterministicMarketDataStore.portfolioPositions;
-      DeterministicMarketDataStore.portfolioPositions = [];
-      addTearDown(() {
-        DeterministicMarketDataStore.portfolioPositions = originalPositions;
-      });
-
-      await pumpScreen(tester);
+      await pumpScreen(tester, positions: []);
 
       await tester.tap(find.text('Positions'));
       await tester.pumpAndSettle();

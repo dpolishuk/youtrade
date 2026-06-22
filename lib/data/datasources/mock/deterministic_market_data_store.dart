@@ -19,12 +19,11 @@ import '../../../domain/entities/exchange_detail_snapshot.dart';
 
 import '../../../domain/sources/market_data_store.dart';
 
-/// Deterministic replacement for [DemoMarketDataStore].
+/// Deterministic fallback market-data store.
 ///
 /// Uses the same Park-Miller PRNG and `series()` algorithm as
 /// `mockups/YouTrade.dc.html` so every returned value matches the mockup
-/// exactly. The public API is identical to [DemoMarketDataStore]; existing
-/// tests for that class continue to pass unchanged.
+/// exactly. The public API implements [MarketDataStore].
 typedef _ExchangeAsset = ({String symbol, double qty, String glyph});
 
 final class DeterministicMarketDataStore implements MarketDataStore {
@@ -143,7 +142,7 @@ final class DeterministicMarketDataStore implements MarketDataStore {
   };
 
   /// Static position data matching the mockup Portfolio screen.
-  static List<Position> portfolioPositions = const [
+  static const List<Position> portfolioPositions = [
     Position(
       symbol: 'BTCUSDT',
       sym0: '฿',
@@ -423,7 +422,9 @@ final class DeterministicMarketDataStore implements MarketDataStore {
   ];
 
   /// Deterministic BTC options chain rows matching the mockup exactly.
-  static List<OptionChainStrike> btcOptionsChain = _buildBtcOptionsChain();
+  static final List<OptionChainStrike> btcOptionsChain = List.unmodifiable(
+    _buildBtcOptionsChain(),
+  );
 
   static List<OptionChainStrike> _buildBtcOptionsChain() {
     final spot = btcLastPrice;

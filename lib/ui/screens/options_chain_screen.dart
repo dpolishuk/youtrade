@@ -9,9 +9,10 @@ import '../widgets/options_chain/options_header.dart';
 import '../widgets/options_chain/strike_row.dart';
 
 class OptionsChainScreen extends StatefulWidget {
-  const OptionsChainScreen({this.symbol, super.key});
+  const OptionsChainScreen({this.symbol, this.rows, super.key});
 
   final String? symbol;
+  final List<OptionChainStrike>? rows;
 
   @override
   State<OptionsChainScreen> createState() => _OptionsChainScreenState();
@@ -21,7 +22,7 @@ class _OptionsChainScreenState extends State<OptionsChainScreen> {
   static final _expiries = DeterministicMarketDataStore.btcOptionExpiries;
 
   List<OptionChainStrike> get _rows =>
-      DeterministicMarketDataStore.btcOptionsChain;
+      widget.rows ?? DeterministicMarketDataStore.btcOptionsChain;
 
   int _selectedExpiryIndex = 0;
 
