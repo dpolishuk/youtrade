@@ -26,7 +26,7 @@ This document describes every screen, its purpose, data requirements, states, tr
                                           └─────────────┘      └─────────────┘
 ```
 
-Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Options, More. The implementation uses Material icons instead of the mockup's custom SVG tab icons.
+Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Options, More. The implementation uses Material icons instead of the mockup's custom SVG tab icons; the 4×4 accent active-dot indicator is implemented.
 
 Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes require authentication. Compare and Exchange Detail are nested under `/markets`; Options Chain is at `/markets/options/:symbol`. Orders & History is nested under Portfolio at `/orders`. The Trading Terminal route is `/trading?symbol=<symbol>`.
 
@@ -299,12 +299,11 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 
 ## 8. Account / Settings (More tab)
 
-**Purpose:** Manage appearance, connected exchanges, security, and app info.
+**Purpose:** Manage appearance, connected exchanges, and app info. PIN and biometric protection are configured via the Auth Gate.
 
 **Layout:**
 - Title "Account"
 - Connected exchanges section
-- Protection section (PIN status / biometric unlock)
 - Appearance section: Theme toggle, Visual direction toggle
 - Footer: app version + venue count
 
@@ -319,9 +318,7 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 **Interactions:**
 - Tap Theme button → toggle dark/light
 - Tap Visual direction button → toggle Flux/Carbon
-- Tap "Set up PIN" → configure local PIN protection
-- Tap "Unlock with biometrics" → enable biometric auth when available
-- Protection state reflects whether PIN/biometric protection is active
+- PIN and biometric setup/lock are handled on the Auth Gate, not in Settings
 
 ---
 

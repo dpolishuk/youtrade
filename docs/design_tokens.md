@@ -212,15 +212,17 @@ The mockup computes these at runtime based on `theme` and `dir`. These are the v
 |---|---|---|
 | `accent` | `#3f73ff` | `Color(0xFF3F73FF)` |
 | `glow` | `transparent` | `Colors.transparent` |
-| `surface` / `bg` | `#061336` | `Color(0xFF061336)` |
+| `surface` / `bg` | `#06080f` | `Color(0xFF06080F)` |
+| `up` | `#16d196` | `Color(0xFF16D196)` |
+| `down` | `#ff4d63` | `Color(0xFFFF4D63)` |
 
-All other dark tokens (`up`, `down`, `fg`, `card`, etc.) are currently shared with Flux. The mockup CSS also specifies distinct Carbon `up`/`down` hues, but those are not yet implemented.
+All other dark tokens (`fg`, `card`, `line`, etc.) remain identical to Dark + Flux.
 
 ### Light + Flux
 
 | Token | Value | Flutter `Color` |
 |---|---|---|
-| `bg` | `#f7f4f3` | `Color(0xFFF7F4F3)` |
+| `bg` | `#f1efee` | `Color(0xFFF1EFEE)` |
 | `bg2` | `#fbfafa` | `Color(0xFFFBFAFA)` |
 | `card` | `#ffffff` | `Color(0xFFFFFFFF)` |
 | `chip` | `#ffffff` | `Color(0xFFFFFFFF)` |
@@ -240,13 +242,15 @@ All other dark tokens (`up`, `down`, `fg`, `card`, etc.) are currently shared wi
 
 | Token | Value | Flutter `Color` |
 |---|---|---|
-| `accent` | `#0355f3` | `Color(0xFF0355F3)` |
+| `accent` | `#1634ef` | `Color(0xFF1634EF)` |
 | `glow` | `transparent` | `Colors.transparent` |
-| `surface` / `bg` | `#ffffff` | `Color(0xFFFFFFFF)` |
+| `surface` / `bg` | `#f1efee` | `Color(0xFFF1EFEE)` |
+| `up` | `#1d683f` | `Color(0xFF1D683F)` |
+| `down` | `#c0392b` | `Color(0xFFC0392B)` |
 
-All other light tokens are currently shared with Flux. The mockup CSS also specifies distinct Carbon `up`/`down` hues, but those are not yet implemented.
+All other light tokens (`fg`, `card`, `line`, etc.) follow the Light + Flux palette.
 
-**Note:** The bottom navigation bar currently uses the dark `navbg` (`#080b12`) in both light and dark themes; full light-theme navigation styling is not yet implemented.
+**Note:** The bottom navigation bar now adapts to the active theme: `#080b12` in dark mode and `#ffffff` in light mode.
 
 ---
 

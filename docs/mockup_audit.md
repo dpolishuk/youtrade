@@ -48,7 +48,7 @@ Legend:
 | Label font | JetBrains Mono, `8.5px`, weight 600, letter-spacing `0.04em` | matched | matched |
 | Active color | `#00e6d2` (Flux) | matched | matched |
 | Inactive color | `rgba(255,255,255,0.34)` | matched | matched |
-| Active indicator | `4×4` dot, radius 50%, bg `#00e6d2`, glow `rgba(0,230,210,0.5)` | `NavigationBar` selection indicator disabled (transparent); no accent dot | gap |
+| Active indicator | `4×4` dot, radius 50%, bg `#00e6d2`, glow `rgba(0,230,210,0.5)` | custom `_NavItem` renders a 4×4 accent dot below the active label | matched |
 | Touch target | `5px 10px` padding, radius `9px` | matched | matched |
 
 ---
@@ -630,9 +630,10 @@ Legend:
 
 1. Title
 2. Connected exchanges section
-3. Protection section
-4. Appearance section
-5. Footer
+3. Appearance section
+4. Footer
+
+Protection settings (PIN / biometrics) have been moved to the Auth Gate.
 
 ### Title
 
@@ -650,16 +651,6 @@ Legend:
 | Live dot | `8×8`, radius 50%, bg `#2ee6a6`, glow | matched | matched |
 | Name | `13px`, weight 600, `#f2f5fa`, flex 1 | matched | matched |
 | Status | JetBrains Mono `9px`, letter-spacing `0.05em`, uppercase, `#2ee6a6` → "Connected" | matched | matched |
-
-### Protection
-
-| Element | Mockup value | Current Flutter value | Status |
-|---|---|---|---|
-| Section eyebrow | JetBrains Mono `9px`, letter-spacing `0.1em`, uppercase, `rgba(255,255,255,0.34)`, margin-bottom `9px` | matched | matched |
-| Container | border `1px rgba(255,255,255,0.07)`, radius `11px`, overflow hidden, bg `#0e131f`, margin-bottom `18px` | matched | matched |
-| Row | padding `13px 14px`, border-bottom `1px rgba(255,255,255,0.07)`, justify space-between | matched | matched |
-| Label | `13px`, `#f2f5fa` | matched | matched |
-| Trailing icon | `18px` chevron / fingerprint / check per protection state | matched | matched |
 
 ### Appearance
 
@@ -709,10 +700,7 @@ The auth gate must align to the mockup visual language: dark `#06080f` backgroun
 | Item | Status | Notes |
 |---|---|---|
 | Custom status bar / device notch | gap | The implementation uses the system status bar and `SafeArea`. Rendering a custom 46px status bar with 9:41 clock, custom signal/WiFi/battery SVGs, and a center notch requires platform-specific work (e.g., `SystemChrome` overlays plus custom notch painting) that is beyond the current epic scope. |
-| Bottom navigation custom SVG icons and active dot indicator | gap | The mockup specifies five custom SVG tab icons and a 4×4 accent dot beneath the active label; the app uses standard Material outlined/filled icons at the same 22×22 size and disables the `NavigationBar` selection indicator, so the dot is absent. |
-| Carbon direction-specific colors | gap | Carbon currently shares Flux `up`/`down` colors and uses a different accent than the mockup CSS specifies. |
-| Light-theme bottom nav | gap | `ScaffoldWithNavBar` uses the dark nav background (`#080b12`) in both themes. |
-| Settings security section | partial | PIN status and biometric availability are shown in the Protection section; sign-out action is not yet implemented. |
+| Bottom navigation custom SVG icons | gap | The mockup specifies five custom SVG tab icons; the app uses standard Material outlined/filled icons at the same 22×22 size. The 4×4 accent active-dot indicator is now implemented. |
 
 ## Audit Summary
 
