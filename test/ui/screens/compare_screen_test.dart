@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
@@ -95,6 +96,9 @@ void main() {
       final series = generateCompareSeries(compareSymbols.sublist(0, 2));
       for (final s in series) {
         expect(find.text(s.symbol.symbol), findsWidgets);
+        final returnText =
+            '${s.totalReturn >= 0 ? '+' : ''}${s.totalReturn.toStringAsFixed(2)}%';
+        expect(find.text(returnText), findsWidgets);
       }
     });
 
@@ -138,15 +142,27 @@ void main() {
       expect(find.text('BTC'), findsWidgets);
     });
 
-    testWidgets('surface color matches mockup card color', (tester) async {
+    testWidgets('renders line chart inside a surface-colored container', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      final chart = tester.widget<CompareChart>(find.byType(CompareChart));
+      expect(find.byType(CompareChart), findsOneWidget);
+      expect(find.byType(LineChart), findsOneWidget);
 
-      // Chart container is drawn by CompareChart; verify it receives series.
-      expect(chart.series.length, 2);
-      expect(chart.series.first.normalized.length, 30);
+      final container = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(CompareChart),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      final decoration = container.decoration! as BoxDecoration;
+      final theme = Theme.of(tester.element(find.byType(CompareChart)));
+      expect(decoration.color, theme.colorScheme.surface);
+      expect(decoration.border, isA<Border>());
     });
   });
 }

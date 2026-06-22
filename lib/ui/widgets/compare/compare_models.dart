@@ -54,7 +54,7 @@ List<CompareSeries> generateCompareSeries(
 }
 
 CompareSeries _generateForSymbol(CompareSymbol symbol, int periods) {
-  final prices = DeterministicMarketDataStore.compareSparkline(
+  final prices = DeterministicMarketDataStore.screenerSparkline(
     symbol.rawSymbol,
     periods: periods,
   );

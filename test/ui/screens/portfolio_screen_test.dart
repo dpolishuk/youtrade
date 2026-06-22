@@ -212,5 +212,28 @@ void main() {
       expect(find.text('Trading BTCUSDT'), findsOneWidget);
       await tester.binding.setSurfaceSize(null);
     });
+
+    testWidgets('renders without overflow in landscape orientation', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(844, 390));
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PortfolioScreen), findsOneWidget);
+      await tester.binding.setSurfaceSize(null);
+    });
+
+    testWidgets('renders without overflow at 2x text scale', (tester) async {
+      tester.binding.platformDispatcher.textScaleFactorTestValue = 2.0;
+      addTearDown(
+        () => tester.binding.platformDispatcher.textScaleFactorTestValue = 1.0,
+      );
+
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PortfolioScreen), findsOneWidget);
+    });
   });
 }

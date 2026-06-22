@@ -1,5 +1,6 @@
-import 'dart:async';
 import 'dart:math';
+import '../../../core/formatting.dart';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
@@ -362,7 +363,7 @@ final class DeterministicMarketDataStore implements MarketDataStore {
       return ExchangeBalance(
         symbol: asset.symbol,
         glyph: asset.glyph,
-        valueFormatted: _formatMoney(value, decimals: 0),
+        valueFormatted: formatMoney(value, decimals: 0),
         sharePercent: share,
         shareColor: color,
       );
@@ -371,8 +372,8 @@ final class DeterministicMarketDataStore implements MarketDataStore {
     final pnlPercent = pnl / total * 100;
 
     return ExchangeDetailSnapshot(
-      total: _formatMoney(total, decimals: 0),
-      pnl: '${pnl >= 0 ? '+' : ''}${_formatMoney(pnl, decimals: 0)}',
+      total: formatMoney(total, decimals: 0),
+      pnl: '${pnl >= 0 ? '+' : ''}${formatMoney(pnl, decimals: 0)}',
       pnlPercent:
           '${pnlPercent >= 0 ? '+' : ''}${pnlPercent.toStringAsFixed(2)}%',
       kinds: data.kinds,
@@ -399,28 +400,6 @@ final class DeterministicMarketDataStore implements MarketDataStore {
       return asset.qty * _candles[pair]!.last.close;
     }
     return asset.qty * 200.0;
-  }
-
-  static String _formatMoney(double value, {required int decimals}) {
-    final isNegative = value < 0;
-    final abs = value.abs();
-    final whole = abs.truncate();
-    final wholeFormatted = _addCommas(whole);
-    if (decimals == 0) {
-      return '${isNegative ? '-' : ''}\$$wholeFormatted';
-    }
-    final frac = ((abs - whole) * pow(10, decimals)).round().toString().padLeft(
-      decimals,
-      '0',
-    );
-    return '${isNegative ? '-' : ''}\$$wholeFormatted.$frac';
-  }
-
-  static String _addCommas(int value) {
-    return value.toString().replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (match) => ',',
-    );
   }
 
   /// Last BTC price from the deterministic series.
@@ -500,11 +479,6 @@ final class DeterministicMarketDataStore implements MarketDataStore {
     final data = _candles[rawSymbol] ?? _candles['BTCUSDT']!;
     final start = max(0, data.length - periods);
     return data.sublist(start).map((c) => c.close).toList();
-  }
-
-  /// Deterministic 30-period closes used by the Compare screen.
-  static List<double> compareSparkline(String rawSymbol, {int periods = 30}) {
-    return screenerSparkline(rawSymbol, periods: periods);
   }
 
   List<_RawCandle> _rawCandlesFor(TradingSymbol symbol) {
@@ -616,39 +590,18 @@ final class DeterministicMarketDataStore implements MarketDataStore {
   }
 
   @override
-  Stream<Ticker> watchTicker(TradingSymbol symbol) {
-    Timer? timer;
-    final controller = StreamController<Ticker>(
-      onCancel: () => timer?.cancel(),
-    );
-    timer = Timer.periodic(const Duration(seconds: 1), (_) async {
-      controller.add(await getTicker(symbol));
-    });
-    return controller.stream;
+  Stream<Ticker> watchTicker(TradingSymbol symbol) async* {
+    yield await getTicker(symbol);
   }
 
   @override
-  Stream<OrderBook> watchOrderBook(TradingSymbol symbol) {
-    Timer? timer;
-    final controller = StreamController<OrderBook>(
-      onCancel: () => timer?.cancel(),
-    );
-    timer = Timer.periodic(const Duration(seconds: 1), (_) async {
-      controller.add(await getOrderBook(symbol));
-    });
-    return controller.stream;
+  Stream<OrderBook> watchOrderBook(TradingSymbol symbol) async* {
+    yield await getOrderBook(symbol);
   }
 
   @override
-  Stream<List<Trade>> watchTrades(TradingSymbol symbol) {
-    Timer? timer;
-    final controller = StreamController<List<Trade>>(
-      onCancel: () => timer?.cancel(),
-    );
-    timer = Timer.periodic(const Duration(seconds: 1), (_) async {
-      controller.add(await getTrades(symbol));
-    });
-    return controller.stream;
+  Stream<List<Trade>> watchTrades(TradingSymbol symbol) async* {
+    yield await getTrades(symbol);
   }
 
   /// Fixed UTC timestamp used for all deterministic mock data.

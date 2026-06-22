@@ -130,6 +130,25 @@ void main() {
       expect(find.text('Oscillator score 35/100'), findsOneWidget);
     });
 
+    testWidgets('renders without pivot levels for empty candles', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildGauge(
+          lastPrice: 100000,
+          change24hPercent: 0.0,
+          candles: const [],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Oscillators'), findsOneWidget);
+      expect(find.text('Moving averages'), findsOneWidget);
+      expect(find.text('Pivot levels'), findsOneWidget);
+      expect(find.text('R2'), findsNothing);
+      expect(find.text('S2'), findsNothing);
+    });
+
     testWidgets('renders oscillators and moving averages sections', (
       tester,
     ) async {

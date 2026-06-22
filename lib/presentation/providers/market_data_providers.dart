@@ -6,8 +6,6 @@ import '../../domain/entities/symbol.dart';
 import '../../domain/entities/ticker.dart';
 import '../../domain/entities/timeframe.dart';
 import '../../domain/entities/trade.dart';
-import '../../domain/entities/venue.dart';
-import '../../domain/registry/exchange_capability.dart';
 import '../../domain/usecases/market_data_use_cases.dart';
 import 'repository_provider.dart';
 
@@ -40,12 +38,6 @@ final watchTradesUseCaseProvider = Provider<WatchTradesUseCase>((ref) {
   final repository = ref.watch(marketDataRepositoryProvider);
   return WatchTradesUseCase(repository);
 });
-
-final getSupportedFeaturesUseCaseProvider =
-    Provider<GetSupportedFeaturesUseCase>((ref) {
-      final registry = ref.watch(exchangeCapabilityRegistryProvider);
-      return GetSupportedFeaturesUseCase(registry);
-    });
 
 final tickerStreamProvider = StreamProvider.family<Ticker, TradingSymbol>((
   ref,
@@ -92,9 +84,3 @@ final tradesStreamProvider = StreamProvider.family<List<Trade>, TradingSymbol>((
         (result) => result.fold((failure) => throw failure, (value) => value),
       );
 });
-
-final supportedFeaturesProvider =
-    Provider.family<Set<MarketDataFeature>, Venue>((ref, venue) {
-      final useCase = ref.watch(getSupportedFeaturesUseCaseProvider);
-      return useCase.call(venue);
-    });

@@ -7,7 +7,6 @@ import 'package:youtrade/domain/entities/ticker.dart';
 import 'package:youtrade/domain/entities/timeframe.dart';
 import 'package:youtrade/domain/entities/trade.dart';
 import 'package:youtrade/domain/entities/venue.dart';
-import 'package:youtrade/domain/registry/exchange_capability.dart';
 import 'package:youtrade/domain/repositories/market_data_repository.dart';
 import 'package:youtrade/domain/usecases/market_data_use_cases.dart';
 
@@ -79,24 +78,6 @@ final class _FakeRepository implements MarketDataRepository {
       throw UnimplementedError();
 }
 
-final class _FakeRegistry implements ExchangeCapabilityRegistry {
-  const _FakeRegistry(this.capabilities);
-
-  final List<ExchangeCapability> capabilities;
-
-  @override
-  List<ExchangeCapability> get all => capabilities;
-
-  @override
-  ExchangeCapability? forVenue(Venue venue) {
-    try {
-      return capabilities.firstWhere((c) => c.venue == venue);
-    } on StateError {
-      return null;
-    }
-  }
-}
-
 void main() {
   final symbol = _symbol;
 
@@ -144,35 +125,6 @@ void main() {
       await useCase.call(symbol, limit: 25);
 
       expect(capturedLimit, 25);
-    });
-  });
-
-  group('GetSupportedFeaturesUseCase', () {
-    test('returns supported features for a venue', () {
-      const features = {
-        MarketDataFeature.restTicker,
-        MarketDataFeature.wsTicker,
-      };
-      final registry = _FakeRegistry([
-        const ExchangeCapability(
-          venue: Venue.binance,
-          supportedFeatures: features,
-        ),
-      ]);
-      final useCase = GetSupportedFeaturesUseCase(registry);
-
-      final result = useCase.call(Venue.binance);
-
-      expect(result, features);
-    });
-
-    test('returns empty set when venue is unknown', () {
-      const registry = _FakeRegistry([]);
-      final useCase = GetSupportedFeaturesUseCase(registry);
-
-      final result = useCase.call(Venue.bybit);
-
-      expect(result, isEmpty);
     });
   });
 }

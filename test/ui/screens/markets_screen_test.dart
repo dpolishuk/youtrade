@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/screens/markets_screen.dart';
+import 'package:youtrade/ui/widgets/markets/market_list_tile.dart';
 
 void main() {
   Widget buildApp() {
@@ -16,9 +17,7 @@ void main() {
   }
 
   group('MarketsScreen', () {
-    testWidgets('renders without overflow and shows search bar', (
-      tester,
-    ) async {
+    testWidgets('renders market rows and filters the list', (tester) async {
       await tester.pumpWidget(buildApp());
       await tester.pumpAndSettle();
 
@@ -28,6 +27,23 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Search symbols, venues, assets'), findsOneWidget);
+      expect(find.byType(MarketListTile), findsWidgets);
+
+      final initialCount = find.byType(MarketListTile).evaluate().length;
+      await tester.tap(find.text('Crypto'));
+      await tester.pumpAndSettle();
+      final cryptoCount = find.byType(MarketListTile).evaluate().length;
+      expect(cryptoCount, lessThan(initialCount));
+
+      await tester.tap(find.text('All'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('markets_search_field')),
+        'AAPL',
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MarketListTile), findsOneWidget);
+      expect(find.widgetWithText(MarketListTile, 'AAPL'), findsOneWidget);
     });
 
     testWidgets('shows mockup filter chips', (tester) async {

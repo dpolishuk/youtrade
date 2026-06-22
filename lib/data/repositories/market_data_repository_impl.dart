@@ -295,107 +295,74 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
   }
 
   @override
-  Stream<Result<Ticker>> watchTicker(TradingSymbol symbol) async* {
-    final capability = registry.forVenue(symbol.venue);
-    if (capability == null ||
-        !capability.supports(MarketDataFeature.wsTicker)) {
-      yield Err(
-        UnsupportedFeatureFailure(symbol.venue.displayName, 'WS ticker'),
+  Stream<Result<Ticker>> watchTicker(TradingSymbol symbol) =>
+      _watchWithFallback<Ticker>(
+        symbol: symbol,
+        feature: MarketDataFeature.wsTicker,
+        featureName: 'WS ticker',
+        getCached: () async => cache?.getTicker(symbol),
+        watchSource: (sources) => sources.stream.watchTicker(symbol),
+        watchMock: () => _mockStore.watchTicker(symbol),
       );
-      return;
-    }
-
-    final cached = await cache?.getTicker(symbol);
-    if (cached != null) {
-      yield Success(cached);
-    }
-
-    final isOnline = this.isOnline;
-    if (!isOnline) {
-      await for (final ticker in _mockStore.watchTicker(symbol)) {
-        yield Success(ticker);
-      }
-      return;
-    }
-
-    final sources = _venueSources[symbol.venue];
-    if (sources != null) {
-      yield* sources.stream.watchTicker(symbol);
-      return;
-    }
-
-    await for (final ticker in _mockStore.watchTicker(symbol)) {
-      yield Success(ticker);
-    }
-  }
 
   @override
-  Stream<Result<OrderBook>> watchOrderBook(TradingSymbol symbol) async* {
-    final capability = registry.forVenue(symbol.venue);
-    if (capability == null ||
-        !capability.supports(MarketDataFeature.wsOrderBook)) {
-      yield Err(
-        UnsupportedFeatureFailure(symbol.venue.displayName, 'WS order book'),
+  Stream<Result<OrderBook>> watchOrderBook(TradingSymbol symbol) =>
+      _watchWithFallback<OrderBook>(
+        symbol: symbol,
+        feature: MarketDataFeature.wsOrderBook,
+        featureName: 'WS order book',
+        getCached: () async => cache?.getOrderBook(symbol),
+        watchSource: (sources) => sources.stream.watchOrderBook(symbol),
+        watchMock: () => _mockStore.watchOrderBook(symbol),
       );
-      return;
-    }
-
-    final cached = await cache?.getOrderBook(symbol);
-    if (cached != null) {
-      yield Success(cached);
-    }
-
-    final isOnline = this.isOnline;
-    if (!isOnline) {
-      await for (final orderBook in _mockStore.watchOrderBook(symbol)) {
-        yield Success(orderBook);
-      }
-      return;
-    }
-
-    final sources = _venueSources[symbol.venue];
-    if (sources != null) {
-      yield* sources.stream.watchOrderBook(symbol);
-      return;
-    }
-
-    await for (final orderBook in _mockStore.watchOrderBook(symbol)) {
-      yield Success(orderBook);
-    }
-  }
 
   @override
-  Stream<Result<List<Trade>>> watchTrades(TradingSymbol symbol) async* {
+  Stream<Result<List<Trade>>> watchTrades(TradingSymbol symbol) =>
+      _watchWithFallback<List<Trade>>(
+        symbol: symbol,
+        feature: MarketDataFeature.wsTrades,
+        featureName: 'WS trades',
+        getCached: () async => cache?.getTrades(symbol),
+        watchSource: (sources) => sources.stream.watchTrades(symbol),
+        watchMock: () => _mockStore.watchTrades(symbol),
+      );
+
+  Stream<Result<T>> _watchWithFallback<T>({
+    required TradingSymbol symbol,
+    required MarketDataFeature feature,
+    required String featureName,
+    required Future<T?> Function() getCached,
+    required Stream<Result<T>> Function(VenueSources sources) watchSource,
+    required Stream<T> Function() watchMock,
+  }) async* {
     final capability = registry.forVenue(symbol.venue);
-    if (capability == null ||
-        !capability.supports(MarketDataFeature.wsTrades)) {
+    if (capability == null || !capability.supports(feature)) {
       yield Err(
-        UnsupportedFeatureFailure(symbol.venue.displayName, 'WS trades'),
+        UnsupportedFeatureFailure(symbol.venue.displayName, featureName),
       );
       return;
     }
 
-    final cached = await cache?.getTrades(symbol);
+    final cached = await getCached();
     if (cached != null) {
       yield Success(cached);
     }
 
-    final isOnline = this.isOnline;
     if (!isOnline) {
-      await for (final trades in _mockStore.watchTrades(symbol)) {
-        yield Success(trades);
+      await for (final value in watchMock()) {
+        yield Success(value);
       }
       return;
     }
 
     final sources = _venueSources[symbol.venue];
     if (sources != null) {
-      yield* sources.stream.watchTrades(symbol);
+      yield* watchSource(sources);
       return;
     }
 
-    await for (final trades in _mockStore.watchTrades(symbol)) {
-      yield Success(trades);
+    await for (final value in watchMock()) {
+      yield Success(value);
     }
   }
 }

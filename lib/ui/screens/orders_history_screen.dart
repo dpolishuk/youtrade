@@ -52,7 +52,7 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
               const SizedBox(height: 14),
               _buildTabs(appColors),
               const SizedBox(height: 14),
-              Expanded(child: _buildBody(appColors)),
+              Expanded(child: _buildBody()),
             ],
           ),
         ),
@@ -102,22 +102,25 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
     );
   }
 
-  Widget _buildBody(AppColorTheme appColors) {
+  Widget _buildBody() {
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
     return switch (_selectedIndex) {
-      0 => _buildOpenList(appColors),
+      0 => _buildOpenList(),
       1 => _buildHistoryList(appColors),
       2 => _buildPositionsList(appColors),
       _ => const SizedBox.shrink(),
     };
   }
 
-  Widget _buildOpenList(AppColorTheme appColors) {
+  Widget _buildOpenList() {
     return ListView.separated(
       itemCount: _openOrders.length,
       separatorBuilder: (_, _) => const SizedBox(height: 9),
       itemBuilder: (_, index) => OrderListTile(
         order: _openOrders[index],
-        onCancel: () => setState(() => _openOrders.removeAt(index)),
+        onCancel: () => setState(() {
+          if (index < _openOrders.length) _openOrders.removeAt(index);
+        }),
       ),
     );
   }

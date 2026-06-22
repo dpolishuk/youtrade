@@ -7,12 +7,12 @@ import '../../../presentation/theme/theme_extensions.dart';
 class FilterChips extends ConsumerWidget {
   const FilterChips({super.key});
 
-  static const _filters = <String>[
-    'All',
-    'Crypto',
-    'Stocks',
-    'Futures',
-    'Options',
+  static const _filters = <(String label, MarketCategory? category)>[
+    ('All', null),
+    ('Crypto', MarketCategory.crypto),
+    ('Stocks', MarketCategory.stocks),
+    ('Futures', MarketCategory.futures),
+    ('Options', MarketCategory.options),
   ];
 
   @override
@@ -25,17 +25,17 @@ class FilterChips extends ConsumerWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (final filter in _filters)
+          for (final (label, category) in _filters)
             Padding(
               padding: const EdgeInsets.only(right: 6),
               child: _FilterChip(
-                label: filter,
-                isSelected: selected == filter,
+                label: label,
+                isSelected: selected == category,
                 appColors: appColors,
                 theme: theme,
                 onTap: () {
                   ref.read(marketScreenerFilterProvider.notifier).state =
-                      filter;
+                      category;
                 },
               ),
             ),

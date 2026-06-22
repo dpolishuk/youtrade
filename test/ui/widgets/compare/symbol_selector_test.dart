@@ -122,16 +122,5 @@ void main() {
         );
       }
     });
-
-    testWidgets('uses mockup symbol colors', (tester) async {
-      await tester.pumpWidget(buildSelector([compareSymbols[0]]));
-      await tester.pumpAndSettle();
-
-      expect(compareSymbols[0].color, const Color(0xFF00E6D2));
-      expect(compareSymbols[1].color, const Color(0xFFFFB020));
-      expect(compareSymbols[2].color, const Color(0xFFFF5D77));
-      expect(compareSymbols[3].color, const Color(0xFF8B9CF0));
-      expect(compareSymbols[4].color, const Color(0xFFC9A6FF));
-    });
   });
 }

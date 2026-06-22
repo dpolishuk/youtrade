@@ -49,7 +49,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
       if (isAuthenticated && isAuthRoute) {
         final from = state.uri.queryParameters['from'];
-        if (from != null && from.isNotEmpty) return from;
+        if (from != null &&
+            from.isNotEmpty &&
+            from.startsWith('/') &&
+            !from.startsWith('//')) {
+          return from;
+        }
         return '/';
       }
       return null;

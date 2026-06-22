@@ -127,7 +127,7 @@ void main() {
     );
 
     test(
-      'initialize transitions to authenticated when biometrics are available',
+      'initialize transitions to PIN entry when biometrics are available',
       () async {
         fakePinAuth.setStoredPin('1234');
         when(
@@ -144,7 +144,10 @@ void main() {
 
         await container.read(authNotifierProvider.notifier).initialize();
 
-        expect(states, [isA<AuthAuthenticated>()]);
+        expect(states, [isA<AuthUnauthenticated>()]);
+        final unauthenticated = states.single as AuthUnauthenticated;
+        expect(unauthenticated.pinSet, isTrue);
+        verifyNever(() => mockLocalAuth.authenticate());
       },
     );
 
@@ -456,59 +459,6 @@ void main() {
       final unauthenticated = states.last as AuthUnauthenticated;
       expect(unauthenticated.pinSet, isTrue);
     });
-
-    test(
-      'initialize emits AuthError with AuthCancelledFailure when biometric auth is cancelled',
-      () async {
-        fakePinAuth.setStoredPin('1234');
-        when(
-          () => mockLocalAuth.canCheckBiometrics(),
-        ).thenAnswer((_) async => true);
-        when(
-          () => mockLocalAuth.authenticate(),
-        ).thenAnswer((_) async => const Err<bool>(AuthCancelledFailure()));
-
-        final container = makeContainer();
-        addTearDown(container.dispose);
-        final states = <AuthState>[];
-        container.listen(authNotifierProvider, (_, state) => states.add(state));
-
-        await container.read(authNotifierProvider.notifier).initialize();
-
-        expect(states, [isA<AuthError>()]);
-        final error = states.single as AuthError;
-        expect(error.failure, isA<AuthCancelledFailure>());
-        expect(error.failure.message, 'Authentication was cancelled.');
-      },
-    );
-
-    test(
-      'initialize emits AuthError with AuthFailedFailure when biometric auth fails',
-      () async {
-        fakePinAuth.setStoredPin('1234');
-        when(
-          () => mockLocalAuth.canCheckBiometrics(),
-        ).thenAnswer((_) async => true);
-        when(
-          () => mockLocalAuth.authenticate(),
-        ).thenAnswer((_) async => const Err<bool>(AuthFailedFailure()));
-
-        final container = makeContainer();
-        addTearDown(container.dispose);
-        final states = <AuthState>[];
-        container.listen(authNotifierProvider, (_, state) => states.add(state));
-
-        await container.read(authNotifierProvider.notifier).initialize();
-
-        expect(states, [isA<AuthError>()]);
-        final error = states.single as AuthError;
-        expect(error.failure, isA<AuthFailedFailure>());
-        expect(
-          error.failure.message,
-          'Authentication failed. Please try again.',
-        );
-      },
-    );
 
     test(
       'initialize does not attempt biometrics when no PIN is set even if biometrics are available',
@@ -862,6 +812,57 @@ void main() {
       final error = states.single as AuthError;
       expect(error.failure, isA<PinMismatchFailure>());
     });
+
+    test(
+      'successful biometrics resets PIN lockout and allows PIN entry',
+      () async {
+        fakePinAuth.setStoredPin('1234');
+        when(
+          () => mockLocalAuth.canCheckBiometrics(),
+        ).thenAnswer((_) async => false);
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final states = <AuthState>[];
+        container.listen(authNotifierProvider, (_, state) => states.add(state));
+
+        await container.read(authNotifierProvider.notifier).initialize();
+        states.clear();
+
+        for (var i = 0; i < 5; i++) {
+          await container
+              .read(authNotifierProvider.notifier)
+              .authenticateWithPin('0000');
+        }
+
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('1234');
+
+        expect(container.read(authNotifierProvider), isA<AuthError>());
+        final firstError = container.read(authNotifierProvider) as AuthError;
+        expect(firstError.failure, isA<PinLockedFailure>());
+
+        states.clear();
+        when(
+          () => mockLocalAuth.authenticate(),
+        ).thenAnswer((_) async => const Success<bool>(true));
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithBiometrics();
+
+        expect(container.read(authNotifierProvider), isA<AuthAuthenticated>());
+
+        container.read(authNotifierProvider.notifier).signOut();
+        states.clear();
+
+        await container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('1234');
+
+        expect(states, [isA<AuthAuthenticated>()]);
+      },
+    );
 
     group('with SecurePinAuthService', () {
       ProviderContainer makeSecureContainer(FlutterSecureStorage storage) {

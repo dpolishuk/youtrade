@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/formatting.dart';
 
 import '../../data/datasources/mock/deterministic_market_data_store.dart';
 import '../../domain/entities/position.dart';
@@ -73,31 +74,6 @@ class PortfolioData {
   final List<Position> positions;
 }
 
-/// Formats a USD amount with comma separators and two decimal places.
-String _formatCurrency(double value) {
-  final isNegative = value < 0;
-  final abs = value.abs();
-  final whole = abs.truncate();
-  final cents = ((abs - whole) * 100).round().toString().padLeft(2, '0');
-  final wholeFormatted = _addCommas(whole);
-  return '${isNegative ? '-' : ''}\$$wholeFormatted.$cents';
-}
-
-String _formatCompact(double value) {
-  final isNegative = value < 0;
-  final abs = value.abs();
-  final whole = abs.truncate();
-  final wholeFormatted = _addCommas(whole);
-  return '${isNegative ? '-' : ''}\$$wholeFormatted';
-}
-
-String _addCommas(int value) {
-  return value.toString().replaceAllMapped(
-    RegExp(r'\B(?=(\d{3})+(?!\d))'),
-    (match) => ',',
-  );
-}
-
 /// Provider that exposes the deterministic Portfolio screen data.
 final portfolioDataProvider = Provider<PortfolioData>((ref) {
   final appColors = ref.watch(appColorThemeProvider);
@@ -119,7 +95,7 @@ final portfolioDataProvider = Provider<PortfolioData>((ref) {
         venue: venue,
         initial: _initialFor(venue),
         kinds: _kindsFor(venue),
-        value: _formatCompact(exchange.value),
+        value: formatCompactMoney(exchange.value),
         percentChange: exchange.percentChange,
         color: color,
         tint: tint,
@@ -137,12 +113,12 @@ final portfolioDataProvider = Provider<PortfolioData>((ref) {
 
   return PortfolioData(
     netWorth: DeterministicMarketDataStore.portfolioNetWorth,
-    netWorthFormatted: _formatCurrency(
+    netWorthFormatted: formatCurrency(
       DeterministicMarketDataStore.portfolioNetWorth,
     ),
     deltaAmount: DeterministicMarketDataStore.portfolio24hDelta,
     deltaAmountFormatted:
-        '+${_formatCurrency(DeterministicMarketDataStore.portfolio24hDelta)}',
+        '+${formatCurrency(DeterministicMarketDataStore.portfolio24hDelta)}',
     deltaPercent: DeterministicMarketDataStore.portfolio24hDeltaPct,
     venueCount: exchanges.length,
     assetMix: DeterministicMarketDataStore.portfolioAssetMix,

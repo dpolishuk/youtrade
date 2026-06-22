@@ -107,12 +107,12 @@ class OKXWebSocketClient implements MarketStreamSource {
 
     _sessions.add(disposeSession);
 
-    final controller = StreamController<T>(
-      onCancel: () async {
-        await disposeSession();
-        _sessions.remove(disposeSession);
-      },
-    );
+    final controller = StreamController<T>();
+    controller.onCancel = () async {
+      await disposeSession();
+      _sessions.remove(disposeSession);
+      if (!controller.isClosed) controller.close();
+    };
 
     channel.ready
         .then((_) {

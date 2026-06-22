@@ -90,5 +90,23 @@ void main() {
       expect(find.text('BTC'), findsOneWidget);
       expect(find.text('BTCUSDT'), findsNothing);
     });
+
+    testWidgets('normalizes lowercase symbol to uppercase display', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildScreen(symbol: 'btcusdt'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('BTC'), findsOneWidget);
+    });
+
+    testWidgets('displays arbitrary symbol after stripping futures suffix', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildScreen(symbol: 'XYZ=F'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('XYZ'), findsOneWidget);
+    });
   });
 }

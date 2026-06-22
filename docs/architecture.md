@@ -35,7 +35,7 @@ lib/
 |---|---|
 | Single Responsibility | One file/class per responsibility: entity, source, client, repository, provider, screen, widget. |
 | Open/Closed | New exchanges are added by implementing existing interfaces, not editing core logic. |
-| Liskov Substitution | `BinanceRestClient` and `MockMarketDataStore` are interchangeable behind `TickerSource`. |
+| Liskov Substitution | `BinanceRestClient` and `DeterministicMarketDataStore` are interchangeable behind `TickerSource`. |
 | Interface Segregation | Small contracts: `TickerSource`, `CandleSource`, `OrderBookSource`, `TradeSource`, `MarketStreamSource`. |
 | Dependency Inversion | Use cases and providers depend on repository/source interfaces, not concrete implementations. |
 
@@ -114,7 +114,7 @@ Each venue provides:
 | Bybit | `BybitRestClient` | `BybitWebSocketClient` |
 | OKX | `OKXRestClient` | `OKXWebSocketClient` |
 | Coinbase | `CoinbaseRestClient` | `CoinbaseWebSocketClient` |
-| Mock | `MockMarketDataStore` | `MockMarketDataStore` |
+| Mock | `DeterministicMarketDataStore` | `DeterministicMarketDataStore` |
 
 ### Cache
 
@@ -179,7 +179,7 @@ See [`docs/screens.md`](./screens.md) for detailed screen specifications.
 
 ### Bottom Navigation
 
-Portfolio / Markets / Trading / Orders / Account
+Portfolio / Markets / Trade / Options / More
 
 ## Theme System
 
@@ -214,7 +214,7 @@ Theme is implemented via `AppColorTheme` (`ThemeExtension`) and `AppTheme` facto
 ## Offline / Demo Mode
 
 - Detect connectivity with `connectivity_plus`.
-- Offline fallback to `MockMarketDataStore`.
+- Offline fallback to `DeterministicMarketDataStore`.
 - Persistent "Demo data" banner when mock data is shown.
 - Disabled actions: submit order, cancel order, refresh real data.
 
@@ -251,6 +251,17 @@ Integration tests live in `integration_test/`:
 
 ```
 integration_test/
+  app_test.dart              # smoke test: app launches and shows Portfolio
+  auth_flow_test.dart        # local biometric/PIN gate flows
+  markets_flow_test.dart     # screener flows
+  offline_mode_test.dart     # offline/demo mode fallback
+  compare_flow_test.dart     # compare screen flows
+  exchange_detail_flow_test.dart # exchange detail flows
+  options_flow_test.dart     # options chain flows
+  orders_flow_test.dart      # orders & history flows
+  settings_flow_test.dart    # account/settings flows
+  helpers.dart               # shared integration-test utilities
+```integration_test/
   app_test.dart              # smoke test: app launches and shows Portfolio
   auth_flow_test.dart        # local biometric/PIN gate flows
   markets_flow_test.dart     # screener flows

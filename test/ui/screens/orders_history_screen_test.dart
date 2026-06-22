@@ -124,6 +124,36 @@ void main() {
       expect(find.text('Cancel'), findsNWidgets(3));
     });
 
+    testWidgets('rapid cancel taps do not throw RangeError', (tester) async {
+      await pumpScreen(tester);
+
+      final cancelFinder = find.text('Cancel');
+      expect(cancelFinder, findsNWidgets(4));
+
+      await tester.tap(cancelFinder.at(0));
+      await tester.tap(cancelFinder.at(1));
+      await tester.pumpAndSettle();
+
+      expect(cancelFinder, findsNWidgets(2));
+    });
+
+    testWidgets('Open tab shows empty list after cancelling all orders', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+
+      expect(find.byType(OrderListTile), findsNWidgets(4));
+      expect(find.text('Cancel'), findsNWidgets(4));
+
+      while (find.text('Cancel').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Cancel').first);
+        await tester.pumpAndSettle();
+      }
+
+      expect(find.byType(OrderListTile), findsNothing);
+      expect(find.text('Cancel'), findsNothing);
+    });
+
     testWidgets('History tab shows deterministic history orders', (
       tester,
     ) async {

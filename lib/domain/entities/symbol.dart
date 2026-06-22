@@ -44,7 +44,7 @@ final class TradingSymbol {
       );
     }
 
-    const symbolPartPattern = r'^[A-Za-z0-9.]{1,20}$';
+    const symbolPartPattern = r'^[A-Za-z0-9.\-=]{1,20}$';
     final symbolPartRegex = RegExp(symbolPartPattern);
     if (!symbolPartRegex.hasMatch(normalizedBase)) {
       throw ArgumentError.value(

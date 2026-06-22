@@ -208,6 +208,7 @@ class SignalGauge extends StatelessWidget {
     final last24 = candles.length >= 24
         ? candles.sublist(candles.length - 24)
         : candles;
+    if (last24.isEmpty) return [];
     final hi = last24.map((c) => c.high).reduce((a, b) => a > b ? a : b);
     final lo = last24.map((c) => c.low).reduce((a, b) => a < b ? a : b);
     final last = candles.isNotEmpty ? candles.last.close : hi;

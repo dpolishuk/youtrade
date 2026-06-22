@@ -52,7 +52,9 @@ final class MarketScreenerItem {
 
 final marketScreenerSearchProvider = StateProvider<String>((ref) => '');
 
-final marketScreenerFilterProvider = StateProvider<String>((ref) => 'All');
+final marketScreenerFilterProvider = StateProvider<MarketCategory?>(
+  (ref) => null,
+);
 
 final marketScreenerItemsProvider = Provider<List<MarketScreenerItem>>((ref) {
   return _mockMarkets;
@@ -67,7 +69,7 @@ final filteredMarketScreenerItemsProvider = Provider<List<MarketScreenerItem>>((
 
   return markets.where((market) {
     final matchesFilter =
-        filter == 'All' || market.assetClass.category.label == filter;
+        filter == null || market.assetClass.category == filter;
     final matchesSearch =
         query.isEmpty ||
         market.symbol.toLowerCase().contains(query) ||

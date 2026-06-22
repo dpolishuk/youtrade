@@ -30,11 +30,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   bool get isAuthenticating => _isAuthenticating;
 
+  static const Duration _initTimeout = Duration(seconds: 3);
+
   Future<void> initialize() async {
     if (_isInitializing) return;
     _isInitializing = true;
     try {
-      _pinSet = await _pinAuthService.isPinSet();
+      _pinSet = await _pinAuthService.isPinSet().timeout(
+        _initTimeout,
+        onTimeout: () => false,
+      );
 
       if (!_pinSet) {
         _isBiometricAvailable = false;
@@ -43,18 +48,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       try {
-        _isBiometricAvailable = await _localAuthService.canCheckBiometrics();
+        _isBiometricAvailable = await _localAuthService
+            .canCheckBiometrics()
+            .timeout(_initTimeout, onTimeout: () => false);
       } on Object {
         _isBiometricAvailable = false;
         state = const AuthUnauthenticated(pinSet: true);
         return;
       }
 
-      if (_isBiometricAvailable) {
-        await authenticateWithBiometrics();
-      } else {
-        state = const AuthUnauthenticated(pinSet: true);
-      }
+      state = const AuthUnauthenticated(pinSet: true);
     } finally {
       _isInitializing = false;
     }

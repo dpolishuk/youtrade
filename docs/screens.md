@@ -51,7 +51,7 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 
 **Data:**
 - `marketScreenerItemsProvider`: list of market rows used for portfolio composition
-- Synthetic positions and balances from `MockMarketDataStore`
+- Synthetic positions and balances from `DeterministicMarketDataStore`
 
 **States:**
 - Loading: skeleton placeholders for value, chart, lists
@@ -188,7 +188,7 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 
 **Data:**
 - `exchangeCapabilityRegistryProvider`: supported features per venue
-- Synthetic balances and P&L from `MockMarketDataStore`
+- Synthetic balances and P&L from `DeterministicMarketDataStore`
 
 **States:**
 - Loading: skeleton cards and rows
@@ -218,7 +218,7 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 - Footer: ATM strike info
 
 **Data:**
-- Synthetic options chain from `MockMarketDataStore`
+- Synthetic options chain from `DeterministicMarketDataStore`
 - Spot price from ticker
 
 **States:**
@@ -277,9 +277,9 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 - Positions tab: position rows (same as Home)
 
 **Data:**
-- Mock open orders from `MockMarketDataStore`
-- Mock order history from `MockMarketDataStore`
-- Current positions from `MockMarketDataStore`
+- Mock open orders from `DeterministicMarketDataStore`
+- Mock order history from `DeterministicMarketDataStore`
+- Current positions from `DeterministicMarketDataStore`
 
 **States:**
 - Loading: shimmer
@@ -297,12 +297,12 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 
 ---
 
-## 8. Account / Settings
+## 8. Account / Settings (More tab)
 
 **Purpose:** Manage appearance, connected exchanges, security, and app info.
 
 **Layout:**
-- Title "Settings"
+- Title "Account"
 - Appearance section: Theme toggle, Visual direction toggle
 - Connected exchanges section: read-only list of venue capabilities
 - Security section: Biometric/PIN toggle, Sign out action

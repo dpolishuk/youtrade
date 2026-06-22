@@ -89,6 +89,27 @@ void main() {
       expect(binance, isNot(equals(coinbase)));
     });
 
+    test('accepts base characters including dash and equals', () {
+      final gcF = TradingSymbol(
+        base: 'GC',
+        quote: 'F',
+        venue: Venue.okx,
+        rawSymbol: 'GC=F',
+      );
+      expect(gcF.base, 'GC');
+      expect(gcF.quote, 'F');
+      expect(gcF.rawSymbol, 'GC=F');
+
+      final btcOption = TradingSymbol(
+        base: 'BTC-28K-C',
+        quote: 'USD',
+        venue: Venue.bybit,
+        rawSymbol: 'BTC-28K-C',
+      );
+      expect(btcOption.base, 'BTC-28K-C');
+      expect(btcOption.quote, 'USD');
+    });
+
     test('rejects base or quote longer than 20 characters', () {
       final longBase = 'A' * 21;
       final longQuote = 'B' * 21;

@@ -206,6 +206,17 @@ integration_test/
   auth_flow_test.dart        # local biometric/PIN gate flows
   markets_flow_test.dart     # screener flows
   offline_mode_test.dart     # offline/demo mode fallback
+  compare_flow_test.dart     # compare screen flows
+  exchange_detail_flow_test.dart # exchange detail flows
+  options_flow_test.dart     # options chain flows
+  orders_flow_test.dart      # orders & history flows
+  settings_flow_test.dart    # account/settings flows
+  helpers.dart               # shared integration-test utilities
+```integration_test/
+  app_test.dart              # smoke test: app launches and shows Portfolio
+  auth_flow_test.dart        # local biometric/PIN gate flows
+  markets_flow_test.dart     # screener flows
+  offline_mode_test.dart     # offline/demo mode fallback
   helpers.dart               # shared integration-test utilities
 ```
 

@@ -358,6 +358,29 @@ void main() {
       expect(find.byType(TradingTerminalScreen), findsOneWidget);
     });
 
+    testWidgets('deep link /trading?symbol=ETH! falls back to default symbol', (
+      tester,
+    ) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = createContainer();
+      final router = container.read(appRouterProvider);
+
+      container.read(authNotifierProvider.notifier).authenticateWithPin('1234');
+      router.go('/trading?symbol=ETH!');
+
+      await tester.pumpWidget(
+        buildRouter(router: router, container: container),
+      );
+      await pumpFrames(tester);
+
+      expect(router.state.uri.path, '/trading');
+      expect(find.byType(TradingTerminalScreen), findsOneWidget);
+      expect(find.textContaining('BTC'), findsWidgets);
+    });
+
     testWidgets('deep links to /markets/options/BTC render options chain', (
       tester,
     ) async {
@@ -380,6 +403,33 @@ void main() {
       expect(router.state.pathParameters['symbol'], 'BTC');
       expect(find.byType(OptionsChainScreen), findsOneWidget);
     });
+
+    testWidgets(
+      'deep links to /markets/options/BTCUSDT normalize display symbol',
+      (tester) async {
+        when(
+          () => mockService.canCheckBiometrics(),
+        ).thenAnswer((_) async => false);
+
+        final container = createContainer();
+        final router = container.read(appRouterProvider);
+
+        container
+            .read(authNotifierProvider.notifier)
+            .authenticateWithPin('1234');
+        router.go('/markets/options/BTCUSDT');
+
+        await tester.pumpWidget(
+          buildRouter(router: router, container: container),
+        );
+        await pumpFrames(tester);
+
+        expect(router.state.uri.path, '/markets/options/BTCUSDT');
+        expect(router.state.pathParameters['symbol'], 'BTCUSDT');
+        expect(find.byType(OptionsChainScreen), findsOneWidget);
+        expect(find.text('BTC'), findsOneWidget);
+      },
+    );
 
     testWidgets('/markets/options defaults to BTC for authenticated users', (
       tester,
@@ -438,6 +488,50 @@ void main() {
 
       container.read(authNotifierProvider.notifier).authenticateWithPin('1234');
       router.go('/auth');
+
+      await tester.pumpWidget(
+        buildRouter(router: router, container: container),
+      );
+      await pumpFrames(tester);
+
+      expect(router.state.uri.path, '/');
+      expect(find.byType(PortfolioScreen), findsOneWidget);
+    });
+
+    testWidgets('rejects external redirect target in from query parameter', (
+      tester,
+    ) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = createContainer();
+      final router = container.read(appRouterProvider);
+      router.go('/auth?from=https://example.com');
+
+      container.read(authNotifierProvider.notifier).authenticateWithPin('1234');
+
+      await tester.pumpWidget(
+        buildRouter(router: router, container: container),
+      );
+      await pumpFrames(tester);
+
+      expect(router.state.uri.path, '/');
+      expect(find.byType(PortfolioScreen), findsOneWidget);
+    });
+
+    testWidgets('rejects from query parameter starting with //', (
+      tester,
+    ) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = createContainer();
+      final router = container.read(appRouterProvider);
+      router.go('/auth?from=//evil.com');
+
+      container.read(authNotifierProvider.notifier).authenticateWithPin('1234');
 
       await tester.pumpWidget(
         buildRouter(router: router, container: container),

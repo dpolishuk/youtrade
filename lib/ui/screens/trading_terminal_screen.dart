@@ -30,7 +30,7 @@ class TradingTerminalScreen extends ConsumerStatefulWidget {
 }
 
 class _TradingTerminalScreenState extends ConsumerState<TradingTerminalScreen> {
-  static final _symbolPartRegex = RegExp(r'^[A-Za-z0-9.]{1,20}$');
+  static final _symbolPartRegex = RegExp(r'^[A-Za-z0-9.\-=]{1,20}$');
   bool _invalidSymbolWarningShown = false;
 
   @override

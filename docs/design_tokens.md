@@ -4,6 +4,8 @@ Source of truth extracted from [`mockups/colors_and_type.css`](../mockups/colors
 
 All CSS custom properties are recorded with their Flutter/Dart equivalents. Pixel values are logical pixels (Flutter uses logical pixels by default; the mockup is rendered at 1× CSS pixel on a 390×844 viewport).
 
+The runtime source of truth for the semantic tokens below is `AppColorTheme` in [`lib/presentation/theme/theme_extensions.dart`](../lib/presentation/theme/theme_extensions.dart). `AppColorTheme` exposes direction- and theme-aware values such as `bg`, `card`, `accent`, `up`, and `down`, and is retrieved via `Theme.of(context).extension<AppColorTheme>()`. Use `AppColorTheme` directly in widgets rather than hard-coding the static values in this document.
+
 ---
 
 ## Type Families

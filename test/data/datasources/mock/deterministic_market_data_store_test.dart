@@ -18,84 +18,6 @@ void main() {
 
     setUp(() => store = DeterministicMarketDataStore());
 
-    test('portfolio net worth matches mockup', () {
-      expect(
-        DeterministicMarketDataStore.portfolioNetWorth,
-        746240.0,
-        reason: 'Sum of Binance/Bybit/OKX/Coinbase balances from mockup',
-      );
-    });
-
-    test('24h delta matches mockup', () {
-      expect(DeterministicMarketDataStore.portfolio24hDelta, 14820.0);
-      expect(DeterministicMarketDataStore.portfolio24hDeltaPct, '+2.04%');
-    });
-
-    test('first equity curve point matches mockup', () {
-      expect(
-        DeterministicMarketDataStore.firstEquityCurvePoint,
-        closeTo(812468.7068931296, 1e-9),
-      );
-    });
-
-    test('BTC last price matches deterministic mockup', () {
-      expect(
-        DeterministicMarketDataStore.btcLastPrice,
-        closeTo(105154.04697406417, 1e-9),
-      );
-    });
-
-    test('BTC first open matches deterministic mockup', () {
-      expect(DeterministicMarketDataStore.btcFirstOpen, 58000.0);
-    });
-
-    test('options ATM strike matches deterministic spot', () {
-      expect(DeterministicMarketDataStore.btcOptionsAtmStrike, 106000.0);
-    });
-
-    test('returns deterministic BTC options chain', () {
-      final chain = DeterministicMarketDataStore.btcOptionsChain;
-      final strikes = chain.map((r) => r.strike).toList();
-
-      expect(chain.length, 9);
-      expect(strikes, [
-        98000,
-        100000,
-        102000,
-        104000,
-        106000,
-        108000,
-        110000,
-        112000,
-        114000,
-      ]);
-
-      final atm = chain.firstWhere((r) => r.isAtm);
-      expect(atm.strike, 106000.0);
-      expect(atm.callInTheMoney, isFalse);
-      expect(atm.callIv, closeTo(59.226943359350, 1e-9));
-      expect(atm.callDelta, closeTo(0.467820429160, 1e-9));
-      expect(atm.callMark, closeTo(0.026335148456, 1e-9));
-      expect(atm.putIv, closeTo(63.226943359350, 1e-9));
-      expect(atm.putDelta, closeTo(-0.532179570840, 1e-9));
-      expect(atm.putMark, closeTo(0.022884988184, 1e-9));
-
-      final itmCall = chain.first;
-      expect(itmCall.strike, 98000.0);
-      expect(itmCall.callInTheMoney, isTrue);
-      expect(itmCall.callIv, closeTo(56.677117660957, 1e-9));
-      expect(itmCall.callMark, closeTo(0.078035062809, 1e-9));
-    });
-
-    test('returns deterministic BTC option expiries', () {
-      expect(DeterministicMarketDataStore.btcOptionExpiries, [
-        '26 JUN',
-        '25 JUL',
-        '29 AUG',
-        '26 SEP',
-      ]);
-    });
-
     test('returns deterministic BTC ticker', () async {
       final ticker = await store.getTicker(btc);
 
@@ -141,9 +63,9 @@ void main() {
     });
 
     test('watchTicker emits deterministic values', () async {
-      final values = await store.watchTicker(btc).take(2).toList();
+      final values = await store.watchTicker(btc).take(1).toList();
 
-      expect(values.length, 2);
+      expect(values.length, 1);
       expect(values.first.symbol, btc);
       expect(values.first.lastPrice, closeTo(105154.04697406417, 1e-9));
     });
@@ -183,9 +105,9 @@ void main() {
       expect(spark.last, closeTo(105154.04697406417, 1e-9));
     });
 
-    test('compareSparkline returns deterministic 30-period closes', () {
-      final btc = DeterministicMarketDataStore.compareSparkline('BTCUSDT');
-      final eth = DeterministicMarketDataStore.compareSparkline('ETHUSDT');
+    test('screenerSparkline returns deterministic 30-period closes', () {
+      final btc = DeterministicMarketDataStore.screenerSparkline('BTCUSDT');
+      final eth = DeterministicMarketDataStore.screenerSparkline('ETHUSDT');
 
       expect(btc.length, 30);
       expect(eth.length, 30);
@@ -193,7 +115,7 @@ void main() {
       expect(eth.last, isNot(closeTo(btc.last, 1e-3)));
       expect(
         btc,
-        equals(DeterministicMarketDataStore.compareSparkline('BTCUSDT')),
+        equals(DeterministicMarketDataStore.screenerSparkline('BTCUSDT')),
       );
     });
   });

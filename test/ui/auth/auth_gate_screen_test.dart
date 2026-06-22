@@ -96,6 +96,10 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
+      expect(find.text('Unlock with biometrics'), findsOneWidget);
+      await tester.tap(find.text('Unlock with biometrics'));
+      await tester.pumpAndSettle();
+
       expect(find.text('Welcome to YouTrade'), findsOneWidget);
       expect(find.text('YouTrade is locked'), findsNothing);
     });
@@ -273,6 +277,10 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
+      expect(find.text('Unlock with biometrics'), findsOneWidget);
+      await tester.tap(find.text('Unlock with biometrics'));
+      await tester.pumpAndSettle();
+
       expect(
         find.text('Authentication failed. Please try again.'),
         findsOneWidget,
@@ -299,6 +307,10 @@ void main() {
 
       await tester.pumpWidget(buildApp());
       await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Unlock with biometrics'), findsOneWidget);
+      await tester.tap(find.text('Unlock with biometrics'));
       await tester.pumpAndSettle();
 
       expect(

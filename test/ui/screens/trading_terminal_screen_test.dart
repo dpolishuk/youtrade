@@ -162,6 +162,25 @@ void main() {
       expect(find.text('Ethereum Perpetual · Bybit'), findsOneWidget);
     });
 
+    testWidgets('parses GC=F futures symbol parameter', (tester) async {
+      await tester.pumpWidget(_buildApp(symbol: 'GC=F'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('GOLD'), findsOneWidget);
+      expect(find.text('XAU'), findsOneWidget);
+      expect(find.text('Gold Futures · Dec · OKX'), findsOneWidget);
+      expect(find.text('FUTURE'), findsOneWidget);
+    });
+
+    testWidgets('parses BTC-28K-C options symbol parameter', (tester) async {
+      await tester.pumpWidget(_buildApp(symbol: 'BTC-28K-C'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('BTC-28K-C'), findsOneWidget);
+    });
+
     testWidgets(
       'falls back to default symbol when symbol parameter is invalid',
       (tester) async {
@@ -172,6 +191,28 @@ void main() {
         expect(find.textContaining('BTC'), findsWidgets);
       },
     );
+
+    testWidgets('shows SnackBar and falls back when symbol contains a slash', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_buildApp(symbol: 'BTC/USD'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Invalid symbol parameter: BTC/USD'), findsOneWidget);
+      expect(find.textContaining('BTC'), findsWidgets);
+    });
+
+    testWidgets('falls back to default for symbol longer than 20 characters', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_buildApp(symbol: 'A' * 21));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.textContaining('Invalid symbol parameter'), findsOneWidget);
+      expect(find.textContaining('BTC'), findsWidgets);
+    });
 
     testWidgets(
       'selecting a different timeframe fetches candles for that timeframe',
