@@ -50,6 +50,12 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
   final Map<Venue, VenueSources> _venueSources;
   final MarketCache? cache;
 
+  /// Exposed for tests to verify offline fallback wiring.
+  MarketDataStore get fallbackStore => _fallbackStore;
+
+  /// Exposed for tests to verify venue source wiring.
+  Map<Venue, VenueSources> get venueSources => Map.unmodifiable(_venueSources);
+
   static const _tickerTtl = Duration(seconds: 30);
   static const _candlesTtl = Duration(minutes: 5);
   static const _orderBookTtl = Duration(seconds: 30);

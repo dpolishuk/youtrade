@@ -156,6 +156,41 @@ Widget _buildApp({String? symbol}) {
 
 void main() {
   group('TradingTerminalScreen', () {
+    testWidgets('normalizes BTCUSDT symbol parameter to BTC', (tester) async {
+      final repository = _SymbolRecordingRepository();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            marketDataRepositoryProvider.overrideWithValue(repository),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.dark(AppVisualDirection.flux),
+            routerConfig: GoRouter(
+              routes: [
+                GoRoute(
+                  path: '/',
+                  builder: (context, state) =>
+                      const TradingTerminalScreen(symbol: 'BTCUSDT'),
+                ),
+                GoRoute(
+                  path: '/markets/compare',
+                  builder: (context, state) =>
+                      const Scaffold(body: Center(child: Text('Compare'))),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      for (var i = 0; i < 20 && repository.recordedSymbol == null; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(repository.recordedSymbol, isNotNull);
+      expect(repository.recordedSymbol!.base, 'BTC');
+      expect(repository.recordedSymbol!.rawSymbol, 'BTCUSDT');
+    });
+
     testWidgets('repository error shows error UI with retry button', (
       tester,
     ) async {
@@ -407,6 +442,53 @@ void main() {
       );
     });
   });
+}
+
+final class _SymbolRecordingRepository implements MarketDataRepository {
+  _SymbolRecordingRepository()
+    : _delegate = MarketDataRepositoryImpl(
+        registry: const _FakeRegistry(),
+        fallbackStore: const DeterministicMarketDataStore(),
+      );
+
+  final MarketDataRepository _delegate;
+  TradingSymbol? recordedSymbol;
+
+  @override
+  Future<Result<Ticker>> getTicker(TradingSymbol symbol) async {
+    recordedSymbol ??= symbol;
+    return _delegate.getTicker(symbol);
+  }
+
+  @override
+  Future<Result<List<Candle>>> getCandles(
+    TradingSymbol symbol,
+    Timeframe timeframe, {
+    int? limit,
+  }) => _delegate.getCandles(symbol, timeframe, limit: limit);
+
+  @override
+  Future<Result<OrderBook>> getOrderBook(TradingSymbol symbol, {int? depth}) =>
+      _delegate.getOrderBook(symbol, depth: depth);
+
+  @override
+  Future<Result<List<Trade>>> getTrades(TradingSymbol symbol, {int? limit}) =>
+      _delegate.getTrades(symbol, limit: limit);
+
+  @override
+  Stream<Result<Ticker>> watchTicker(TradingSymbol symbol) async* {
+    yield await getTicker(symbol);
+  }
+
+  @override
+  Stream<Result<OrderBook>> watchOrderBook(TradingSymbol symbol) async* {
+    yield await getOrderBook(symbol);
+  }
+
+  @override
+  Stream<Result<List<Trade>>> watchTrades(TradingSymbol symbol) async* {
+    yield await getTrades(symbol);
+  }
 }
 
 final class _TimeframeRecordingRepository implements MarketDataRepository {
