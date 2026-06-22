@@ -407,6 +407,11 @@ final class DeterministicMarketDataStore implements MarketDataStore {
     return data.sublist(start).map((c) => c.close).toList();
   }
 
+  /// Deterministic 30-period closes used by the Compare screen.
+  static List<double> compareSparkline(String rawSymbol, {int periods = 30}) {
+    return screenerSparkline(rawSymbol, periods: periods);
+  }
+
   List<_RawCandle> _rawCandlesFor(TradingSymbol symbol) {
     final key = symbol.rawSymbol;
     return _candles[key] ?? _candles['BTCUSDT']!;

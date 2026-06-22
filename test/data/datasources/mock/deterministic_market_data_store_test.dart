@@ -182,5 +182,19 @@ void main() {
       expect(fallback.last, closeTo(105154.04697406417, 1e-9));
       expect(spark.last, closeTo(105154.04697406417, 1e-9));
     });
+
+    test('compareSparkline returns deterministic 30-period closes', () {
+      final btc = DeterministicMarketDataStore.compareSparkline('BTCUSDT');
+      final eth = DeterministicMarketDataStore.compareSparkline('ETHUSDT');
+
+      expect(btc.length, 30);
+      expect(eth.length, 30);
+      expect(btc.last, closeTo(105154.04697406417, 1e-9));
+      expect(eth.last, isNot(closeTo(btc.last, 1e-3)));
+      expect(
+        btc,
+        equals(DeterministicMarketDataStore.compareSparkline('BTCUSDT')),
+      );
+    });
   });
 }

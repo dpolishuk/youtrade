@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../presentation/theme/app_theme.dart';
 import '../../../presentation/theme/theme_extensions.dart';
 import 'compare_models.dart';
 
@@ -16,9 +17,7 @@ class SymbolSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -31,7 +30,6 @@ class SymbolSelector extends StatelessWidget {
                 symbol: symbol,
                 isSelected: selected.any((s) => s.symbol == symbol.symbol),
                 onTap: () => _toggle(symbol),
-                colorScheme: colorScheme,
                 appColors: appColors,
               ),
             ),
@@ -69,23 +67,23 @@ class _SymbolChip extends StatelessWidget {
     required this.symbol,
     required this.isSelected,
     required this.onTap,
-    required this.colorScheme,
     required this.appColors,
   });
 
   final CompareSymbol symbol;
   final bool isSelected;
   final VoidCallback onTap;
-  final ColorScheme colorScheme;
   final AppColorTheme appColors;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final bg = isSelected ? symbol.color : appColors.chip;
+    final border = isSelected ? symbol.color : appColors.borderSubtle;
+    final fg = isSelected ? Colors.white : appColors.subtleText;
 
     return Material(
       key: ValueKey('symbol_chip_${symbol.symbol}'),
-      color: isSelected ? symbol.color : colorScheme.surface,
+      color: bg,
       borderRadius: BorderRadius.circular(7),
       child: InkWell(
         onTap: onTap,
@@ -94,16 +92,14 @@ class _SymbolChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(7),
-            border: Border.all(
-              color: isSelected ? symbol.color : appColors.borderSubtle,
-            ),
+            border: Border.all(color: border),
           ),
           child: Text(
             symbol.symbol,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: isSelected ? Colors.white : colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTheme.mono(
+              color: fg,
+              fontSize: 11,
+            ).copyWith(fontWeight: FontWeight.w600),
           ),
         ),
       ),

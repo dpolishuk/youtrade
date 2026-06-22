@@ -2,18 +2,20 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../../data/datasources/mock/deterministic_market_data_store.dart';
+
 /// A symbol available for comparison.
 @immutable
 class CompareSymbol {
   const CompareSymbol({
     required this.symbol,
     required this.color,
-    required this.basePrice,
+    required this.rawSymbol,
   });
 
   final String symbol;
   final Color color;
-  final double basePrice;
+  final String rawSymbol;
 }
 
 /// Normalized series and derived statistics for a single symbol.
@@ -34,48 +36,28 @@ class CompareSeries {
   final double volatility;
 }
 
-/// Available comparison time ranges and the number of data points each uses.
-enum CompareTimeRange {
-  oneDay('1D', 24),
-  oneWeek('1W', 7),
-  oneMonth('1M', 30),
-  threeMonths('3M', 90),
-  oneYear('1Y', 252);
-
-  const CompareTimeRange(this.label, this.pointCount);
-
-  final String label;
-  final int pointCount;
-}
-
-/// Static palette for the comparison symbols.
+/// Static palette for the comparison symbols matching the mockup exactly.
 const compareSymbols = [
-  CompareSymbol(symbol: 'BTC', color: Color(0xFFF7931A), basePrice: 100000),
-  CompareSymbol(symbol: 'ETH', color: Color(0xFF627EEA), basePrice: 5000),
-  CompareSymbol(symbol: 'SOL', color: Color(0xFF14F195), basePrice: 200),
-  CompareSymbol(symbol: 'XRP', color: Color(0xFFFF4D4D), basePrice: 1),
+  CompareSymbol(symbol: 'BTC', color: Color(0xFF00E6D2), rawSymbol: 'BTCUSDT'),
+  CompareSymbol(symbol: 'ETH', color: Color(0xFFFFB020), rawSymbol: 'ETHUSDT'),
+  CompareSymbol(symbol: 'SOL', color: Color(0xFFFF5D77), rawSymbol: 'SOLUSDT'),
+  CompareSymbol(symbol: 'AAPL', color: Color(0xFF8B9CF0), rawSymbol: 'AAPL'),
+  CompareSymbol(symbol: 'GOLD', color: Color(0xFFC9A6FF), rawSymbol: 'GC=F'),
 ];
 
-/// Generates deterministic mock series for the selected symbols.
+/// Generates deterministic 30-period mock series for the selected symbols.
 List<CompareSeries> generateCompareSeries(
-  List<CompareSymbol> symbols,
-  int pointCount,
-) {
-  return symbols
-      .map((symbol) => _generateForSymbol(symbol, pointCount))
-      .toList();
+  List<CompareSymbol> symbols, {
+  int periods = 30,
+}) {
+  return symbols.map((symbol) => _generateForSymbol(symbol, periods)).toList();
 }
 
-CompareSeries _generateForSymbol(CompareSymbol symbol, int pointCount) {
-  final random = Random(symbol.symbol.hashCode + pointCount);
-  final prices = <double>[];
-  var price = symbol.basePrice;
-
-  for (var i = 0; i < pointCount; i++) {
-    prices.add(price);
-    final drift = (random.nextDouble() - 0.47) * 0.08;
-    price *= 1 + drift;
-  }
+CompareSeries _generateForSymbol(CompareSymbol symbol, int periods) {
+  final prices = DeterministicMarketDataStore.compareSparkline(
+    symbol.rawSymbol,
+    periods: periods,
+  );
 
   final first = prices.first;
   final normalized = prices.map((p) => (p / first - 1) * 100).toList();
@@ -102,43 +84,4 @@ CompareSeries _generateForSymbol(CompareSymbol symbol, int pointCount) {
     totalReturn: (prices.last / first - 1) * 100,
     volatility: sqrt(variance) * 100,
   );
-}
-
-/// Pearson correlation between the daily returns of two series.
-double correlation(CompareSeries a, CompareSeries b) {
-  final returnsA = _dailyReturns(a.prices);
-  final returnsB = _dailyReturns(b.prices);
-
-  if (returnsA.length != returnsB.length || returnsA.isEmpty) return 0;
-
-  final meanA = returnsA.reduce((x, y) => x + y) / returnsA.length;
-  final meanB = returnsB.reduce((x, y) => x + y) / returnsB.length;
-
-  var numerator = 0.0;
-  var denomA = 0.0;
-  var denomB = 0.0;
-
-  for (var i = 0; i < returnsA.length; i++) {
-    final da = returnsA[i] - meanA;
-    final db = returnsB[i] - meanB;
-    numerator += da * db;
-    denomA += da * da;
-    denomB += db * db;
-  }
-
-  final denominator = sqrt(denomA * denomB);
-  return denominator == 0 ? 0 : numerator / denominator;
-}
-
-List<double> _dailyReturns(List<double> prices) {
-  final returns = <double>[];
-  for (var i = 1; i < prices.length; i++) {
-    returns.add(prices[i] / prices[i - 1] - 1);
-  }
-  return returns;
-}
-
-/// Ratio of the last prices of two series.
-double priceRatio(CompareSeries a, CompareSeries b) {
-  return b.prices.last == 0 ? 0 : a.prices.last / b.prices.last;
 }

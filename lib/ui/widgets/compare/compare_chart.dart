@@ -36,13 +36,14 @@ class CompareChart extends StatelessWidget {
               show: true,
               drawVerticalLine: false,
               horizontalInterval: _gridInterval,
-              getDrawingHorizontalLine: (value) =>
-                  FlLine(color: appColors.borderSubtle, strokeWidth: 1),
+              getDrawingHorizontalLine: (value) {
+                if (value == 0) {
+                  return FlLine(color: const Color(0x80FFFFFF), strokeWidth: 1);
+                }
+                return FlLine(color: const Color(0x0BFFFFFF), strokeWidth: 1);
+              },
             ),
-            borderData: FlBorderData(
-              show: true,
-              border: Border.all(color: appColors.borderSubtle),
-            ),
+            borderData: FlBorderData(show: false),
             titlesData: const FlTitlesData(show: false),
             lineTouchData: const LineTouchData(enabled: false),
             lineBarsData: [
@@ -54,9 +55,26 @@ class CompareChart extends StatelessWidget {
                   ],
                   isCurved: true,
                   color: s.symbol.color,
-                  barWidth: 2,
+                  barWidth: 1.8,
                   isStrokeCapRound: true,
-                  dotData: const FlDotData(show: false),
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, bar, index) {
+                      final isLast = index == bar.spots.length - 1;
+                      if (isLast) {
+                        return FlDotCirclePainter(
+                          radius: 3,
+                          color: s.symbol.color,
+                          strokeWidth: 0,
+                        );
+                      }
+                      return FlDotCirclePainter(
+                        radius: 0,
+                        color: Colors.transparent,
+                        strokeWidth: 0,
+                      );
+                    },
+                  ),
                   belowBarData: BarAreaData(show: false),
                 ),
             ],

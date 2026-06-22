@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../presentation/theme/app_theme.dart';
 import '../../../presentation/theme/theme_extensions.dart';
 import 'compare_models.dart';
 
@@ -11,13 +12,11 @@ class CompareStatsTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: appColors.borderSubtle),
       ),
@@ -38,8 +37,6 @@ class CompareStatsTable extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context, AppColorTheme appColors) {
-    final theme = Theme.of(context);
-
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 14),
       decoration: BoxDecoration(
@@ -50,30 +47,33 @@ class CompareStatsTable extends StatelessWidget {
           Expanded(
             child: Text(
               'Symbol',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                letterSpacing: 0.06 * 8.5,
-              ),
+              style: AppTheme.mono(color: appColors.tertiaryText, fontSize: 8.5)
+                  .copyWith(
+                    letterSpacing: 0.06 * 8.5,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ),
           Expanded(
             child: Text(
               'Return',
               textAlign: TextAlign.right,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                letterSpacing: 0.06 * 8.5,
-              ),
+              style: AppTheme.mono(color: appColors.tertiaryText, fontSize: 8.5)
+                  .copyWith(
+                    letterSpacing: 0.06 * 8.5,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ),
           Expanded(
             child: Text(
               'Volatility',
               textAlign: TextAlign.right,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                letterSpacing: 0.06 * 8.5,
-              ),
+              style: AppTheme.mono(color: appColors.tertiaryText, fontSize: 8.5)
+                  .copyWith(
+                    letterSpacing: 0.06 * 8.5,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ),
         ],
@@ -87,8 +87,6 @@ class CompareStatsTable extends StatelessWidget {
     AppColorTheme appColors, {
     required bool isLast,
   }) {
-    final theme = Theme.of(context);
-
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
       decoration: BoxDecoration(
@@ -103,32 +101,32 @@ class CompareStatsTable extends StatelessWidget {
           Expanded(
             child: Text(
               s.symbol.symbol,
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
+              style: AppTheme.mono(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 12,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           Expanded(
             child: Text(
               '${s.totalReturn >= 0 ? '+' : ''}${s.totalReturn.toStringAsFixed(2)}%',
               textAlign: TextAlign.right,
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontFamily: 'Geist Mono',
+              style: AppTheme.mono(
                 color: s.totalReturn >= 0
                     ? appColors.bullish
                     : appColors.bearish,
-              ),
+                fontSize: 12,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           Expanded(
             child: Text(
               '${s.volatility.toStringAsFixed(2)}%',
               textAlign: TextAlign.right,
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontFamily: 'Geist Mono',
-                color: theme.colorScheme.onSurface,
-              ),
+              style: AppTheme.mono(
+                color: appColors.subtleText,
+                fontSize: 12,
+              ).copyWith(fontWeight: FontWeight.w500),
             ),
           ),
         ],

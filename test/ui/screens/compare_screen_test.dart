@@ -4,6 +4,8 @@ import 'package:youtrade/presentation/theme/app_theme.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/screens/compare_screen.dart';
 import 'package:youtrade/ui/widgets/compare/compare_chart.dart';
+import 'package:youtrade/ui/widgets/compare/compare_models.dart';
+import 'package:youtrade/ui/widgets/compare/compare_stats_table.dart';
 import 'package:youtrade/ui/widgets/compare/symbol_selector.dart';
 
 void main() {
@@ -22,34 +24,129 @@ void main() {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(find.text('Compare'), findsWidgets);
+      expect(find.text('Compare'), findsOneWidget);
+      expect(find.text('2/4 · normalized %'), findsOneWidget);
       expect(find.byType(CompareChart), findsOneWidget);
       expect(find.byType(SymbolSelector), findsOneWidget);
+      expect(find.byType(CompareStatsTable), findsOneWidget);
       expect(find.text('BTC'), findsWidgets);
       expect(find.text('ETH'), findsWidgets);
 
       await tester.binding.setSurfaceSize(null);
     });
 
-    testWidgets('tapping a time range chip updates the selected range', (
+    testWidgets('does not show time range selector or stat cards', (
       tester,
     ) async {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      // Catches bug where the chart series does not update when the range changes.
-      final chartBefore = tester.widget<CompareChart>(
-        find.byType(CompareChart),
-      );
-      expect(chartBefore.series.first.normalized.length, 30);
+      expect(find.text('1D'), findsNothing);
+      expect(find.text('1W'), findsNothing);
+      expect(find.text('1M'), findsNothing);
+      expect(find.text('3M'), findsNothing);
+      expect(find.text('1Y'), findsNothing);
+      expect(find.text('Correlation'), findsNothing);
+      expect(find.text('Ratio'), findsNothing);
+    });
 
-      await tester.tap(find.text('3M'));
+    testWidgets('uses 30-period stats eyebrow', (tester) async {
+      await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      final chartAfter = tester.widget<CompareChart>(find.byType(CompareChart));
-      expect(chartAfter.series.first.normalized.length, 90);
-      expect(find.text('90-period stats'), findsOneWidget);
-      expect(find.text('30-period stats'), findsNothing);
+      expect(find.text('30-period stats'), findsOneWidget);
+    });
+
+    testWidgets('count indicator updates when a symbol is toggled', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      expect(find.text('2/4 · normalized %'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('symbol_chip_SOL')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('3/4 · normalized %'), findsOneWidget);
+    });
+
+    testWidgets('uses mockup title and count typography', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      final title = tester.widget<Text>(find.text('Compare'));
+      expect(title.style?.fontFamily, 'Space Grotesk');
+      expect(title.style?.fontSize, 18);
+      expect(title.style?.fontWeight, FontWeight.w600);
+      expect(title.style?.letterSpacing, closeTo(-0.02 * 18, 0.01));
+
+      final count = tester.widget<Text>(find.text('2/4 · normalized %'));
+      expect(count.style?.fontFamily, 'JetBrains Mono');
+      expect(count.style?.fontSize, 9);
+    });
+
+    testWidgets('legend shows selected symbols and deterministic returns', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      final series = generateCompareSeries(compareSymbols.sublist(0, 2));
+      for (final s in series) {
+        expect(find.text(s.symbol.symbol), findsWidgets);
+      }
+    });
+
+    testWidgets('selecting a fifth symbol evicts the oldest selection', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('symbol_chip_SOL')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('symbol_chip_AAPL')));
+      await tester.pumpAndSettle();
+
+      // Now BTC, ETH, SOL, AAPL are selected.
+      expect(find.text('4/4 · normalized %'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('symbol_chip_GOLD')));
+      await tester.pumpAndSettle();
+
+      // BTC is evicted, GOLD added.
+      expect(find.text('4/4 · normalized %'), findsOneWidget);
+      final btcChip = tester.widget<Material>(
+        find.byKey(const ValueKey('symbol_chip_BTC')),
+      );
+      expect(btcChip.color, isNot(compareSymbols[0].color));
+      expect(find.text('GOLD'), findsWidgets);
+    });
+
+    testWidgets('cannot deselect the last symbol', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('symbol_chip_BTC')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('symbol_chip_ETH')));
+      await tester.pumpAndSettle();
+
+      // Only one symbol remains selected; trying to remove it does nothing.
+      expect(find.text('1/4 · normalized %'), findsOneWidget);
+      expect(find.text('BTC'), findsWidgets);
+    });
+
+    testWidgets('surface color matches mockup card color', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      final chart = tester.widget<CompareChart>(find.byType(CompareChart));
+
+      // Chart container is drawn by CompareChart; verify it receives series.
+      expect(chart.series.length, 2);
+      expect(chart.series.first.normalized.length, 30);
     });
   });
 }

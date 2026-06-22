@@ -91,28 +91,47 @@ void main() {
       await tester.tap(find.text(compareSymbols[3].symbol));
       await tester.pumpAndSettle();
 
-      for (final symbol in compareSymbols) {
-        expect(chipMaterial(tester, symbol).color, symbol.color);
-      }
-    });
-
-    testWidgets('allows deselecting from four symbols', (tester) async {
-      await tester.pumpWidget(buildSelector(compareSymbols));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text(compareSymbols[0].symbol));
-      await tester.pumpAndSettle();
-
-      expect(
-        chipMaterial(tester, compareSymbols[0]).color,
-        isNot(compareSymbols[0].color),
-      );
-      for (var i = 1; i < compareSymbols.length; i++) {
+      for (var i = 0; i < 4; i++) {
         expect(
           chipMaterial(tester, compareSymbols[i]).color,
           compareSymbols[i].color,
         );
       }
+      expect(
+        chipMaterial(tester, compareSymbols[4]).color,
+        isNot(compareSymbols[4].color),
+      );
+    });
+
+    testWidgets('evicts oldest symbol when selecting a fifth', (tester) async {
+      await tester.pumpWidget(buildSelector(compareSymbols.sublist(0, 4)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text(compareSymbols[4].symbol));
+      await tester.pumpAndSettle();
+
+      // Oldest (BTC) is evicted; newest (GOLD) is selected.
+      expect(
+        chipMaterial(tester, compareSymbols[0]).color,
+        isNot(compareSymbols[0].color),
+      );
+      for (var i = 1; i < 5; i++) {
+        expect(
+          chipMaterial(tester, compareSymbols[i]).color,
+          compareSymbols[i].color,
+        );
+      }
+    });
+
+    testWidgets('uses mockup symbol colors', (tester) async {
+      await tester.pumpWidget(buildSelector([compareSymbols[0]]));
+      await tester.pumpAndSettle();
+
+      expect(compareSymbols[0].color, const Color(0xFF00E6D2));
+      expect(compareSymbols[1].color, const Color(0xFFFFB020));
+      expect(compareSymbols[2].color, const Color(0xFFFF5D77));
+      expect(compareSymbols[3].color, const Color(0xFF8B9CF0));
+      expect(compareSymbols[4].color, const Color(0xFFC9A6FF));
     });
   });
 }

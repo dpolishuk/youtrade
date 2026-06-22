@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../presentation/theme/theme_extensions.dart';
+import '../../../presentation/theme/app_theme.dart';
+import '../../../presentation/theme/theme_extensions.dart';
 import '../widgets/compare/compare_chart.dart';
 import '../widgets/compare/compare_models.dart';
 import '../widgets/compare/compare_stats_table.dart';
-import '../widgets/compare/stat_card.dart';
 import '../widgets/compare/symbol_selector.dart';
-import '../widgets/compare/time_range_selector.dart';
 
 /// Compare screen rendered from the YouTrade mockups.
 class CompareScreen extends StatefulWidget {
@@ -18,20 +17,15 @@ class CompareScreen extends StatefulWidget {
 
 class _CompareScreenState extends State<CompareScreen> {
   var _selectedSymbols = List<CompareSymbol>.from(compareSymbols.sublist(0, 2));
-  var _timeRange = CompareTimeRange.oneMonth;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>()!;
 
-    final series = generateCompareSeries(
-      _selectedSymbols,
-      _timeRange.pointCount,
-    );
+    final series = generateCompareSeries(_selectedSymbols);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Compare')),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -40,7 +34,7 @@ class _CompareScreenState extends State<CompareScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildHeader(context, appColors),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 SymbolSelector(
                   selected: _selectedSymbols,
                   onSelectionChanged: (selected) {
@@ -48,20 +42,11 @@ class _CompareScreenState extends State<CompareScreen> {
                   },
                 ),
                 const SizedBox(height: 14),
-                TimeRangeSelector(
-                  selected: _timeRange,
-                  onSelected: (range) {
-                    setState(() => _timeRange = range);
-                  },
-                ),
-                const SizedBox(height: 14),
                 CompareChart(series: series),
                 const SizedBox(height: 14),
-                _buildLegend(context, series),
+                _buildLegend(context, appColors, series),
                 const SizedBox(height: 14),
-                if (series.length == 2) _buildStatCards(context, series),
-                const SizedBox(height: 8),
-                _buildStatsHeader(context),
+                _buildStatsHeader(context, appColors),
                 const SizedBox(height: 9),
                 CompareStatsTable(series: series),
               ],
@@ -77,70 +62,58 @@ class _CompareScreenState extends State<CompareScreen> {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
           'Compare',
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.02 * 18,
-          ),
+          style: AppTheme.display(
+            color: theme.colorScheme.onSurface,
+            fontSize: 18,
+          ).copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.02 * 18),
         ),
         Text(
           '${_selectedSymbols.length}/4 · normalized %',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: AppTheme.mono(
+            color: appColors.tertiaryText,
+            fontSize: 9,
+          ).copyWith(letterSpacing: 0.0),
         ),
       ],
     );
   }
 
-  Widget _buildLegend(BuildContext context, List<CompareSeries> series) {
-    return Wrap(
-      spacing: 14,
-      runSpacing: 8,
-      children: [
-        for (final s in series)
-          _LegendItem(
-            symbol: s.symbol.symbol,
-            color: s.symbol.color,
-            change: s.totalReturn,
-          ),
-      ],
+  Widget _buildLegend(
+    BuildContext context,
+    AppColorTheme appColors,
+    List<CompareSeries> series,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 8,
+        children: [
+          for (final s in series)
+            _LegendItem(
+              symbol: s.symbol.symbol,
+              color: s.symbol.color,
+              change: s.totalReturn,
+            ),
+        ],
+      ),
     );
   }
 
-  Widget _buildStatCards(BuildContext context, List<CompareSeries> series) {
-    final appColors = Theme.of(context).extension<AppColorTheme>()!;
-    final corr = correlation(series[0], series[1]);
-    final ratio = priceRatio(series[0], series[1]);
-
-    return Row(
-      children: [
-        StatCard(
-          label: 'Correlation',
-          value: corr.toStringAsFixed(2),
-          valueColor: appColors.accent,
-        ),
-        const SizedBox(width: 10),
-        StatCard(
-          label: 'Ratio',
-          value: ratio.toStringAsFixed(3),
-          valueColor: appColors.accent,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsHeader(BuildContext context) {
+  Widget _buildStatsHeader(BuildContext context, AppColorTheme appColors) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Text(
-        '${_timeRange.pointCount}-period stats',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          letterSpacing: 0.1 * 9,
-        ),
+        '30-period stats',
+        style: AppTheme.mono(
+          color: appColors.tertiaryText,
+          fontSize: 9,
+        ).copyWith(letterSpacing: 0.1 * 9),
       ),
     );
   }
@@ -159,8 +132,7 @@ class _LegendItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>()!;
+    final appColors = Theme.of(context).extension<AppColorTheme>()!;
     final changeColor = change >= 0 ? appColors.bullish : appColors.bearish;
 
     return Row(
@@ -177,18 +149,18 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 7),
         Text(
           symbol,
-          style: theme.textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.onSurface,
-          ),
+          style: AppTheme.mono(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 11,
+          ).copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(width: 7),
         Text(
           '${change >= 0 ? '+' : ''}${change.toStringAsFixed(2)}%',
-          style: theme.textTheme.labelMedium?.copyWith(
-            fontFamily: 'Geist Mono',
+          style: AppTheme.mono(
             color: changeColor,
-          ),
+            fontSize: 11,
+          ).copyWith(fontWeight: FontWeight.w600),
         ),
       ],
     );
