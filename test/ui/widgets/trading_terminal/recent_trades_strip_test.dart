@@ -32,7 +32,7 @@ Widget _buildStrip(List<Trade> trades) {
 
 void main() {
   group('RecentTradesStrip', () {
-    testWidgets('shows the five newest trades sorted by timestamp', (
+    testWidgets('shows the three newest trades sorted by timestamp', (
       tester,
     ) async {
       final now = DateTime.utc(2026, 1, 1, 12);
@@ -40,7 +40,7 @@ void main() {
         Trade(
           price: 100,
           amount: 1,
-          side: TradeSide.buy,
+          side: TradeSide.sell,
           timestamp: now.subtract(const Duration(seconds: 4)),
           tradeId: 't1',
         ),
@@ -63,20 +63,63 @@ void main() {
       await tester.pumpWidget(_buildStrip(trades.reversed.toList()));
       await tester.pumpAndSettle();
 
-      final prices = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((t) => t.data);
-      final priceTexts = prices.where((p) => p?.startsWith('300') ?? false);
-      expect(priceTexts, isNotEmpty);
+      // Prevents regression where the widget renders duplicate rows or loses
+      // the five-trade limit.
+      final rows = find.descendant(
+        of: find.byType(RecentTradesStrip),
+        matching: find.byType(Row),
+      );
+      expect(rows, findsNWidgets(3));
 
-      // The newest trade should appear before the older ones.
-      final allText = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((t) => t.data ?? '')
-          .join('\n');
-      expect(allText, contains('300'));
-      expect(allText, contains('200'));
-      expect(allText, contains('100'));
+      // Prevents regression where the sort order is inverted so the oldest
+      // trade appears first.
+      final firstRowTexts = tester.widgetList<Text>(
+        find.descendant(of: rows.first, matching: find.byType(Text)),
+      );
+      expect(firstRowTexts.elementAt(1).data, '300.00');
+
+      // Prevents regression where the oldest trade is not shown at the bottom.
+      final lastRowTexts = tester.widgetList<Text>(
+        find.descendant(of: rows.last, matching: find.byType(Text)),
+      );
+      expect(lastRowTexts.elementAt(1).data, '100.00');
+    });
+
+    testWidgets('limits to five trades and drops older rows', (tester) async {
+      final now = DateTime.utc(2026, 1, 1, 12);
+      final trades = List.generate(
+        6,
+        (i) => Trade(
+          price: (i + 1) * 100.0,
+          amount: 1,
+          side: i.isEven ? TradeSide.buy : TradeSide.sell,
+          timestamp: now.subtract(Duration(seconds: (6 - i) * 10)),
+          tradeId: 't$i',
+        ),
+      );
+
+      await tester.pumpWidget(_buildStrip(trades.reversed.toList()));
+      await tester.pumpAndSettle();
+
+      // Prevents regression where the limit/take(5) is removed and older rows
+      // leak into the UI.
+      final rows = find.descendant(
+        of: find.byType(RecentTradesStrip),
+        matching: find.byType(Row),
+      );
+      expect(rows, findsNWidgets(5));
+
+      final firstRowTexts = tester.widgetList<Text>(
+        find.descendant(of: rows.first, matching: find.byType(Text)),
+      );
+      expect(firstRowTexts.elementAt(1).data, '600.00');
+
+      final lastRowTexts = tester.widgetList<Text>(
+        find.descendant(of: rows.last, matching: find.byType(Text)),
+      );
+      expect(lastRowTexts.elementAt(1).data, '200.00');
+
+      expect(find.text('100.00'), findsNothing);
     });
 
     testWidgets('renders empty state when no trades are provided', (

@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
@@ -38,6 +39,28 @@ void main() {
 
       final chart = tester.widget<CompareChart>(find.byType(CompareChart));
       expect(chart.series.length, 3);
+    });
+
+    testWidgets('LineChart spots match normalized series values', (
+      tester,
+    ) async {
+      final series = generateCompareSeries([compareSymbols[0]]);
+      await tester.pumpWidget(buildChart(series));
+      await tester.pumpAndSettle();
+
+      // Prevents regression where the container has the correct height but the
+      // LineChart is passed empty, shuffled, or otherwise incorrect data.
+      final lineChart = tester.widget<LineChart>(find.byType(LineChart));
+      final barData = lineChart.data.lineBarsData;
+      expect(barData.length, 1);
+
+      final spots = barData.single.spots;
+      final normalized = series.first.normalized;
+      expect(spots.length, normalized.length);
+      expect(spots.first.x, 0);
+      expect(spots.first.y, closeTo(normalized.first, 1e-9));
+      expect(spots.last.x, normalized.length - 1);
+      expect(spots.last.y, closeTo(normalized.last, 1e-9));
     });
   });
 }

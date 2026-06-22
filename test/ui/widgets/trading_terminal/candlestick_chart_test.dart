@@ -29,13 +29,32 @@ List<Candle> _candlesWithCloses(List<double> closes) {
 
 void main() {
   group('CandlestickChart', () {
-    testWidgets('renders MA labels', (tester) async {
+    testWidgets('renders MA labels and painted price area', (tester) async {
       final candles = _candlesWithCloses([10, 10, 10, 1, 1, 1, 1, 1, 1, 1]);
       await tester.pumpWidget(_buildChart(candles));
       await tester.pumpAndSettle();
 
       expect(find.text('MA7'), findsOneWidget);
       expect(find.text('MA25'), findsOneWidget);
+
+      // Prevents regression where non-empty candle data still shows the empty
+      // loading state instead of the painted chart.
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+
+      // Prevents regression where the chart is laid out at zero size and the
+      // axis price labels (painted by _CandlestickPainter) are not visible.
+      final customPaint = tester.widget<CustomPaint>(
+        find
+            .descendant(
+              of: find.byType(CandlestickChart),
+              matching: find.byType(CustomPaint),
+            )
+            .first,
+      );
+      expect(customPaint.size, isNot(equals(Size.zero)));
+      expect(customPaint.size.height, 248);
+      expect(customPaint.size.width, greaterThan(0));
+      expect(customPaint.painter, isNotNull);
     });
 
     testWidgets('shows progress indicator when candles are empty', (
