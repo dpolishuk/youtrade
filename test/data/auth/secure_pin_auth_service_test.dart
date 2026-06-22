@@ -129,10 +129,8 @@ void main() {
         expect(result, isA<Success<void>>());
         final hash = await storage.read(key: 'pin_hash');
         final salt = await storage.read(key: 'pin_salt');
-        expect(hash, isNotNull);
-        expect(hash, isNotEmpty);
-        expect(salt, isNotNull);
-        expect(salt, isNotEmpty);
+        expect(hash, matches(RegExp(r'^[0-9a-f]{64}$')));
+        expect(salt, matches(RegExp(r'^[A-Za-z0-9+/]{22}==$')));
         expect(hash, isNot(equals('1234')));
       });
 
@@ -163,21 +161,12 @@ void main() {
         expect(secondSalt, equals(firstSalt));
       });
 
-      test(
-        'accepts PINs longer than 4 digits and stores salted hash',
-        () async {
-          final result = await service.setPin('123456');
+      test('accepts PINs longer than 4 digits', () async {
+        final result = await service.setPin('123456');
 
-          expect(result, isA<Success<void>>());
-          final hash = await storage.read(key: 'pin_hash');
-          final salt = await storage.read(key: 'pin_salt');
-          expect(hash, isNotNull);
-          expect(hash, isNotEmpty);
-          expect(salt, isNotNull);
-          expect(salt, isNotEmpty);
-          expect(hash, isNot(equals('123456')));
-        },
-      );
+        expect(result, isA<Success<void>>());
+        expect(await service.authenticatePin('123456'), isTrue);
+      });
 
       test('concurrent setPin calls produce deterministic final PIN', () async {
         final results = await Future.wait([

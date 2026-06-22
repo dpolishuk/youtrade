@@ -17,7 +17,7 @@ void main() {
         );
 
         expect(item.price, 65000.0);
-        expect(item.change24hPercent, isNotNull);
+        expect(item.change24hPercent, closeTo(6.423290746323324, 1e-9));
       },
     );
 
@@ -33,8 +33,24 @@ void main() {
           change24hPercent: 2.5,
         );
 
-        expect(item.price, isNotNull);
+        expect(item.price, closeTo(2887.8860130257644, 1e-9));
         expect(item.change24hPercent, 2.5);
+      },
+    );
+
+    test(
+      'falls back to ticker when both price and change24hPercent are null',
+      () {
+        final item = row(
+          rawSymbol: 'BTCUSDT',
+          name: 'Bitcoin',
+          venue: Venue.binance,
+          assetClass: AssetClass.perp,
+          decimals: 1,
+        );
+
+        expect(item.price, closeTo(105154.04697406417, 1e-9));
+        expect(item.change24hPercent, closeTo(6.423290746323324, 1e-9));
       },
     );
 
