@@ -26,9 +26,9 @@ This document describes every screen, its purpose, data requirements, states, tr
                                           └─────────────┘      └─────────────┘
 ```
 
-Bottom tab bar is always visible on main screens: Portfolio, Markets, Trading, Orders, Account.
+Bottom tab bar is always visible on main screens: Portfolio, Markets, Trade, Options, More.
 
-Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes require authentication. Compare and Exchange Detail are nested under `/markets`; Options Chain is at `/markets/options/:symbol`. The Trading Terminal route is `/trading?symbol=<symbol>`.
+Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes require authentication. Compare and Exchange Detail are nested under `/markets`; Options Chain is at `/markets/options/:symbol`. Orders & History is nested under Portfolio at `/orders`. The Trading Terminal route is `/trading?symbol=<symbol>`.
 
 ---
 
@@ -305,7 +305,7 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 - Title "Account"
 - Appearance section: Theme toggle, Visual direction toggle
 - Connected exchanges section: read-only list of venue capabilities
-- Security section: Biometric/PIN toggle, Sign out action
+- Security section (TODO: not yet implemented — Biometric/PIN toggle, Sign out action)
 - Footer: app version + venue count
 
 **Data:**
@@ -319,8 +319,8 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 **Interactions:**
 - Tap Theme button → toggle dark/light
 - Tap Visual direction button → toggle Flux/Carbon
-- Tap Biometric/PIN toggle → enable/disable local auth gate
-- Tap Sign out → clear local auth and return to Auth Gate
+- Tap Biometric/PIN toggle → enable/disable local auth gate (TODO: not yet implemented)
+- Tap Sign out → clear local auth and return to Auth Gate (TODO: not yet implemented)
 
 ---
 
@@ -335,7 +335,7 @@ Public (non-auth) routes are `/markets` and `/markets/compare`; all other routes
 ### Local Auth Gate
 - On cold start, require biometric/PIN before showing Portfolio, Terminal, Exchange Detail, Orders, or Account.
 - Markets and Compare can be viewed without auth (public market data).
-- Lock when app goes to background for > 2 minutes.
+- TBD: Lock when app goes to background for > 2 minutes.
 - Store auth state in `AuthNotifier`.
 
 ### Theme

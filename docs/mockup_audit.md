@@ -21,7 +21,7 @@ Legend:
 | Background | transparent (inherits `#06080f`) | matched | matched |
 | Clock | `9:41`, JetBrains Mono, `13px`, weight 500, letter-spacing `-0.02em`, `#f2f5fa` | matched | matched |
 | Signal/WiFi/Battery icons | inline SVG, currentColor `#f2f5fa`, size ~17×11 / 16×11 / 25×12 | matched | matched |
-| Center notch | `#000`, `104×30`, radius `16px` | matched | matched |
+| Center notch | `#000`, `104×30`, radius `16px` | system status bar; custom notch not implemented | gap |
 
 ### App Header
 
@@ -692,6 +692,15 @@ The auth gate must align to the mockup visual language: dark `#06080f` backgroun
 | Secondary action | JetBrains Mono `11px`, `rgba(255,255,255,0.55)` | matched | matched |
 
 ---
+
+## Known Implementation Gaps
+
+| Item | Status | Notes |
+|---|---|---|
+| Custom status bar / notch | gap | Uses the system status bar; the preview-wrapper notch is not implemented in the app. |
+| Carbon direction-specific colors | gap | Carbon currently shares Flux `up`/`down` colors and uses a different accent than the mockup CSS specifies. |
+| Light-theme bottom nav | gap | `ScaffoldWithNavBar` uses the dark nav background (`#080b12`) in both themes. |
+| Settings security section | gap | Biometric/PIN toggle and sign-out actions are not yet implemented on the Account screen. |
 
 ## Audit Summary
 

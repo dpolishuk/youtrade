@@ -87,5 +87,15 @@ The hooks run `dart format`, `flutter analyze`, and `flutter test` on Dart files
 
 ## Resources
 
+### Project documentation
+
+- [Architecture overview](./docs/architecture.md)
+- [Design tokens](./docs/design_tokens.md)
+- [Screen flows](./docs/screens.md)
+- [Mockup audit](./docs/mockup_audit.md)
+- [Interactive mockups](./mockups/)
+
+### External resources
+
 - [Flutter documentation](https://docs.flutter.dev/)
 - [Effective Dart](https://dart.dev/effective-dart)

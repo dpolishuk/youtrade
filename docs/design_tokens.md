@@ -4,7 +4,7 @@ Source of truth extracted from [`mockups/colors_and_type.css`](../mockups/colors
 
 All CSS custom properties are recorded with their Flutter/Dart equivalents. Pixel values are logical pixels (Flutter uses logical pixels by default; the mockup is rendered at 1× CSS pixel on a 390×844 viewport).
 
-The runtime source of truth for the semantic tokens below is `AppColorTheme` in [`lib/presentation/theme/theme_extensions.dart`](../lib/presentation/theme/theme_extensions.dart). `AppColorTheme` exposes direction- and theme-aware values such as `bg`, `card`, `accent`, `up`, and `down`, and is retrieved via `Theme.of(context).extension<AppColorTheme>()`. Use `AppColorTheme` directly in widgets rather than hard-coding the static values in this document.
+The runtime source of truth for the semantic tokens below is `AppColorTheme` in [`lib/presentation/theme/theme_extensions.dart`](../lib/presentation/theme/theme_extensions.dart). `AppColorTheme` exposes the fields `bullish`, `bearish`, `accent`, `foreground`, `surfaceGlass`, `subtleText`, `borderSubtle`, `tertiaryText`, `chip`, and `line`. Background (`bg`) and card colors come from Flutter's `ColorScheme` (`scaffoldBackgroundColor`, `cardColor`, `cardTheme.color`), not from `AppColorTheme`. Retrieve `AppColorTheme` via `Theme.of(context).extension<AppColorTheme>()!`. Use `AppColorTheme` directly in widgets rather than hard-coding the static values in this document.
 
 ---
 
@@ -212,9 +212,9 @@ The mockup computes these at runtime based on `theme` and `dir`. These are the v
 |---|---|---|
 | `accent` | `#3f73ff` | `Color(0xFF3F73FF)` |
 | `glow` | `transparent` | `Colors.transparent` |
-| `up` | `#16d196` | `Color(0xFF16D196)` |
-| `down` | `#ff4d63` | `Color(0xFFFF4D63)` |
-| All other dark tokens | same as Flux | same as Flux |
+| `surface` / `bg` | `#061336` | `Color(0xFF061336)` |
+
+All other dark tokens (`up`, `down`, `fg`, `card`, etc.) are currently shared with Flux. The mockup CSS also specifies distinct Carbon `up`/`down` hues, but those are not yet implemented.
 
 ### Light + Flux
 
@@ -240,11 +240,13 @@ The mockup computes these at runtime based on `theme` and `dir`. These are the v
 
 | Token | Value | Flutter `Color` |
 |---|---|---|
-| `accent` | `#1634ef` | `Color(0xFF1634EF)` |
+| `accent` | `#0355f3` | `Color(0xFF0355F3)` |
 | `glow` | `transparent` | `Colors.transparent` |
-| `up` | `#1d683f` | `Color(0xFF1D683F)` |
-| `down` | `#c0392b` | `Color(0xFFC0392B)` |
-| All other light tokens | same as Flux | same as Flux |
+| `surface` / `bg` | `#ffffff` | `Color(0xFFFFFFFF)` |
+
+All other light tokens are currently shared with Flux. The mockup CSS also specifies distinct Carbon `up`/`down` hues, but those are not yet implemented.
+
+**Note:** The bottom navigation bar currently uses the dark `navbg` (`#080b12`) in both light and dark themes; full light-theme navigation styling is not yet implemented.
 
 ---
 

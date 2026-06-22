@@ -139,13 +139,13 @@ Online/offline is handled by `connectivityProvider` in `presentation/providers/c
 
 | Provider | Emits |
 |---|---|
-| `tickerStreamProvider(symbol)` | `AsyncValue<Result<Ticker>>` |
-| `candlesProvider(symbol, timeframe)` | `AsyncValue<Result<List<Candle>>>` |
-| `orderBookStreamProvider(symbol)` | `AsyncValue<Result<OrderBook>>` |
-| `tradesStreamProvider(symbol)` | `AsyncValue<Result<List<Trade>>>` |
-| `marketScreenerItemsProvider` | `AsyncValue<List<MarketScreenerItem>>` |
-| `filteredMarketScreenerItemsProvider(filter)` | `AsyncValue<List<MarketScreenerItem>>` |
-| `selectedSymbolProvider` | `TradingSymbol?` |
+| `tickerStreamProvider(symbol)` | `AsyncValue<Ticker>` |
+| `candlesProvider(symbol, timeframe)` | `AsyncValue<List<Candle>>` |
+| `orderBookStreamProvider(symbol)` | `AsyncValue<OrderBook>` |
+| `tradesStreamProvider(symbol)` | `AsyncValue<List<Trade>>` |
+| `marketScreenerItemsProvider` | `List<MarketScreenerItem>` |
+| `filteredMarketScreenerItemsProvider(filter)` | `List<MarketScreenerItem>` |
+| `selectedSymbolProvider` | `TradingSymbol` |
 | `tradingTerminalProvider(symbol)` | `TradingTerminalState` |
 | `themeSettingsProvider` | `ThemeSettings` |
 | `authNotifierProvider` | `AuthState` |
@@ -206,7 +206,7 @@ Theme is implemented via `AppColorTheme` (`ThemeExtension`) and `AppTheme` facto
 ## Security
 
 - PIN is hashed with PBKDF2-HMAC-SHA256 (100,000 iterations, 32-byte derived key) and a per-install salt, stored via `flutter_secure_storage` (iOS Keychain / Android Keystore).
-- PIN entry is rate-limited: 5 failed attempts trigger a 1-minute lockout.
+- PIN entry is rate-limited: 5 failed attempts trigger a 15-minute lockout.
 - No logging of secrets or PII.
 - Biometric/PIN gate before sensitive screens.
 - Validate all network input before use.
@@ -230,6 +230,16 @@ Work is tracked in `br` (beads_rust). See [`AGENTS.md`](../AGENTS.md) for the fu
   - `youtrade-qqg` — Phase 3: Presentation, theme, and auth guard
   - `youtrade-mv8` — Phase 4: Build UI screens from mockups
   - `youtrade-75g` — Phase 5: Integration, navigation, and verification
+  - `youtrade-7k7` — Epic 7k7: screen-alignment pass
+    - `youtrade-ann` — completed
+    - `youtrade-3rt` — completed
+    - `youtrade-v66` — completed
+    - `youtrade-ejn` — completed
+    - `youtrade-2qm` — completed
+    - `youtrade-9zb` — completed
+    - `youtrade-ys4` — completed
+    - `youtrade-wze` — completed
+    - `youtrade-kn5` — completed
 
 ### Dependency Order
 
@@ -260,12 +270,6 @@ integration_test/
   options_flow_test.dart     # options chain flows
   orders_flow_test.dart      # orders & history flows
   settings_flow_test.dart    # account/settings flows
-  helpers.dart               # shared integration-test utilities
-```integration_test/
-  app_test.dart              # smoke test: app launches and shows Portfolio
-  auth_flow_test.dart        # local biometric/PIN gate flows
-  markets_flow_test.dart     # screener flows
-  offline_mode_test.dart     # offline/demo mode fallback
   helpers.dart               # shared integration-test utilities
 ```
 
