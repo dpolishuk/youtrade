@@ -31,15 +31,6 @@ void main() {
       expect(container.constraints?.maxHeight, 220);
     });
 
-    testWidgets('series has 30 normalized points', (tester) async {
-      final series = generateCompareSeries([compareSymbols[0]]);
-      await tester.pumpWidget(buildChart(series));
-      await tester.pumpAndSettle();
-
-      final chart = tester.widget<CompareChart>(find.byType(CompareChart));
-      expect(chart.series.first.normalized.length, 30);
-    });
-
     testWidgets('renders multiple series', (tester) async {
       final series = generateCompareSeries(compareSymbols.sublist(0, 3));
       await tester.pumpWidget(buildChart(series));

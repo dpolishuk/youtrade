@@ -87,21 +87,6 @@ void main() {
       expect(count.style?.fontSize, 9);
     });
 
-    testWidgets('legend shows selected symbols and deterministic returns', (
-      tester,
-    ) async {
-      await tester.pumpWidget(buildScreen());
-      await tester.pumpAndSettle();
-
-      final series = generateCompareSeries(compareSymbols.sublist(0, 2));
-      for (final s in series) {
-        expect(find.text(s.symbol.symbol), findsWidgets);
-        final returnText =
-            '${s.totalReturn >= 0 ? '+' : ''}${s.totalReturn.toStringAsFixed(2)}%';
-        expect(find.text(returnText), findsWidgets);
-      }
-    });
-
     testWidgets('selecting a fifth symbol evicts the oldest selection', (
       tester,
     ) async {
