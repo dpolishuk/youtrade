@@ -65,6 +65,33 @@ void main() {
       );
     });
 
+    test('Carbon dark uses mockup surface and direction colors', () {
+      final theme = AppTheme.dark(AppVisualDirection.carbon);
+      final appColors = theme.extension<AppColorTheme>()!;
+
+      expect(theme.colorScheme.surface, const Color(0xFF06080F));
+      expect(appColors.bullish, const Color(0xFF16D196));
+      expect(appColors.bearish, const Color(0xFFFF4D63));
+    });
+
+    test('Carbon light keeps direction-aware bullish/bearish colors', () {
+      final theme = AppTheme.light(AppVisualDirection.carbon);
+      final appColors = theme.extension<AppColorTheme>()!;
+
+      expect(appColors.bullish, const Color(0xFF16D196));
+      expect(appColors.bearish, const Color(0xFFFF4D63));
+    });
+
+    test('Flux and Carbon use different bullish/bearish colors', () {
+      final flux = AppTheme.dark(AppVisualDirection.flux);
+      final carbon = AppTheme.dark(AppVisualDirection.carbon);
+      final fluxColors = flux.extension<AppColorTheme>()!;
+      final carbonColors = carbon.extension<AppColorTheme>()!;
+
+      expect(fluxColors.bullish, isNot(equals(carbonColors.bullish)));
+      expect(fluxColors.bearish, isNot(equals(carbonColors.bearish)));
+    });
+
     test('display type uses Space Grotesk', () {
       final theme = AppTheme.dark(AppVisualDirection.flux);
 

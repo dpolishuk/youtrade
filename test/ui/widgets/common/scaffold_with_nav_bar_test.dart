@@ -125,13 +125,16 @@ void main() {
   Widget buildRouter({
     required GoRouter router,
     required ProviderContainer container,
+    ThemeData? theme,
+    ThemeData? darkTheme,
+    ThemeMode? themeMode,
   }) {
     return UncontrolledProviderScope(
       container: container,
       child: MaterialApp.router(
-        theme: AppTheme.dark(AppVisualDirection.carbon),
-        darkTheme: AppTheme.dark(AppVisualDirection.carbon),
-        themeMode: ThemeMode.dark,
+        theme: theme ?? AppTheme.dark(AppVisualDirection.carbon),
+        darkTheme: darkTheme ?? AppTheme.dark(AppVisualDirection.carbon),
+        themeMode: themeMode ?? ThemeMode.dark,
         routerConfig: router,
       ),
     );
@@ -182,6 +185,32 @@ void main() {
       final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
       expect(navBar.backgroundColor, const Color(0xFF080B12));
       expect(navBar.indicatorColor, Colors.transparent);
+    });
+
+    testWidgets('uses white background in light mode', (tester) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = createContainer();
+      final router = container.read(appRouterProvider);
+
+      container.read(authNotifierProvider.notifier).authenticateWithPin('1234');
+      router.go('/');
+
+      await tester.pumpWidget(
+        buildRouter(
+          router: router,
+          container: container,
+          theme: AppTheme.light(AppVisualDirection.carbon),
+          darkTheme: AppTheme.dark(AppVisualDirection.carbon),
+          themeMode: ThemeMode.light,
+        ),
+      );
+      await pumpFrames(tester);
+
+      final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(navBar.backgroundColor, const Color(0xFFFFFFFF));
     });
   });
 }

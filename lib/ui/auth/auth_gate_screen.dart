@@ -54,7 +54,7 @@ class _AuthGateScreenState extends ConsumerState<AuthGateScreen> {
     final accent = appColors?.accent ?? theme.colorScheme.primary;
     final foreground = appColors?.foreground ?? theme.colorScheme.onSurface;
     final muted = appColors?.tertiaryText ?? theme.colorScheme.onSurfaceVariant;
-    final cardBg = appColors?.chip ?? const Color(0xFF10151F);
+    final cardBg = const Color(0xFF0E131F);
     final borderColor = appColors?.borderSubtle ?? const Color(0x12FFFFFF);
     final subtleText = appColors?.subtleText ?? const Color(0x8CFFFFFF);
 
@@ -72,68 +72,79 @@ class _AuthGateScreenState extends ConsumerState<AuthGateScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(flex: 2),
-              _Logo(accent: accent),
-              const SizedBox(height: 28),
-              Text(
-                pinSet ? 'YouTrade is locked' : 'Set up PIN',
-                textAlign: TextAlign.center,
-                style: AppTheme.display(
-                  color: foreground,
-                  fontSize: 24,
-                ).copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.02),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                pinSet
-                    ? 'Authenticate to continue'
-                    : 'Create a 4-digit PIN to secure YouTrade',
-                textAlign: TextAlign.center,
-                style: AppTheme.mono(
-                  color: muted,
-                  fontSize: 12,
-                ).copyWith(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 40),
-              if (canUseBiometrics) ...[
-                _BiometricButton(
-                  accent: accent,
-                  cardBg: cardBg,
-                  borderColor: borderColor,
-                  subtleText: subtleText,
-                  onPressed: () {
-                    ref
-                        .read(authNotifierProvider.notifier)
-                        .authenticateWithBiometrics();
-                  },
-                ),
-                const SizedBox(height: 12),
-              ],
-              _PinField(
-                controller: _pinController,
-                cardBg: cardBg,
+              _GateCard(
                 borderColor: borderColor,
-                foreground: foreground,
-                subtleText: subtleText,
-                hint: pinSet ? 'Enter PIN' : 'Choose a 4-digit PIN',
-                onSubmitted: (_) => _submitPin(),
-              ),
-              const SizedBox(height: 16),
-              _PrimaryButton(
-                accent: accent,
-                label: pinSet ? 'Unlock with PIN' : 'Set PIN',
-                onPressed: _submitPin,
-              ),
-              if (failure != null) ...[
-                const SizedBox(height: 18),
-                Text(
-                  _failureMessage(failure),
-                  textAlign: TextAlign.center,
-                  style: AppTheme.mono(
-                    color: theme.colorScheme.error,
-                    fontSize: 12,
-                  ).copyWith(fontWeight: FontWeight.w600),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _Logo(accent: accent),
+                    const SizedBox(height: 28),
+                    Text(
+                      pinSet ? 'YouTrade is locked' : 'Set up PIN',
+                      textAlign: TextAlign.center,
+                      style: AppTheme.display(color: foreground, fontSize: 28)
+                          .copyWith(
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.02,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      pinSet
+                          ? 'Authenticate to continue'
+                          : 'Create a 4-digit PIN to secure YouTrade',
+                      textAlign: TextAlign.center,
+                      style: AppTheme.mono(
+                        color: muted,
+                        fontSize: 12,
+                      ).copyWith(fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 40),
+                    if (canUseBiometrics) ...[
+                      _BiometricButton(
+                        accent: accent,
+                        cardBg: cardBg,
+                        borderColor: borderColor,
+                        subtleText: subtleText,
+                        onPressed: () {
+                          ref
+                              .read(authNotifierProvider.notifier)
+                              .authenticateWithBiometrics();
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    _PinField(
+                      controller: _pinController,
+                      cardBg: cardBg,
+                      borderColor: borderColor,
+                      foreground: foreground,
+                      subtleText: subtleText,
+                      hint: pinSet ? 'Enter PIN' : 'Choose a 4-digit PIN',
+                      onSubmitted: (_) => _submitPin(),
+                    ),
+                    const SizedBox(height: 16),
+                    _PrimaryButton(
+                      accent: accent,
+                      foregroundColor: const Color(0xFF06080F),
+                      label: pinSet ? 'Unlock with PIN' : 'Set PIN',
+                      onPressed: _submitPin,
+                    ),
+                    if (failure != null) ...[
+                      const SizedBox(height: 18),
+                      Text(
+                        _failureMessage(failure),
+                        textAlign: TextAlign.center,
+                        style: AppTheme.mono(
+                          color: theme.colorScheme.error,
+                          fontSize: 12,
+                        ).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
               const Spacer(flex: 3),
             ],
           ),
@@ -295,11 +306,13 @@ class _PinField extends StatelessWidget {
 class _PrimaryButton extends StatelessWidget {
   const _PrimaryButton({
     required this.accent,
+    required this.foregroundColor,
     required this.label,
     required this.onPressed,
   });
 
   final Color accent;
+  final Color foregroundColor;
   final String label;
   final VoidCallback onPressed;
 
@@ -320,7 +333,7 @@ class _PrimaryButton extends StatelessWidget {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: accent,
-          foregroundColor: Colors.white,
+          foregroundColor: foregroundColor,
           minimumSize: const Size(double.infinity, 48),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 0,
@@ -328,11 +341,32 @@ class _PrimaryButton extends StatelessWidget {
         child: Text(
           label,
           style: AppTheme.display(
-            color: Colors.white,
+            color: foregroundColor,
             fontSize: 15,
           ).copyWith(fontWeight: FontWeight.w600),
         ),
       ),
+    );
+  }
+}
+
+class _GateCard extends StatelessWidget {
+  const _GateCard({required this.borderColor, required this.child});
+
+  final Color borderColor;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('authGateCard'),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0E131F),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: child,
     );
   }
 }

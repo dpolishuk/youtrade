@@ -24,6 +24,11 @@ abstract final class AppTheme {
   static const _rose = Color(0xFFFF5D77); // dark+flux down
   static const _roseLight = Color(0xFFD22A47); // light down
 
+  // Carbon direction tokens
+  static const _carbonSurface = Color(0xFF06080F);
+  static const _carbonUp = Color(0xFF16D196);
+  static const _carbonDown = Color(0xFFFF4D63);
+
   // Neutrals
   static const _carbon = Color(0xFF020D23); // --color-carbon
   static const _white = Color(0xFFFFFFFF);
@@ -35,13 +40,12 @@ abstract final class AppTheme {
 
   /// Builds a dark theme for the given visual direction.
   static ThemeData dark(AppVisualDirection direction) {
-    final primary = direction == AppVisualDirection.flux
-        ? _turquoiseVivid
-        : _carbonAccent;
-    final surface = direction == AppVisualDirection.flux
-        ? const Color(0xFF06080F)
-        : const Color(0xFF061336);
+    final isCarbon = direction == AppVisualDirection.carbon;
+    final primary = isCarbon ? _carbonAccent : _turquoiseVivid;
+    final surface = _carbonSurface;
     final card = const Color(0xFF0E131F);
+    final bullish = isCarbon ? _carbonUp : _emeraldVivid;
+    final bearish = isCarbon ? _carbonDown : _rose;
 
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primary,
@@ -51,7 +55,7 @@ abstract final class AppTheme {
       onPrimary: _white,
       secondary: const Color(0xFF10151F),
       onSecondary: _white,
-      error: _rose,
+      error: bearish,
       onError: _white,
       outline: _white6,
       outlineVariant: _white8,
@@ -61,15 +65,15 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       cardColor: card,
       appColorTheme: AppColorTheme(
-        bullish: _emeraldVivid,
-        bearish: _rose,
+        bullish: bullish,
+        bearish: bearish,
         accent: primary,
         foreground: const Color(0xFFF2F5FA),
         surfaceGlass: _white8,
         subtleText: _white55,
         borderSubtle: _white6,
         tertiaryText: const Color(0x57FFFFFF),
-        chip: const Color(0xFF10151F),
+        chip: card,
         line: const Color(0x12FFFFFF),
       ),
     );
@@ -77,16 +81,13 @@ abstract final class AppTheme {
 
   /// Builds a light theme for the given visual direction.
   static ThemeData light(AppVisualDirection direction) {
-    final primary = direction == AppVisualDirection.flux
-        ? _turquoiseBold
-        : _cobaltVivid;
-    final accent = direction == AppVisualDirection.flux
-        ? _turquoiseBold
-        : _cobaltVivid;
-    final surface = direction == AppVisualDirection.flux
-        ? _titanium
-        : _lightSurface;
+    final isCarbon = direction == AppVisualDirection.carbon;
+    final primary = isCarbon ? _cobaltVivid : _turquoiseBold;
+    final accent = isCarbon ? _cobaltVivid : _turquoiseBold;
+    final surface = isCarbon ? _lightSurface : _titanium;
     final card = _lightSurface;
+    final bullish = isCarbon ? _carbonUp : _emeraldLight;
+    final bearish = isCarbon ? _carbonDown : _roseLight;
 
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primary,
@@ -96,7 +97,7 @@ abstract final class AppTheme {
       onPrimary: _white,
       secondary: _titanium,
       onSecondary: _carbon,
-      error: _roseLight,
+      error: bearish,
       onError: _white,
       outline: _carbon8,
       outlineVariant: _carbon8,
@@ -106,8 +107,8 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       cardColor: card,
       appColorTheme: AppColorTheme(
-        bullish: _emeraldLight,
-        bearish: _roseLight,
+        bullish: bullish,
+        bearish: bearish,
         accent: accent,
         foreground: _carbon,
         surfaceGlass: _carbon8,

@@ -14,13 +14,14 @@ class YouTradeApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(appThemeProvider);
+    final settings = ref.watch(themeSettingsProvider);
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
       title: 'YouTrade',
       theme: theme,
       darkTheme: theme,
-      themeMode: ThemeMode.dark,
+      themeMode: settings.themeMode,
       routerConfig: router,
     );
   }
