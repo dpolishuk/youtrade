@@ -31,7 +31,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: find.byType(NavigationBar),
-          matching: find.text('Trading'),
+          matching: find.text('Trade'),
         ),
       );
       await tester.pumpAndSettle(const Duration(seconds: 5));
@@ -42,25 +42,23 @@ void main() {
       await tester.tap(
         find.descendant(
           of: find.byType(NavigationBar),
-          matching: find.text('Orders'),
+          matching: find.text('Options'),
         ),
       );
       await tester.pumpAndSettle(const Duration(seconds: 5));
-      expect(find.text('Open'), findsOneWidget);
-      expect(find.text('History'), findsOneWidget);
-      expect(find.text('Positions'), findsOneWidget);
-      await binding.takeScreenshot('orders_tab');
+      expect(find.text('BTC'), findsWidgets);
+      await binding.takeScreenshot('options_tab');
 
       await tester.tap(
         find.descendant(
           of: find.byType(NavigationBar),
-          matching: find.text('Account'),
+          matching: find.text('More'),
         ),
       );
       await tester.pumpAndSettle(const Duration(seconds: 5));
       expect(find.text('Account'), findsWidgets);
       expect(find.text('Appearance'), findsOneWidget);
-      await binding.takeScreenshot('account_tab');
+      await binding.takeScreenshot('more_tab');
     });
   });
 }

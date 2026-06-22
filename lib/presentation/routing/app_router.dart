@@ -71,6 +71,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/',
                 builder: (context, state) => const PortfolioScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'orders',
+                    builder: (context, state) => const OrdersHistoryScreen(),
+                  ),
+                ],
               ),
             ],
           ),
@@ -92,13 +98,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: 'compare',
                     builder: (context, state) => const CompareScreen(),
                   ),
-                  GoRoute(
-                    path: 'options/:symbol',
-                    builder: (context, state) {
-                      final symbol = state.pathParameters['symbol']!;
-                      return OptionsChainScreen(symbol: symbol);
-                    },
-                  ),
                 ],
               ),
             ],
@@ -117,8 +116,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/orders',
-                builder: (context, state) => const OrdersHistoryScreen(),
+                path: '/markets/options',
+                redirect: (context, state) => '/markets/options/BTC',
+              ),
+              GoRoute(
+                path: '/markets/options/:symbol',
+                builder: (context, state) {
+                  final symbol = state.pathParameters['symbol']!;
+                  return OptionsChainScreen(symbol: symbol);
+                },
               ),
             ],
           ),

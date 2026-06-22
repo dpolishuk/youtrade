@@ -279,18 +279,34 @@ void main() {
       await tester.tap(find.text('Markets'));
       await pumpFrames(tester);
       expect(router.state.uri.path, '/markets');
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        1,
+      );
 
-      await tester.tap(find.text('Trading'));
+      await tester.tap(find.text('Trade'));
       await pumpFrames(tester);
       expect(router.state.uri.path, '/trading');
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        2,
+      );
 
-      await tester.tap(find.text('Orders'));
+      await tester.tap(find.text('Options'));
       await pumpFrames(tester);
-      expect(router.state.uri.path, '/orders');
+      expect(router.state.uri.path, '/markets/options/BTC');
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        3,
+      );
 
-      await tester.tap(find.text('Account'));
+      await tester.tap(find.text('More'));
       await pumpFrames(tester);
       expect(router.state.uri.path, '/account');
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        4,
+      );
     });
 
     testWidgets(
@@ -364,6 +380,51 @@ void main() {
       expect(router.state.pathParameters['symbol'], 'BTC');
       expect(find.byType(OptionsChainScreen), findsOneWidget);
     });
+
+    testWidgets('/markets/options defaults to BTC for authenticated users', (
+      tester,
+    ) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      final container = createContainer();
+      final router = container.read(appRouterProvider);
+
+      container.read(authNotifierProvider.notifier).authenticateWithPin('1234');
+      router.go('/markets/options');
+
+      await tester.pumpWidget(
+        buildRouter(router: router, container: container),
+      );
+      await pumpFrames(tester);
+
+      expect(router.state.uri.path, '/markets/options/BTC');
+      expect(router.state.pathParameters['symbol'], 'BTC');
+      expect(find.byType(OptionsChainScreen), findsOneWidget);
+    });
+
+    testWidgets(
+      'redirects unauthenticated users from /markets/options to auth',
+      (tester) async {
+        when(
+          () => mockService.canCheckBiometrics(),
+        ).thenAnswer((_) async => false);
+
+        final container = createContainer();
+        final router = container.read(appRouterProvider);
+        router.go('/markets/options');
+
+        await tester.pumpWidget(
+          buildRouter(router: router, container: container),
+        );
+        await pumpFrames(tester);
+
+        expect(router.state.uri.path, '/auth');
+        expect(router.state.uri.queryParameters['from'], '/markets/options');
+        expect(find.text('YouTrade is locked'), findsOneWidget);
+      },
+    );
 
     testWidgets('redirects authenticated users away from /auth', (
       tester,
