@@ -13,9 +13,18 @@ void main() {
     ) async {
       await pumpAuthenticatedApp(tester);
 
-      expect(find.text('Aggregated net worth · 3 venues'), findsOneWidget);
-      expect(find.textContaining(r'$124,350'), findsOneWidget);
+      expect(find.text('Aggregated net worth · 4 venues'), findsOneWidget);
+      expect(find.textContaining(r'$746,240'), findsOneWidget);
+      expect(find.text('+2.04%'), findsOneWidget);
+      expect(find.text('Binance'), findsOneWidget);
+      expect(find.text('OKX'), findsOneWidget);
       await binding.takeScreenshot('portfolio_tab');
+
+      await tester.ensureVisible(find.text('Orders →'));
+      await tester.tap(find.text('Orders →'));
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+      expect(find.text('Orders & History'), findsOneWidget);
+      await binding.takeScreenshot('orders_screen');
 
       await tester.tap(
         find.descendant(

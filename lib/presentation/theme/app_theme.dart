@@ -11,19 +11,18 @@ import 'theme_mode.dart';
 /// [mockups/colors_and_type.css].
 abstract final class AppTheme {
   // Surfaces
-  static const _dark = Color(0xFF030612); // --color-dark
-  static const _carbonHover = Color(0xFF061336); // --color-carbon-hover
   static const _lightSurface = Color(0xFFFFFFFF); // --color-background
   static const _titanium = Color(0xFFF7F4F3); // --color-titanium
 
   // Brand accents (from the CSS triads)
   static const _cobaltVivid = Color(0xFF0355F3); // --color-cobalt-vivid
-  static const _turquoiseVivid = Color(0xFF00BBCC); // --color-turquoise-vivid
-  static const _turquoiseBold = Color(0xFF005060); // --color-turquoise-bold
-  static const _emeraldVivid = Color(0xFF01A54C); // --color-emerald-vivid
-  static const _emeraldBold = Color(0xFF1D683F); // --color-emerald-bold
-  static const _rose = Color(0xFFFF4D4D);
-  static const _roseBold = Color(0xFFDC2626);
+  static const _carbonAccent = Color(0xFF3F73FF); // dark+carbon accent
+  static const _turquoiseVivid = Color(0xFF00E6D2); // dark+flux accent
+  static const _turquoiseBold = Color(0xFF0094A8); // light+flux accent
+  static const _emeraldVivid = Color(0xFF2EE6A6); // dark+flux up
+  static const _emeraldLight = Color(0xFF00936B); // light up
+  static const _rose = Color(0xFFFF5D77); // dark+flux down
+  static const _roseLight = Color(0xFFD22A47); // light down
 
   // Neutrals
   static const _carbon = Color(0xFF020D23); // --color-carbon
@@ -38,8 +37,11 @@ abstract final class AppTheme {
   static ThemeData dark(AppVisualDirection direction) {
     final primary = direction == AppVisualDirection.flux
         ? _turquoiseVivid
-        : _cobaltVivid;
-    final surface = direction == AppVisualDirection.flux ? _dark : _carbonHover;
+        : _carbonAccent;
+    final surface = direction == AppVisualDirection.flux
+        ? const Color(0xFF06080F)
+        : const Color(0xFF061336);
+    final card = const Color(0xFF0E131F);
 
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primary,
@@ -47,7 +49,7 @@ abstract final class AppTheme {
       surface: surface,
       primary: primary,
       onPrimary: _white,
-      secondary: const Color(0xFF1A1A1A),
+      secondary: const Color(0xFF10151F),
       onSecondary: _white,
       error: _rose,
       onError: _white,
@@ -57,6 +59,7 @@ abstract final class AppTheme {
 
     return _baseTheme(
       colorScheme: colorScheme,
+      cardColor: card,
       appColorTheme: AppColorTheme(
         bullish: _emeraldVivid,
         bearish: _rose,
@@ -74,11 +77,12 @@ abstract final class AppTheme {
         ? _turquoiseBold
         : _cobaltVivid;
     final accent = direction == AppVisualDirection.flux
-        ? const Color(0xFFBDECF6)
-        : _titanium;
+        ? _turquoiseBold
+        : _cobaltVivid;
     final surface = direction == AppVisualDirection.flux
         ? _titanium
         : _lightSurface;
+    final card = _lightSurface;
 
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primary,
@@ -88,7 +92,7 @@ abstract final class AppTheme {
       onPrimary: _white,
       secondary: _titanium,
       onSecondary: _carbon,
-      error: _roseBold,
+      error: _roseLight,
       onError: _white,
       outline: _carbon8,
       outlineVariant: _carbon8,
@@ -96,9 +100,10 @@ abstract final class AppTheme {
 
     return _baseTheme(
       colorScheme: colorScheme,
+      cardColor: card,
       appColorTheme: AppColorTheme(
-        bullish: _emeraldBold,
-        bearish: _roseBold,
+        bullish: _emeraldLight,
+        bearish: _roseLight,
         accent: accent,
         surfaceGlass: _carbon8,
         subtleText: _carbon60,
@@ -110,6 +115,7 @@ abstract final class AppTheme {
   static ThemeData _baseTheme({
     required ColorScheme colorScheme,
     required AppColorTheme appColorTheme,
+    required Color cardColor,
   }) {
     final textTheme = _buildTextTheme(colorScheme.onSurface);
 
@@ -119,7 +125,7 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colorScheme.surface,
       canvasColor: colorScheme.surface,
-      cardColor: colorScheme.surface,
+      cardColor: cardColor,
       dividerColor: appColorTheme.borderSubtle,
       splashColor: appColorTheme.accent.withValues(alpha: 0.08),
       highlightColor: appColorTheme.accent.withValues(alpha: 0.04),

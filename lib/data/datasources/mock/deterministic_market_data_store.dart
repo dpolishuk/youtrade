@@ -1,12 +1,16 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/material.dart';
+
 import '../../../domain/entities/candle.dart';
 import '../../../domain/entities/order_book.dart';
+import '../../../domain/entities/position.dart';
 import '../../../domain/entities/symbol.dart';
 import '../../../domain/entities/ticker.dart';
 import '../../../domain/entities/timeframe.dart';
 import '../../../domain/entities/trade.dart';
+import '../../../domain/entities/venue.dart';
 
 /// Deterministic replacement for [MockMarketDataStore].
 ///
@@ -15,7 +19,7 @@ import '../../../domain/entities/trade.dart';
 /// exactly. The public API is identical to [MockMarketDataStore]; existing
 /// tests for that class continue to pass unchanged.
 final class DeterministicMarketDataStore {
-  DeterministicMarketDataStore();
+  const DeterministicMarketDataStore();
 
   static const int _modulus = 2147483647;
   static const int _multiplier = 16807;
@@ -93,8 +97,93 @@ final class DeterministicMarketDataStore {
   /// Extracted 24h delta percentage.
   static const String portfolio24hDeltaPct = '+2.04%';
 
+  /// Full deterministic equity curve used by the Portfolio screen.
+  static List<double> get equityCurve => List.unmodifiable(_equityCurve);
+
   /// First point of the mockup equity curve.
   static double get firstEquityCurvePoint => _equityCurve.first;
+
+  /// Portfolio allocation percentages and colors by venue.
+  static const Map<Venue, ({double share, Color color, Color tint})>
+  portfolioAllocation = {
+    Venue.binance: (
+      share: 41.9,
+      color: Color(0xFFF0B90B),
+      tint: Color(0x24F0B90B),
+    ),
+    Venue.bybit: (
+      share: 26.6,
+      color: Color(0xFFF7A600),
+      tint: Color(0x24F7A600),
+    ),
+    Venue.okx: (share: 19.7, color: Color(0xFF00E6D2), tint: Color(0x2800E6D2)),
+    Venue.coinbase: (
+      share: 11.9,
+      color: Color(0xFF0052FF),
+      tint: Color(0x240052FF),
+    ),
+  };
+
+  /// Exchange balances and 24h percent changes shown on the Portfolio screen.
+  static const Map<Venue, ({double value, double percentChange})>
+  portfolioExchanges = {
+    Venue.binance: (value: 312480.0, percentChange: 2.14),
+    Venue.bybit: (value: 198320.0, percentChange: -0.86),
+    Venue.okx: (value: 146900.0, percentChange: 1.42),
+    Venue.coinbase: (value: 88540.0, percentChange: 0.31),
+  };
+
+  /// Static position data matching the mockup Portfolio screen.
+  static const List<Position> portfolioPositions = [
+    Position(
+      symbol: 'BTCUSDT',
+      sym0: '฿',
+      side: 'LONG',
+      venue: 'Binance Perp',
+      qty: '1.84 BTC',
+      value: '\$107,320',
+      pnl: '+\$4,210',
+      tint: Color(0x24F7931A),
+      iconColor: Color(0xFFF7931A),
+    ),
+    Position(
+      symbol: 'ETHUSDT',
+      sym0: 'Ξ',
+      side: 'LONG',
+      venue: 'Bybit Perp',
+      qty: '22.5 ETH',
+      value: '\$66,375',
+      pnl: '-\$820',
+      tint: Color(0x28627EEA),
+      iconColor: Color(0xFF8B9CF0),
+    ),
+    Position(
+      symbol: 'AAPL',
+      sym0: 'A',
+      side: 'LONG',
+      venue: 'Coinbase',
+      qty: '120 sh',
+      value: '\$26,880',
+      pnl: '+\$312',
+      tint: Color(0x2800E6D2),
+      iconColor: Color(0xFF00E6D2),
+    ),
+    Position(
+      symbol: 'GC=F',
+      sym0: 'Au',
+      side: 'SHORT',
+      venue: 'OKX Futures',
+      qty: '4 lots',
+      value: '\$31,200',
+      pnl: '+\$680',
+      tint: Color(0x28FFC457),
+      iconColor: Color(0xFFFFC457),
+    ),
+  ];
+
+  /// Asset class mix label shown above the allocation bar.
+  static const String portfolioAssetMix =
+      'Spot 41 · Perp 38 · Eq 12 · Fut 6 · Opt 3';
 
   /// Last BTC price from the deterministic series.
   static double get btcLastPrice => _candles['BTCUSDT']!.last.close;

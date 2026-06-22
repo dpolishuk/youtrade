@@ -37,9 +37,9 @@ class ExchangeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>();
-    final effectivePctColor = data.percent >= 0
-        ? appColors?.bullish ?? Colors.green
-        : appColors?.bearish ?? Colors.red;
+    final bullish = appColors?.bullish ?? Colors.green;
+    final bearish = appColors?.bearish ?? Colors.red;
+    final effectivePctColor = data.percent >= 0 ? bullish : bearish;
 
     return InkWell(
       onTap: onTap,
@@ -64,6 +64,7 @@ class ExchangeCard extends StatelessWidget {
               child: Text(
                 data.initial,
                 style: theme.textTheme.titleMedium?.copyWith(
+                  fontFamily: 'Space Grotesk',
                   color: data.color,
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
@@ -81,6 +82,8 @@ class ExchangeCard extends StatelessWidget {
                         data.name,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          letterSpacing: -0.01 * 14,
                           color: theme.colorScheme.onSurface,
                         ),
                       ),
@@ -90,13 +93,11 @@ class ExchangeCard extends StatelessWidget {
                           width: 6,
                           height: 6,
                           decoration: BoxDecoration(
-                            color: effectivePctColor,
+                            color: bullish,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: effectivePctColor.withValues(
-                                  alpha: 0.35,
-                                ),
+                                color: bullish.withValues(alpha: 0.18),
                                 blurRadius: 6,
                               ),
                             ],
@@ -108,8 +109,10 @@ class ExchangeCard extends StatelessWidget {
                   Text(
                     data.kinds,
                     style: theme.textTheme.labelSmall?.copyWith(
+                      fontFamily: 'JetBrains Mono',
                       color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 0.05 * 9,
+                      letterSpacing: 0.05 * 9.5,
+                      fontSize: 9.5,
                     ),
                   ),
                 ],
@@ -122,7 +125,8 @@ class ExchangeCard extends StatelessWidget {
                   data.value,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Geist Mono',
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 14,
                     color: theme.colorScheme.onSurface,
                   ),
                 ),
@@ -131,7 +135,8 @@ class ExchangeCard extends StatelessWidget {
                   '${data.percent >= 0 ? '+' : ''}${data.percent.toStringAsFixed(2)}%',
                   style: theme.textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Geist Mono',
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 11,
                     color: effectivePctColor,
                   ),
                 ),

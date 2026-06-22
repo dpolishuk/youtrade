@@ -20,7 +20,7 @@ void main() {
 
       expect(theme.brightness, Brightness.light);
       expect(theme.colorScheme.brightness, Brightness.light);
-      expect(theme.colorScheme.primary, const Color(0xFF005060));
+      expect(theme.colorScheme.primary, const Color(0xFF0094A8));
     });
 
     test('dark theme uses expected brightness and color scheme', () {
@@ -28,7 +28,7 @@ void main() {
 
       expect(theme.brightness, Brightness.dark);
       expect(theme.colorScheme.brightness, Brightness.dark);
-      expect(theme.colorScheme.primary, const Color(0xFF0355F3));
+      expect(theme.colorScheme.primary, const Color(0xFF3F73FF));
     });
 
     test('Flux and Carbon directions produce different accent colors', () {
@@ -50,17 +50,17 @@ void main() {
       // so the test catches swaps or accidental overrides.
       expect(
         appColors!.bullish,
-        const Color(0xFF01A54C),
+        const Color(0xFF2EE6A6),
         reason: 'bullish must be emerald vivid',
       );
       expect(
         appColors.bearish,
-        const Color(0xFFFF4D4D),
+        const Color(0xFFFF5D77),
         reason: 'bearish must be rose',
       );
       expect(
         appColors.accent,
-        const Color(0xFF00BBCC),
+        const Color(0xFF00E6D2),
         reason: 'accent must be turquoise vivid for Flux dark',
       );
     });

@@ -25,22 +25,20 @@ class AllocationBar extends StatelessWidget {
     final total = segments.fold(0.0, (sum, s) => sum + s.share);
     final effectiveTotal = total <= 0 ? 1.0 : total;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(5),
-          child: Row(
-            children: [
-              for (final segment in segments)
-                Expanded(
-                  flex: (segment.share / effectiveTotal * 1000).round(),
-                  child: Container(height: 9, color: segment.color),
-                ),
-            ],
-          ),
-        ),
-      ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(5),
+      child: Row(
+        children: [
+          for (var i = 0; i < segments.length; i++) ...[
+            Expanded(
+              flex: (segments[i].share / effectiveTotal * 1000).round(),
+              child: Container(height: 9, color: segments[i].color),
+            ),
+            if (i < segments.length - 1)
+              Container(width: 2, height: 9, color: Colors.transparent),
+          ],
+        ],
+      ),
     );
   }
 }

@@ -60,6 +60,7 @@ class PositionTile extends StatelessWidget {
               child: Text(
                 data.symbolInitial,
                 style: theme.textTheme.labelMedium?.copyWith(
+                  fontFamily: 'Space Grotesk',
                   color: data.iconColor,
                   fontWeight: FontWeight.w600,
                   fontSize: 12,
@@ -77,6 +78,7 @@ class PositionTile extends StatelessWidget {
                         data.symbol,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
+                          fontSize: 13,
                           color: theme.colorScheme.onSurface,
                         ),
                       ),
@@ -93,6 +95,7 @@ class PositionTile extends StatelessWidget {
                         child: Text(
                           data.side,
                           style: theme.textTheme.labelSmall?.copyWith(
+                            fontFamily: 'JetBrains Mono',
                             color: data.sideColor,
                             fontWeight: FontWeight.w700,
                             fontSize: 8,
@@ -106,6 +109,7 @@ class PositionTile extends StatelessWidget {
                   Text(
                     '${data.venue} · ${data.quantity}',
                     style: theme.textTheme.labelSmall?.copyWith(
+                      fontFamily: 'JetBrains Mono',
                       color: theme.colorScheme.onSurfaceVariant,
                       fontSize: 9.5,
                     ),
@@ -120,7 +124,7 @@ class PositionTile extends StatelessWidget {
                   data.value,
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Geist Mono',
+                    fontFamily: 'JetBrains Mono',
                     fontSize: 12.5,
                     color: theme.colorScheme.onSurface,
                   ),
@@ -130,7 +134,7 @@ class PositionTile extends StatelessWidget {
                   data.pnl,
                   style: theme.textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Geist Mono',
+                    fontFamily: 'JetBrains Mono',
                     fontSize: 10.5,
                     color: data.pnlColor,
                   ),

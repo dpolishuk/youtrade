@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../domain/entities/position.dart';
+import '../../presentation/providers/portfolio_data_provider.dart';
 import '../../presentation/theme/theme_extensions.dart';
 import '../../presentation/theme/theme_mode.dart';
 import '../../presentation/theme/theme_provider.dart';
@@ -16,8 +19,8 @@ class PortfolioScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>();
     final settings = ref.watch(themeSettingsProvider);
+    final portfolio = ref.watch(portfolioDataProvider);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -38,21 +41,21 @@ class PortfolioScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildNetWorthLabel(context),
-                      _buildTotalEquity(context),
-                      _buildDeltaRow(context, appColors),
+                      _buildNetWorthLabel(context, portfolio.venueCount),
+                      _buildTotalEquity(context, portfolio.netWorthFormatted),
+                      _buildDeltaRow(context, portfolio),
                       const SizedBox(height: 14),
-                      const EquityCurve(),
+                      EquityCurve(data: portfolio.equityCurve),
                       const SizedBox(height: 18),
-                      _buildAllocationHeader(context),
+                      _buildAllocationHeader(context, portfolio.assetMix),
                       const SizedBox(height: 9),
-                      _buildAllocationBar(),
+                      _buildAllocationBar(portfolio.allocationSegments),
                       const SizedBox(height: 14),
-                      _buildExchangeCards(context),
+                      _buildExchangeCards(context, portfolio.exchanges),
                       const SizedBox(height: 20),
                       _buildPositionsHeader(context),
                       const SizedBox(height: 9),
-                      _buildPositionsList(context),
+                      _buildPositionsList(context, portfolio.positions),
                     ],
                   ),
                 ),
@@ -71,6 +74,7 @@ class PortfolioScreen extends ConsumerWidget {
   ) {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>();
+    final accent = appColors?.accent ?? theme.colorScheme.primary;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 6, 18, 12),
@@ -80,18 +84,20 @@ class PortfolioScreen extends ConsumerWidget {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: appColors?.accent ?? theme.colorScheme.primary,
+              color: accent,
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: (appColors?.accent ?? theme.colorScheme.primary)
-                      .withValues(alpha: 0.35),
+                  color: accent.withValues(alpha: 0.35),
                   blurRadius: 18,
                 ),
               ],
             ),
             alignment: Alignment.center,
-            child: const Icon(Icons.trending_up, color: Colors.white, size: 17),
+            child: CustomPaint(
+              size: const Size(17, 17),
+              painter: _CheckmarkPainter(color: Colors.white),
+            ),
           ),
           const SizedBox(width: 9),
           Column(
@@ -100,8 +106,12 @@ class PortfolioScreen extends ConsumerWidget {
               Text(
                 'YouTrade',
                 style: theme.textTheme.titleMedium?.copyWith(
+                  fontFamily: 'Space Grotesk',
                   fontWeight: FontWeight.w500,
+                  fontSize: 16,
                   letterSpacing: -0.04 * 16,
+                  height: 1,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 3),
@@ -110,6 +120,7 @@ class PortfolioScreen extends ConsumerWidget {
                     ? 'Flux Terminal'
                     : 'Carbon Terminal',
                 style: theme.textTheme.labelSmall?.copyWith(
+                  fontFamily: 'JetBrains Mono',
                   color: theme.colorScheme.onSurfaceVariant,
                   letterSpacing: 0.14 * 8.5,
                   fontSize: 8.5,
@@ -138,10 +149,11 @@ class PortfolioScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNetWorthLabel(BuildContext context) {
+  Widget _buildNetWorthLabel(BuildContext context, int venueCount) {
     return Text(
-      'Aggregated net worth · 3 venues',
+      'Aggregated net worth · $venueCount venues',
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        fontFamily: 'JetBrains Mono',
         color: Theme.of(context).colorScheme.onSurfaceVariant,
         letterSpacing: 0.16 * 9.5,
         fontSize: 9.5,
@@ -149,8 +161,11 @@ class PortfolioScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTotalEquity(BuildContext context) {
+  Widget _buildTotalEquity(BuildContext context, String formattedValue) {
     final theme = Theme.of(context);
+    final parts = formattedValue.split('.');
+    final whole = parts.first;
+    final fraction = parts.length > 1 ? '.${parts.last}' : '.00';
 
     return FittedBox(
       fit: BoxFit.scaleDown,
@@ -159,23 +174,23 @@ class PortfolioScreen extends ConsumerWidget {
         TextSpan(
           children: [
             TextSpan(
-              text: '\$124,350',
+              text: whole,
               style: theme.textTheme.displaySmall?.copyWith(
+                fontFamily: 'Space Grotesk',
                 fontWeight: FontWeight.w500,
                 letterSpacing: -0.045 * 43,
                 fontSize: 43,
                 height: 0.95,
-                fontFamily: 'Space Grotesk',
                 color: theme.colorScheme.onSurface,
               ),
             ),
             TextSpan(
-              text: '.42',
+              text: fraction,
               style: theme.textTheme.displaySmall?.copyWith(
+                fontFamily: 'Space Grotesk',
                 fontSize: 18,
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 0.95,
-                fontFamily: 'Space Grotesk',
               ),
             ),
           ],
@@ -184,8 +199,9 @@ class PortfolioScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDeltaRow(BuildContext context, AppColorTheme? appColors) {
+  Widget _buildDeltaRow(BuildContext context, PortfolioData portfolio) {
     final theme = Theme.of(context);
+    final appColors = theme.extension<AppColorTheme>();
     final color = appColors?.bullish ?? Colors.green;
 
     return Padding(
@@ -195,20 +211,20 @@ class PortfolioScreen extends ConsumerWidget {
           Icon(Icons.arrow_upward, size: 13, color: color),
           const SizedBox(width: 4),
           Text(
-            '+\$1,284.50',
+            portfolio.deltaAmountFormatted,
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
-              fontFamily: 'Geist Mono',
+              fontFamily: 'JetBrains Mono',
               fontSize: 13,
               color: color,
             ),
           ),
           const SizedBox(width: 10),
           Text(
-            '+1.04%',
+            portfolio.deltaPercent,
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
-              fontFamily: 'Geist Mono',
+              fontFamily: 'JetBrains Mono',
               fontSize: 13,
               color: color,
             ),
@@ -217,7 +233,7 @@ class PortfolioScreen extends ConsumerWidget {
           Text(
             '24h',
             style: theme.textTheme.labelSmall?.copyWith(
-              fontFamily: 'Geist Mono',
+              fontFamily: 'JetBrains Mono',
               fontSize: 11,
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -227,7 +243,7 @@ class PortfolioScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAllocationHeader(BuildContext context) {
+  Widget _buildAllocationHeader(BuildContext context, String assetMix) {
     final theme = Theme.of(context);
 
     return Row(
@@ -236,82 +252,65 @@ class PortfolioScreen extends ConsumerWidget {
         Text(
           'Allocation by venue',
           style: theme.textTheme.labelSmall?.copyWith(
+            fontFamily: 'JetBrains Mono',
             color: theme.colorScheme.onSurfaceVariant,
             letterSpacing: 0.14 * 9.5,
             fontSize: 9.5,
           ),
         ),
-        Text(
-          'Mixed assets',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            letterSpacing: 0.06 * 9.5,
-            fontSize: 9.5,
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            assetMix,
+            textAlign: TextAlign.right,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontFamily: 'JetBrains Mono',
+              color: theme.colorScheme.onSurfaceVariant,
+              letterSpacing: 0.06 * 9.5,
+              fontSize: 9.5,
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAllocationBar() {
-    return const AllocationBar(
-      segments: [
-        AllocationSegment(
-          label: 'Binance',
-          color: Color(0xFFF0B90B),
-          share: 45,
-        ),
-        AllocationSegment(label: 'Bybit', color: Color(0xFFFFC107), share: 30),
-        AllocationSegment(
-          label: 'Coinbase',
-          color: Color(0xFF0052FF),
-          share: 25,
-        ),
-      ],
+  Widget _buildAllocationBar(List<PortfolioAllocationSegment> segments) {
+    return AllocationBar(
+      segments: segments
+          .map(
+            (s) => AllocationSegment(
+              label: s.venue.displayName,
+              color: s.color,
+              share: s.share,
+            ),
+          )
+          .toList(),
     );
   }
 
-  Widget _buildExchangeCards(BuildContext context) {
-    final theme = Theme.of(context);
-    final appColors = theme.extension<AppColorTheme>();
-    final accent = appColors?.accent ?? theme.colorScheme.primary;
-
-    final exchanges = [
-      ExchangeCardData(
-        name: 'Binance',
-        initial: 'B',
-        kinds: 'SPOT · PERPS · OPTIONS',
-        value: '\$55,957.69',
-        percent: 1.24,
-        color: const Color(0xFFF0B90B),
-        tint: const Color(0x26F0B90B),
-      ),
-      ExchangeCardData(
-        name: 'Bybit',
-        initial: 'Y',
-        kinds: 'PERPS · SPOT',
-        value: '\$37,305.13',
-        percent: -0.38,
-        color: accent,
-        tint: accent.withValues(alpha: 0.15),
-      ),
-      ExchangeCardData(
-        name: 'Coinbase',
-        initial: 'C',
-        kinds: 'SPOT',
-        value: '\$31,087.60',
-        percent: 0.72,
-        color: const Color(0xFF0052FF),
-        tint: const Color(0x260052FF),
-      ),
-    ];
-
+  Widget _buildExchangeCards(
+    BuildContext context,
+    List<PortfolioExchange> exchanges,
+  ) {
     return Column(
       children: exchanges
           .map(
             (e) => Padding(
               padding: const EdgeInsets.only(bottom: 9),
-              child: ExchangeCard(data: e),
+              child: ExchangeCard(
+                data: ExchangeCardData(
+                  name: e.venue.displayName,
+                  initial: e.initial,
+                  kinds: e.kinds,
+                  value: e.value,
+                  percent: e.percentChange,
+                  color: e.color,
+                  tint: e.tint,
+                ),
+                onTap: () => context.push('/markets/exchange/${e.venue.id}'),
+              ),
             ),
           )
           .toList(),
@@ -327,13 +326,14 @@ class PortfolioScreen extends ConsumerWidget {
         Text(
           'Open positions',
           style: theme.textTheme.labelSmall?.copyWith(
+            fontFamily: 'JetBrains Mono',
             color: theme.colorScheme.onSurfaceVariant,
             letterSpacing: 0.14 * 9.5,
             fontSize: 9.5,
           ),
         ),
         TextButton(
-          onPressed: () {},
+          onPressed: () => context.push('/orders'),
           style: TextButton.styleFrom(
             padding: EdgeInsets.zero,
             minimumSize: Size.zero,
@@ -342,6 +342,7 @@ class PortfolioScreen extends ConsumerWidget {
           child: Text(
             'Orders →',
             style: theme.textTheme.labelSmall?.copyWith(
+              fontFamily: 'JetBrains Mono',
               color: theme.colorScheme.primary,
               fontWeight: FontWeight.w600,
               fontSize: 10,
@@ -352,53 +353,11 @@ class PortfolioScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPositionsList(BuildContext context) {
+  Widget _buildPositionsList(BuildContext context, List<Position> positions) {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>();
     final bullish = appColors?.bullish ?? Colors.green;
     final bearish = appColors?.bearish ?? Colors.red;
-
-    final positions = [
-      PositionTileData(
-        symbol: 'BTC',
-        symbolInitial: '₿',
-        side: 'LONG',
-        venue: 'Binance',
-        quantity: '0.42 BTC',
-        value: '\$28,420.00',
-        pnl: '+\$840.50',
-        pnlColor: bullish,
-        iconTint: const Color(0xFFF7931A),
-        sideTint: bullish.withValues(alpha: 0.15),
-        sideColor: bullish,
-      ),
-      PositionTileData(
-        symbol: 'ETH',
-        symbolInitial: 'Ξ',
-        side: 'LONG',
-        venue: 'Bybit',
-        quantity: '4.20 ETH',
-        value: '\$12,610.00',
-        pnl: '-\$210.30',
-        pnlColor: bearish,
-        iconTint: const Color(0xFF627EEA),
-        sideTint: bullish.withValues(alpha: 0.15),
-        sideColor: bullish,
-      ),
-      PositionTileData(
-        symbol: 'SOL',
-        symbolInitial: 'S',
-        side: 'SHORT',
-        venue: 'Binance',
-        quantity: '120 SOL',
-        value: '\$14,760.00',
-        pnl: '+\$305.20',
-        pnlColor: bullish,
-        iconTint: const Color(0xFF14F195),
-        sideTint: bearish.withValues(alpha: 0.15),
-        sideColor: bearish,
-      ),
-    ];
 
     return Container(
       decoration: BoxDecoration(
@@ -406,14 +365,43 @@ class PortfolioScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(11),
         border: Border.all(color: theme.dividerColor),
       ),
-      child: Column(children: _separatedTiles(positions)),
+      child: Column(
+        children: _separatedTiles(context, positions, bullish, bearish),
+      ),
     );
   }
 
-  List<Widget> _separatedTiles(List<PositionTileData> positions) {
+  List<Widget> _separatedTiles(
+    BuildContext context,
+    List<Position> positions,
+    Color bullish,
+    Color bearish,
+  ) {
     final widgets = <Widget>[];
     for (var i = 0; i < positions.length; i++) {
-      widgets.add(PositionTile(data: positions[i]));
+      final p = positions[i];
+      final isLong = p.isLong;
+      widgets.add(
+        PositionTile(
+          data: PositionTileData(
+            symbol: p.symbol,
+            symbolInitial: p.sym0,
+            side: p.side,
+            venue: p.venue,
+            quantity: p.qty,
+            value: p.value,
+            pnl: p.pnl,
+            pnlColor: p.pnl.startsWith('+') ? bullish : bearish,
+            iconTint: p.tint,
+            sideTint: isLong
+                ? bullish.withValues(alpha: 0.16)
+                : bearish.withValues(alpha: 0.16),
+            sideColor: isLong ? bullish : bearish,
+            iconColor: p.iconColor,
+          ),
+          onTap: () => context.push('/trading?symbol=${p.symbol}'),
+        ),
+      );
       if (i < positions.length - 1) {
         widgets.add(const Divider(height: 1, indent: 55));
       }
@@ -504,7 +492,7 @@ class _DirectionButton extends StatelessWidget {
               label,
               style: theme.textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w600,
-                fontFamily: 'Geist Mono',
+                fontFamily: 'JetBrains Mono',
                 fontSize: 10,
                 letterSpacing: 0.08 * 10,
                 color: accent,
@@ -515,4 +503,30 @@ class _DirectionButton extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CheckmarkPainter extends CustomPainter {
+  const _CheckmarkPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final path = Path()
+      ..moveTo(size.width * 0.22, size.height * 0.52)
+      ..lineTo(size.width * 0.44, size.height * 0.74)
+      ..lineTo(size.width * 0.78, size.height * 0.28);
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
