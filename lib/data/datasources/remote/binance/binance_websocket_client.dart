@@ -128,7 +128,7 @@ class BinanceWebSocketClient implements MarketStreamSource {
       bid: double.parse(json['b'] as String),
       ask: double.parse(json['a'] as String),
       change24h: double.parse(json['p'] as String),
-      change24hPercent: double.parse(json['P'] as String) / 100,
+      change24hPercent: double.parse(json['P'] as String),
       volume: double.parse(json['v'] as String),
       timestamp: DateTime.fromMillisecondsSinceEpoch(
         json['E'] as int,

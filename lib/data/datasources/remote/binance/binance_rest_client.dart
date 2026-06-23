@@ -172,7 +172,7 @@ final class BinanceRestClient
       ask: double.parse(json['askPrice'] as String),
       change24h: double.parse(json['priceChange'] as String),
       change24hPercent:
-          double.parse(json['priceChangePercent'] as String) / 100,
+          double.parse(json['priceChangePercent'] as String),
       volume: double.parse(json['volume'] as String),
       timestamp: DateTime.fromMillisecondsSinceEpoch(
         json['closeTime'] as int,

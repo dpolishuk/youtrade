@@ -200,7 +200,7 @@ final class OKXRestClient
     final lastPrice = double.parse(json['last'] as String);
     final open24h = double.parse(json['open24h'] as String);
     final change24h = lastPrice - open24h;
-    final change24hPercent = open24h == 0.0 ? 0.0 : change24h / open24h;
+    final change24hPercent = open24h == 0.0 ? 0.0 : change24h / open24h * 100;
 
     return Ticker(
       symbol: symbol,

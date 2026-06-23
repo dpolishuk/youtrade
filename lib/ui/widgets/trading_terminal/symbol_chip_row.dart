@@ -18,13 +18,13 @@ final _chipSymbols = [
   TradingSymbol(
     base: 'ETH',
     quote: 'USDT',
-    venue: Venue.binance,
+    venue: Venue.bybit,
     rawSymbol: 'ETHUSDT',
   ),
   TradingSymbol(
     base: 'SOL',
     quote: 'USDT',
-    venue: Venue.binance,
+    venue: Venue.okx,
     rawSymbol: 'SOLUSDT',
   ),
   TradingSymbol(

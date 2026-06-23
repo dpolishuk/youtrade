@@ -267,6 +267,24 @@ void main() {
       expect(find.text('Ethereum Perpetual · Bybit'), findsOneWidget);
     });
 
+    testWidgets(
+      'tapping a chip overrides the deep-linked symbol parameter',
+      (tester) async {
+        await tester.pumpWidget(_buildApp(symbol: 'ETH'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(find.text('ETHUSDT'), findsOneWidget);
+
+        await tester.tap(find.byKey(const ValueKey('symbol_chip_BTC')));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(find.text('BTCUSDT'), findsOneWidget);
+        expect(find.text('Bitcoin Perpetual · Binance'), findsOneWidget);
+      },
+    );
+
     testWidgets('parses GC=F futures symbol parameter', (tester) async {
       await tester.pumpWidget(_buildApp(symbol: 'GC=F'));
       await tester.pump();

@@ -21,8 +21,8 @@ class OptionsChainScreen extends StatefulWidget {
 class _OptionsChainScreenState extends State<OptionsChainScreen> {
   static final _expiries = DeterministicMarketDataStore.btcOptionExpiries;
 
-  List<OptionChainStrike> get _rows =>
-      widget.rows ?? DeterministicMarketDataStore.btcOptionsChain;
+  List<OptionChainStrike> _rowsFor(String symbol) =>
+      widget.rows ?? DeterministicMarketDataStore.optionsChainFor(symbol);
 
   int _selectedExpiryIndex = 0;
 
@@ -31,8 +31,10 @@ class _OptionsChainScreenState extends State<OptionsChainScreen> {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>()!;
     final symbol = _displaySymbol(widget.symbol);
-    final spot = DeterministicMarketDataStore.btcLastPrice;
-    final atmStrike = DeterministicMarketDataStore.btcOptionsAtmStrike;
+    final rawSymbol = _rawSymbol(widget.symbol);
+    final spot = DeterministicMarketDataStore.lastPriceFor(rawSymbol);
+    final atmStrike = DeterministicMarketDataStore.optionsAtmStrikeFor(spot);
+    final rows = _rowsFor(rawSymbol);
 
     return Scaffold(
       body: SafeArea(
@@ -62,7 +64,7 @@ class _OptionsChainScreenState extends State<OptionsChainScreen> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: appColors.borderSubtle),
                   ),
-                  child: _rows.isEmpty
+                  child: rows.isEmpty
                       ? Padding(
                           padding: const EdgeInsets.all(24),
                           child: Center(
@@ -78,10 +80,10 @@ class _OptionsChainScreenState extends State<OptionsChainScreen> {
                           borderRadius: BorderRadius.circular(10),
                           child: Column(
                             children: [
-                              for (var i = 0; i < _rows.length; i++)
+                              for (var i = 0; i < rows.length; i++)
                                 StrikeRow(
-                                  row: _rows[i],
-                                  isLast: i == _rows.length - 1,
+                                  row: rows[i],
+                                  isLast: i == rows.length - 1,
                                 ),
                             ],
                           ),
@@ -107,7 +109,18 @@ class _OptionsChainScreenState extends State<OptionsChainScreen> {
 
   String _displaySymbol(String? symbol) {
     final raw = (symbol ?? 'BTC').toUpperCase();
+    if (raw == 'GC=F' || raw == 'GOLD') return 'GOLD';
+    if (raw == 'CL=F' || raw == 'OIL') return 'OIL';
     return raw.replaceAll('USDT', '').replaceAll(RegExp(r'=F$'), '');
+  }
+
+  String _rawSymbol(String? symbol) {
+    final raw = (symbol ?? 'BTC').toUpperCase();
+    return switch (raw) {
+      'GOLD' => 'GC=F',
+      'OIL' => 'CL=F',
+      _ => raw,
+    };
   }
 }
 

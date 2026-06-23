@@ -43,7 +43,7 @@ void main() {
           expect(ticker.lastPrice, 100.0);
           expect(ticker.bid, 99.5);
           expect(ticker.ask, 100.5);
-          expect(ticker.change24hPercent, 0.01);
+          expect(ticker.change24hPercent, 1.0);
           expect(ticker.volume, 1000.0);
         },
         failure: (_) => fail('expected success'),

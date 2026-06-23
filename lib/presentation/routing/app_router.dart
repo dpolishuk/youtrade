@@ -32,6 +32,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     errorBuilder: (context, state) => const _RedirectHome(),
     redirect: (context, state) {
       final location = state.uri.path;
+      final fullLocation = state.uri.toString();
       final isAuthRoute = location == '/auth';
       final authState = ProviderScope.containerOf(
         context,
@@ -44,7 +45,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (!isAuthenticated && !isPublicRoute) {
         return Uri(
           path: '/auth',
-          queryParameters: {'from': location},
+          queryParameters: {'from': fullLocation},
         ).toString();
       }
       if (isAuthenticated && isAuthRoute) {

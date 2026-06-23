@@ -40,42 +40,77 @@ enum SymbolClass {
 }
 
 SymbolMetadata resolveSymbolMetadata(TradingSymbol symbol) {
-  final key = symbol.rawSymbol.toUpperCase();
+  final key = (symbol.venue, symbol.rawSymbol.toUpperCase());
   return switch (key) {
-    'BTCUSDT' => const SymbolMetadata(
+    (Venue.binance, 'BTCUSDT') => const SymbolMetadata(
       name: 'Bitcoin Perpetual',
       symbolClass: SymbolClass.perp,
       base: 'BTC',
       decimals: 1,
       venue: Venue.binance,
     ),
-    'ETHUSDT' => const SymbolMetadata(
+    (Venue.bybit, 'ETHUSDT') => const SymbolMetadata(
       name: 'Ethereum Perpetual',
       symbolClass: SymbolClass.perp,
       base: 'ETH',
       decimals: 2,
       venue: Venue.bybit,
     ),
-    'SOLUSDT' => const SymbolMetadata(
+    (Venue.okx, 'SOLUSDT') => const SymbolMetadata(
       name: 'Solana',
       symbolClass: SymbolClass.spot,
       base: 'SOL',
       decimals: 2,
       venue: Venue.okx,
     ),
-    'AAPL' => const SymbolMetadata(
+    (Venue.binance, 'XRPUSDT') => const SymbolMetadata(
+      name: 'XRP',
+      symbolClass: SymbolClass.spot,
+      base: 'XRP',
+      decimals: 4,
+      venue: Venue.binance,
+    ),
+    (Venue.coinbase, 'AAPL') => const SymbolMetadata(
       name: 'Apple Inc.',
       symbolClass: SymbolClass.equity,
       base: 'AAPL',
       decimals: 2,
       venue: Venue.coinbase,
     ),
-    'GC=F' => const SymbolMetadata(
-      name: 'Gold Futures · Dec',
+    (Venue.coinbase, 'NVDA') => const SymbolMetadata(
+      name: 'NVIDIA Corp.',
+      symbolClass: SymbolClass.equity,
+      base: 'NVDA',
+      decimals: 2,
+      venue: Venue.coinbase,
+    ),
+    (Venue.coinbase, 'TSLA') => const SymbolMetadata(
+      name: 'Tesla Inc.',
+      symbolClass: SymbolClass.equity,
+      base: 'TSLA',
+      decimals: 2,
+      venue: Venue.coinbase,
+    ),
+    (Venue.okx, 'GC=F') => const SymbolMetadata(
+      name: 'Gold Futures \u00b7 Dec',
       symbolClass: SymbolClass.future,
       base: 'XAU',
       decimals: 1,
       venue: Venue.okx,
+    ),
+    (Venue.okx, 'CL=F') => const SymbolMetadata(
+      name: 'Crude Oil Futures \u00b7 Dec',
+      symbolClass: SymbolClass.future,
+      base: 'CL',
+      decimals: 2,
+      venue: Venue.okx,
+    ),
+    (Venue.bybit, 'BTC-28K-C') => const SymbolMetadata(
+      name: 'BTC 28K Call',
+      symbolClass: SymbolClass.option,
+      base: 'BTC-28K-C',
+      decimals: 2,
+      venue: Venue.bybit,
     ),
     _ => SymbolMetadata(
       name: symbol.base,

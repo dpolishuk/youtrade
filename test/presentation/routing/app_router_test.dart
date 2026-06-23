@@ -177,6 +177,27 @@ void main() {
     );
 
     testWidgets(
+      'preserves query string when redirecting unauthenticated deep link',
+      (tester) async {
+        when(
+          () => mockService.canCheckBiometrics(),
+        ).thenAnswer((_) async => false);
+
+        final container = createContainer();
+        final router = container.read(appRouterProvider);
+        router.go('/trading?symbol=ETH');
+
+        await tester.pumpWidget(
+          buildRouter(router: router, container: container),
+        );
+        await pumpFrames(tester);
+
+        expect(router.state.uri.path, '/auth');
+        expect(router.state.uri.queryParameters['from'], '/trading?symbol=ETH');
+      },
+    );
+
+    testWidgets(
       'redirects authenticated user from /auth without from to home',
       (tester) async {
         when(
@@ -329,6 +350,37 @@ void main() {
         await pumpFrames(tester);
 
         expect(router.state.uri.path, '/orders');
+      },
+    );
+
+    testWidgets(
+      'redirects authenticated users back to deep link with query string',
+      (tester) async {
+        when(
+          () => mockService.canCheckBiometrics(),
+        ).thenAnswer((_) async => false);
+
+        final container = createContainer();
+        final router = container.read(appRouterProvider);
+        router.go('/trading?symbol=ETH');
+
+        await tester.pumpWidget(
+          buildRouter(router: router, container: container),
+        );
+        await pumpFrames(tester);
+
+        expect(router.state.uri.path, '/auth');
+        expect(
+          router.state.uri.queryParameters['from'],
+          '/trading?symbol=ETH',
+        );
+
+        await tester.enterText(find.byType(TextField), '1234');
+        await tester.tap(find.text('Unlock with PIN'));
+        await pumpFrames(tester);
+
+        expect(router.state.uri.path, '/trading');
+        expect(router.state.uri.queryParameters['symbol'], 'ETH');
       },
     );
 

@@ -100,6 +100,17 @@ void main() {
       expect(find.text('BTCUSDT'), findsNothing);
     });
 
+    testWidgets('uses requested symbol for spot and strike data', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildScreen(symbol: 'ETHUSDT'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('ETH'), findsOneWidget);
+      // ETH spot is different from BTC spot, so the ATM strike should differ.
+      expect(find.text('ATM strike 106,000 · highlighted'), findsNothing);
+    });
+
     testWidgets('normalizes lowercase symbol to uppercase display', (
       tester,
     ) async {

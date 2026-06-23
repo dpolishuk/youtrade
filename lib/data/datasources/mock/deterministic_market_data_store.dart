@@ -425,18 +425,28 @@ final class DeterministicMarketDataStore implements MarketDataStore {
   }
 
   /// Last BTC price from the deterministic series.
-  static double get btcLastPrice => _candles['BTCUSDT']!.last.close;
+  static double get btcLastPrice => lastPriceFor('BTCUSDT');
+
+  /// Last price for any supported raw symbol from the deterministic series.
+  static double lastPriceFor(String rawSymbol) {
+    final data = _candles[rawSymbol] ?? _candles['BTCUSDT']!;
+    return data.last.close;
+  }
 
   /// First BTC open from the deterministic series.
   static double get btcFirstOpen => _candles['BTCUSDT']!.first.open;
 
-  /// ATM strike for BTC options derived from the deterministic spot price.
-  static double get btcOptionsAtmStrike {
-    final spot = btcLastPrice;
-    return (spot / 2000).round() * 2000.0;
+  /// ATM strike for options derived from the deterministic spot price.
+  static double optionsAtmStrikeFor(double spot) {
+    final step = spot >= 10000 ? 2000.0 : spot >= 1000 ? 200.0 : 20.0;
+    return (spot / step).round() * step;
   }
 
-  /// Expiration labels shown on the BTC options chain.
+  /// ATM strike for BTC options derived from the deterministic spot price.
+  static double get btcOptionsAtmStrike =>
+      optionsAtmStrikeFor(btcLastPrice);
+
+  /// Expiration labels shown on the options chain.
   static const List<String> btcOptionExpiries = [
     '26 JUN',
     '25 JUL',
@@ -444,20 +454,26 @@ final class DeterministicMarketDataStore implements MarketDataStore {
     '26 SEP',
   ];
 
+  /// Expiration labels for the requested symbol.
+  static List<String> optionExpiriesFor(String rawSymbol) =>
+      btcOptionExpiries;
+
   /// Deterministic BTC options chain rows matching the mockup exactly.
   static final List<OptionChainStrike> btcOptionsChain = List.unmodifiable(
-    _buildBtcOptionsChain(),
+    optionsChainFor('BTCUSDT'),
   );
 
-  static List<OptionChainStrike> _buildBtcOptionsChain() {
-    final spot = btcLastPrice;
-    final base = btcOptionsAtmStrike;
+  /// Deterministic options chain rows for the requested symbol.
+  static List<OptionChainStrike> optionsChainFor(String rawSymbol) {
+    final spot = lastPriceFor(rawSymbol);
+    final base = optionsAtmStrikeFor(spot);
+    final step = spot >= 10000 ? 2000.0 : spot >= 1000 ? 200.0 : 20.0;
     final strikes = <double>[];
     for (var i = -4; i <= 4; i++) {
-      strikes.add(base + i * 2000);
+      strikes.add(base + i * step);
     }
 
-    final optR = _rng(7);
+    final optR = _rng(rawSymbol == 'BTCUSDT' ? 7 : rawSymbol.hashCode);
     return strikes.map((strike) {
       final callInTheMoney = spot > strike;
       final distance = (spot - strike) / spot;

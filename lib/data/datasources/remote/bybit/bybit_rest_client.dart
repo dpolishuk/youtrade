@@ -212,7 +212,7 @@ final class BybitRestClient
       change24h: json['price24h'] == null
           ? 0.0
           : double.parse(json['price24h'] as String),
-      change24hPercent: double.parse(json['price24hPcnt'] as String),
+      change24hPercent: double.parse(json['price24hPcnt'] as String) * 100,
       volume: double.parse(json['volume24h'] as String),
       timestamp: DateTime.now().toUtc(),
     );

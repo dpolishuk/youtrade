@@ -152,7 +152,7 @@ class CoinbaseWebSocketClient implements MarketStreamSource {
     final lastPrice = double.parse(json['price'] as String);
     final open24h = double.parse(json['open_24h'] as String);
     final change24h = lastPrice - open24h;
-    final change24hPercent = open24h == 0.0 ? 0.0 : change24h / open24h;
+    final change24hPercent = open24h == 0.0 ? 0.0 : change24h / open24h * 100;
 
     return Ticker(
       symbol: symbol,

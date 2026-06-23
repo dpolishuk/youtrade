@@ -34,20 +34,35 @@ class _TradingTerminalScreenState extends ConsumerState<TradingTerminalScreen> {
   bool _invalidSymbolWarningShown = false;
 
   @override
+  void initState() {
+    super.initState();
+    _applyQuerySymbol();
+  }
+
+  @override
   void didUpdateWidget(covariant TradingTerminalScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.symbol != oldWidget.symbol) {
       _invalidSymbolWarningShown = false;
+      _applyQuerySymbol();
     }
   }
 
-  TradingSymbol _resolveSymbol() {
+  void _applyQuerySymbol() {
     final raw = widget.symbol?.trim();
-    if (raw != null && raw.isNotEmpty && _symbolPartRegex.hasMatch(raw)) {
-      return _symbolFromRaw(raw);
+    if (raw == null || raw.isEmpty) return;
+
+    if (_symbolPartRegex.hasMatch(raw)) {
+      final symbol = _symbolFromRaw(raw);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(selectedSymbolProvider.notifier).state = symbol;
+        }
+      });
+      return;
     }
 
-    if (raw != null && !_invalidSymbolWarningShown) {
+    if (!_invalidSymbolWarningShown) {
       _invalidSymbolWarningShown = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -56,8 +71,6 @@ class _TradingTerminalScreenState extends ConsumerState<TradingTerminalScreen> {
         );
       });
     }
-
-    return ref.watch(selectedSymbolProvider);
   }
 
   TradingSymbol _symbolFromRaw(String raw) {
@@ -134,7 +147,7 @@ class _TradingTerminalScreenState extends ConsumerState<TradingTerminalScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedSymbol = _resolveSymbol();
+    final selectedSymbol = ref.watch(selectedSymbolProvider);
     final terminalState = ref.watch(tradingTerminalProvider);
     final tickerAsync = ref.watch(tickerStreamProvider(selectedSymbol));
     final candlesAsync = ref.watch(

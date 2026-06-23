@@ -60,7 +60,7 @@ void main() {
           expect(ticker.bid, 99.5);
           expect(ticker.ask, 100.5);
           expect(ticker.change24h, 1.0);
-          expect(ticker.change24hPercent, closeTo(0.010101, 0.000001));
+          expect(ticker.change24hPercent, closeTo(1.010101, 0.000001));
           expect(ticker.volume, 1000.0);
           expect(
             ticker.timestamp,
@@ -688,7 +688,7 @@ void main() {
       result.when(
         success: (ticker) {
           expect(ticker.change24h, 200.0);
-          expect(ticker.change24hPercent, -2.0);
+          expect(ticker.change24hPercent, -200.0);
         },
         failure: (_) => fail('expected success'),
       );
