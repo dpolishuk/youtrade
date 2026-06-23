@@ -237,6 +237,7 @@ void main() {
 
       // Symbol chips from the mockup.
       expect(find.text('BTC'), findsWidgets);
+      expect(find.text('BTCUSDT'), findsOneWidget);
       expect(find.text('ETH'), findsOneWidget);
       expect(find.text('SOL'), findsOneWidget);
       expect(find.text('AAPL'), findsOneWidget);
@@ -262,7 +263,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.textContaining('ETH'), findsWidgets);
+      expect(find.text('ETHUSDT'), findsOneWidget);
       expect(find.text('Ethereum Perpetual · Bybit'), findsOneWidget);
     });
 
@@ -272,7 +273,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('GOLD'), findsOneWidget);
-      expect(find.text('XAU'), findsOneWidget);
+      expect(find.text('GC=F'), findsOneWidget);
       expect(find.text('Gold Futures · Dec · OKX'), findsOneWidget);
       expect(find.text('FUTURE'), findsOneWidget);
     });

@@ -73,7 +73,7 @@ void main() {
       await tester.pumpWidget(buildHeader());
       await tester.pumpAndSettle();
 
-      final symbolText = tester.widget<Text>(find.text('BTC'));
+      final symbolText = tester.widget<Text>(find.text('BTCUSDT'));
       expect(symbolText.style?.color, appColors.foreground);
     });
   });

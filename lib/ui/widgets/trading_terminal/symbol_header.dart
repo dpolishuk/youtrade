@@ -63,7 +63,7 @@ class SymbolHeader extends ConsumerWidget {
                   Row(
                     children: [
                       Text(
-                        meta.base,
+                        symbol.rawSymbol,
                         style: AppTheme.display(color: appColors.foreground)
                             .copyWith(
                               fontSize: 19,
