@@ -84,6 +84,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
   Future<Result<T>> _fetchWithCache<T>({
     required String errorContext,
     required VenueSources? sources,
+    required bool useMockOnly,
     required Future<T?> Function() getCached,
     required bool Function(T cached) isFresh,
     required Future<Result<T>> Function() fetchFromSource,
@@ -93,7 +94,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
   }) async {
     final cached = await getCached();
 
-    if (sources == null) {
+    if (sources == null || useMockOnly) {
       if (cached != null) return Success(cached);
       try {
         return Success(await fetchMock());
@@ -147,9 +148,11 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       );
     }
     final sources = _venueSources[symbol.venue];
+    final useMockOnly = !registry.isSymbolSupported(symbol);
     return _fetchWithCache(
       errorContext: '${symbol.venue.displayName} REST ticker',
       sources: sources,
+      useMockOnly: useMockOnly,
       getCached: () async => cache?.getTicker(symbol),
       isFresh: (ticker) => _isFresh(ticker.timestamp, _tickerTtl),
       fetchFromSource: () => sources!.ticker.fetchTicker(symbol),
@@ -175,9 +178,11 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       );
     }
     final sources = _venueSources[symbol.venue];
+    final useMockOnly = !registry.isSymbolSupported(symbol);
     return _fetchWithCache(
       errorContext: '${symbol.venue.displayName} REST candles',
       sources: sources,
+      useMockOnly: useMockOnly,
       getCached: () async {
         final candles =
             await cache?.getCandles(symbol, timeframe, limit: limit) ?? [];
@@ -223,9 +228,11 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       );
     }
     final sources = _venueSources[symbol.venue];
+    final useMockOnly = !registry.isSymbolSupported(symbol);
     return _fetchWithCache(
       errorContext: '${symbol.venue.displayName} REST order book',
       sources: sources,
+      useMockOnly: useMockOnly,
       getCached: () async => cache?.getOrderBook(symbol),
       isFresh: (orderBook) => _isFresh(orderBook.timestamp, _orderBookTtl),
       fetchFromSource: () =>
@@ -251,9 +258,11 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
       );
     }
     final sources = _venueSources[symbol.venue];
+    final useMockOnly = !registry.isSymbolSupported(symbol);
     return _fetchWithCache(
       errorContext: '${symbol.venue.displayName} REST trades',
       sources: sources,
+      useMockOnly: useMockOnly,
       getCached: () async => cache?.getTrades(symbol),
       isFresh: (trades) {
         if (trades.isEmpty) return false;
@@ -336,7 +345,7 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
     }
 
     final sources = _venueSources[symbol.venue];
-    if (sources != null) {
+    if (sources != null && registry.isSymbolSupported(symbol)) {
       yield* watchSource(sources);
       return;
     }

@@ -12,12 +12,13 @@ String addCommas(int value) {
 String formatMoney(double value, {required int decimals}) {
   final isNegative = value < 0;
   final abs = value.abs();
-  final whole = abs.truncate();
+  final scaled = (abs * pow(10, decimals)).round();
+  final whole = scaled ~/ pow(10, decimals);
   final wholeFormatted = addCommas(whole);
   if (decimals == 0) {
     return '${isNegative ? '-' : ''}\$$wholeFormatted';
   }
-  final frac = ((abs - whole) * pow(10, decimals)).round().toString().padLeft(
+  final frac = (scaled % pow(10, decimals).toInt()).toString().padLeft(
     decimals,
     '0',
   );

@@ -1,3 +1,4 @@
+import '../entities/symbol.dart';
 import '../entities/venue.dart';
 
 enum MarketDataFeature {
@@ -39,6 +40,8 @@ final class ExchangeCapability {
 
 abstract interface class ExchangeCapabilityRegistry {
   ExchangeCapability? forVenue(Venue venue);
+
+  bool isSymbolSupported(TradingSymbol symbol);
 
   List<ExchangeCapability> get all;
 }

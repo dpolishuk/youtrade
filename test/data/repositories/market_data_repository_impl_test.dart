@@ -41,6 +41,9 @@ class _FakeRegistry implements ExchangeCapabilityRegistry {
   @override
   ExchangeCapability? forVenue(Venue venue) =>
       all.firstWhere((c) => c.venue == venue);
+
+  @override
+  bool isSymbolSupported(TradingSymbol symbol) => true;
 }
 
 class _LimitedRegistry implements ExchangeCapabilityRegistry {
@@ -55,6 +58,9 @@ class _LimitedRegistry implements ExchangeCapabilityRegistry {
   @override
   ExchangeCapability? forVenue(Venue venue) =>
       all.firstWhere((c) => c.venue == venue);
+
+  @override
+  bool isSymbolSupported(TradingSymbol symbol) => true;
 }
 
 class _EmptyRegistry implements ExchangeCapabilityRegistry {
@@ -63,6 +69,9 @@ class _EmptyRegistry implements ExchangeCapabilityRegistry {
 
   @override
   ExchangeCapability? forVenue(Venue venue) => null;
+
+  @override
+  bool isSymbolSupported(TradingSymbol symbol) => false;
 }
 
 class _ThrowingTickerSource implements TickerSource {

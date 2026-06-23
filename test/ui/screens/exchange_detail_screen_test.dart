@@ -40,9 +40,9 @@ void main() {
       expect(find.text('SOL'), findsOneWidget);
 
       expect(find.text(r'$193,483'), findsOneWidget);
-      expect(find.text(r'$35,809'), findsOneWidget);
+      expect(find.text(r'$35,810'), findsOneWidget);
       expect(find.text(r'$88,420'), findsOneWidget);
-      expect(find.text(r'$35,071'), findsOneWidget);
+      expect(find.text(r'$35,072'), findsOneWidget);
 
       expect(find.text('62%'), findsOneWidget);
       expect(find.text('11%'), findsNWidgets(2));
@@ -66,7 +66,7 @@ void main() {
       expect(find.text(r'$64,977'), findsOneWidget);
       expect(find.text(r'$64,200'), findsOneWidget);
       expect(find.text('BTC'), findsOneWidget);
-      expect(find.text(r'$94,638'), findsOneWidget);
+      expect(find.text(r'$94,639'), findsOneWidget);
     });
 
     testWidgets('switches to OKX when chip tapped', (tester) async {
@@ -103,7 +103,7 @@ void main() {
       expect(find.text('+0.30%'), findsOneWidget);
 
       expect(find.text('AAPL'), findsOneWidget);
-      expect(find.text(r'$28,198'), findsOneWidget);
+      expect(find.text(r'$28,199'), findsOneWidget);
       expect(find.text('NVDA'), findsOneWidget);
       expect(find.text(r'$16,000'), findsOneWidget);
       expect(find.text('USD'), findsOneWidget);

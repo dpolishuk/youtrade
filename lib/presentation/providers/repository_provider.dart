@@ -12,6 +12,7 @@ import '../../data/datasources/remote/coinbase/coinbase_websocket_client.dart';
 import '../../data/datasources/remote/okx/okx_rest_client.dart';
 import '../../data/datasources/remote/okx/okx_websocket_client.dart';
 import '../../data/repositories/market_data_repository_impl.dart';
+import '../../domain/entities/symbol.dart';
 import '../../domain/entities/venue.dart';
 import '../../domain/registry/exchange_capability.dart';
 import '../../domain/repositories/market_data_repository.dart';
@@ -50,6 +51,11 @@ final class _StaticExchangeCapabilityRegistry
     ),
   ];
 
+  /// Symbols that should always use deterministic mock data because they are
+  /// mockup-only assets (stocks, commodities) and not supported by the live
+  /// exchange products used in this demo.
+  static const _mockOnlySymbols = {'AAPL', 'NVDA', 'TSLA', 'GC=F', 'CL=F'};
+
   @override
   List<ExchangeCapability> get all => _capabilities;
 
@@ -61,6 +67,10 @@ final class _StaticExchangeCapabilityRegistry
       return null;
     }
   }
+
+  @override
+  bool isSymbolSupported(TradingSymbol symbol) =>
+      !_mockOnlySymbols.contains(symbol.rawSymbol);
 }
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {

@@ -81,8 +81,12 @@ final class DeterministicMarketDataStore implements MarketDataStore {
     'BTCUSDT': _series(7, 120, 58000, 0.018, 0.0016),
     'ETHUSDT': _series(13, 120, 2950, 0.022, 0.0012),
     'SOLUSDT': _series(29, 120, 168, 0.03, 0.0021),
+    'XRPUSDT': _series(37, 120, 0.62, 0.028, 0.0015),
     'AAPL': _series(41, 120, 224, 0.012, 0.0008),
+    'NVDA': _series(43, 120, 115, 0.018, 0.0011),
+    'TSLA': _series(47, 120, 178, 0.024, 0.0013),
     'GC=F': _series(53, 120, 2620, 0.008, 0.0006),
+    'CL=F': _series(59, 120, 78.5, 0.016, 0.0007),
   };
 
   static final List<double> _equityCurve = () {

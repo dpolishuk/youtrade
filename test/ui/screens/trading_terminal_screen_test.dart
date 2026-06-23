@@ -89,6 +89,9 @@ final class _FakeRegistry implements ExchangeCapabilityRegistry {
       MarketDataFeature.wsTrades,
     },
   );
+
+  @override
+  bool isSymbolSupported(TradingSymbol symbol) => true;
 }
 
 final class _ErrorRepository implements MarketDataRepository {

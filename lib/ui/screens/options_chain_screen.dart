@@ -119,6 +119,10 @@ class _OptionsChainScreenState extends State<OptionsChainScreen> {
     return switch (raw) {
       'GOLD' => 'GC=F',
       'OIL' => 'CL=F',
+      'BTC' => 'BTCUSDT',
+      'ETH' => 'ETHUSDT',
+      'SOL' => 'SOLUSDT',
+      'XRP' => 'XRPUSDT',
       _ => raw,
     };
   }
