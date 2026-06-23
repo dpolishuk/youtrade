@@ -168,7 +168,7 @@ class _CandlestickPainter extends CustomPainter {
     double Function(double) y,
   ) {
     final gridPaint = Paint()
-      ..color = appColors.line
+      ..color = appColors.grid
       ..strokeWidth = 1;
 
     for (var g = 0; g <= 4; g++) {

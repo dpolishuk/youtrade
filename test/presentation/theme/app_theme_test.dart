@@ -93,12 +93,25 @@ void main() {
       expect(carbon.scaffoldBackgroundColor, const Color(0xFFF1EFEE));
     });
 
-    test('dark theme uses updated chip and border subtle colors', () {
+    test('dark theme uses updated chip, border, and grid colors', () {
       final theme = AppTheme.dark(AppVisualDirection.carbon);
       final appColors = theme.extension<AppColorTheme>()!;
 
       expect(appColors.chip, const Color(0xFF10151F));
       expect(appColors.borderSubtle, const Color(0x12FFFFFF));
+      expect(appColors.grid, const Color(0x0BFFFFFF));
+    });
+
+    test('light theme uses white chip and directional grid color', () {
+      final flux = AppTheme.light(AppVisualDirection.flux);
+      final carbon = AppTheme.light(AppVisualDirection.carbon);
+      final fluxColors = flux.extension<AppColorTheme>()!;
+      final carbonColors = carbon.extension<AppColorTheme>()!;
+
+      expect(fluxColors.chip, const Color(0xFFFFFFFF));
+      expect(carbonColors.chip, const Color(0xFFFFFFFF));
+      expect(fluxColors.grid, const Color(0x0F020D23));
+      expect(carbonColors.grid, const Color(0x0F020D23));
     });
 
     test('Flux and Carbon use different bullish/bearish colors', () {

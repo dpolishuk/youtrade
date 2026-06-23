@@ -97,7 +97,7 @@ class _AuthGateScreenState extends ConsumerState<AuthGateScreen> {
                       textAlign: TextAlign.center,
                       style: AppTheme.mono(
                         color: muted,
-                        fontSize: 12,
+                        fontSize: 13,
                       ).copyWith(fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 40),
@@ -362,7 +362,7 @@ class _GateCard extends StatelessWidget {
       key: const Key('authGateCard'),
       decoration: BoxDecoration(
         color: const Color(0xFF0E131F),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(11),
         border: Border.all(color: borderColor),
       ),
       padding: const EdgeInsets.all(24),

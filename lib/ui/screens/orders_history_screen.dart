@@ -153,7 +153,10 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
 
   Widget _buildPositionsList(AppColorTheme appColors) {
     final positions =
-        widget.positions ?? DeterministicMarketDataStore.portfolioPositions;
+        widget.positions ??
+        DeterministicMarketDataStore.portfolioPositionsFor(
+          accent: appColors.accent,
+        );
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,

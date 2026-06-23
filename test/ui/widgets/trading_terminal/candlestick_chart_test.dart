@@ -73,6 +73,13 @@ void main() {
         AppVisualDirection.flux,
       ).extension<AppColorTheme>()!.accentGlow;
       expect(boxShadow.color, accentGlow);
+
+      // Prevents regression where grid lines use the line token instead of the
+      // dedicated grid token.
+      final appColors = AppTheme.dark(
+        AppVisualDirection.flux,
+      ).extension<AppColorTheme>()!;
+      expect(appColors.grid, isNot(equals(appColors.line)));
     });
 
     testWidgets('shows progress indicator when candles are empty', (

@@ -379,6 +379,21 @@ void main() {
       expect(find.text('Welcome to YouTrade'), findsNothing);
     });
 
+    testWidgets('subtitle uses mockup font size 13', (tester) async {
+      when(
+        () => mockService.canCheckBiometrics(),
+      ).thenAnswer((_) async => false);
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      final subtitle = tester.widget<Text>(
+        find.text('Create a 4-digit PIN to secure YouTrade'),
+      );
+      expect(subtitle.style?.fontSize, 13);
+    });
+
     testWidgets('title uses mockup font size 28', (tester) async {
       when(
         () => mockService.canCheckBiometrics(),
@@ -423,7 +438,7 @@ void main() {
       );
       final decoration = card.decoration! as BoxDecoration;
       expect(decoration.color, const Color(0xFF0E131F));
-      expect(decoration.borderRadius, BorderRadius.circular(16));
+      expect(decoration.borderRadius, BorderRadius.circular(11));
       expect(
         (decoration.border as Border?)?.top.color,
         const Color(0x12FFFFFF),

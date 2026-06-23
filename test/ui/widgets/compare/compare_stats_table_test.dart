@@ -68,7 +68,8 @@ void main() {
       final expectedColor = AppTheme.dark(
         AppVisualDirection.flux,
       ).extension<AppColorTheme>()!.bullish;
-      final returnText = tester.widget<Text>(find.text('+12.80%'));
+      final expectedReturn = '+${series.first.totalReturn.toStringAsFixed(2)}%';
+      final returnText = tester.widget<Text>(find.text(expectedReturn));
       expect(returnText.style?.color, expectedColor);
     });
   });

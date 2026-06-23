@@ -273,10 +273,10 @@ final class BybitRestClient
       Timeframe.m1 => '1',
       Timeframe.m5 => '5',
       Timeframe.m15 => '15',
-      Timeframe.m30 => '30',
       Timeframe.h1 => '60',
       Timeframe.h4 => '240',
       Timeframe.d1 => 'D',
+      Timeframe.w1 => 'W',
     };
   }
 }

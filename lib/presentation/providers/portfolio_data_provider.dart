@@ -125,7 +125,9 @@ final portfolioDataProvider = Provider<PortfolioData>((ref) {
     equityCurve: DeterministicMarketDataStore.equityCurve,
     allocationSegments: allocationSegments,
     exchanges: exchanges,
-    positions: DeterministicMarketDataStore.portfolioPositions,
+    positions: DeterministicMarketDataStore.portfolioPositionsFor(
+      accent: accent,
+    ),
   );
 });
 

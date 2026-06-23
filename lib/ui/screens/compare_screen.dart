@@ -45,7 +45,7 @@ class _CompareScreenState extends State<CompareScreen> {
                 CompareChart(series: series),
                 const SizedBox(height: 14),
                 _buildLegend(context, appColors, series),
-                const SizedBox(height: 14),
+                const SizedBox(key: Key('statsHeaderSpacing'), height: 8),
                 _buildStatsHeader(context, appColors),
                 const SizedBox(height: 9),
                 CompareStatsTable(series: series),
@@ -107,7 +107,7 @@ class _CompareScreenState extends State<CompareScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Text(
-        '30-period stats',
+        '60-period stats',
         style: AppTheme.mono(
           color: appColors.tertiaryText,
           fontSize: 9,

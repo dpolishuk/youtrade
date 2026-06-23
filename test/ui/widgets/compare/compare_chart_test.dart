@@ -35,6 +35,14 @@ void main() {
       final decoration = container.decoration! as BoxDecoration;
       final theme = Theme.of(tester.element(find.byType(CompareChart)));
       expect(decoration.color, theme.cardColor);
+
+      // Prevents regression where grid lines use the line token instead of the
+      // dedicated grid token.
+      final appColors = theme.extension<AppColorTheme>()!;
+      final lineChart = tester.widget<LineChart>(find.byType(LineChart));
+      final gridLine = lineChart.data.gridData.getDrawingHorizontalLine(1);
+      expect(gridLine.color, appColors.grid);
+      expect(appColors.grid, isNot(equals(appColors.line)));
     });
 
     testWidgets('applies accent glow box shadow', (tester) async {

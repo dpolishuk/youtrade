@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youtrade/data/datasources/mock/deterministic_market_data_store.dart';
 import 'package:youtrade/domain/entities/symbol.dart';
@@ -117,6 +118,21 @@ void main() {
         btc,
         equals(DeterministicMarketDataStore.screenerSparkline('BTCUSDT')),
       );
+    });
+
+    test('portfolioPositionsFor tints AAPL with the directional accent', () {
+      const accent = Color(0xFF3F73FF);
+      final positions = DeterministicMarketDataStore.portfolioPositionsFor(
+        accent: accent,
+      );
+      final aapl = positions.firstWhere((p) => p.symbol == 'AAPL');
+
+      expect(aapl.iconColor, accent);
+      expect(aapl.tint, accent.withValues(alpha: 0.16));
+
+      // Other positions keep their original hard-coded colors.
+      final btc = positions.firstWhere((p) => p.symbol == 'BTCUSDT');
+      expect(btc.iconColor, const Color(0xFFF7931A));
     });
   });
 }

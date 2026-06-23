@@ -226,6 +226,9 @@ final class BinanceRestClient
   }
 
   String _timeframeCode(Timeframe timeframe) {
-    return timeframe.code;
+    return switch (timeframe) {
+      Timeframe.w1 => '1w',
+      _ => timeframe.code,
+    };
   }
 }

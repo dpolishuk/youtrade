@@ -300,10 +300,10 @@ final class CoinbaseRestClient
       Timeframe.m1 => 60,
       Timeframe.m5 => 300,
       Timeframe.m15 => 900,
-      Timeframe.m30 => 1800,
       Timeframe.h1 => 3600,
       Timeframe.h4 => 14400,
       Timeframe.d1 => 86400,
+      Timeframe.w1 => 604800,
     };
   }
 }

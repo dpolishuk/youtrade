@@ -58,9 +58,11 @@ class SymbolChipRow extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(right: 6),
               child: _SymbolChip(
+                key: ValueKey('symbol_chip_${chipLabel(chip.rawSymbol)}'),
                 label: chipLabel(chip.rawSymbol),
                 isSelected:
-                    selected.base == chip.base && selected.quote == chip.quote,
+                    selected.rawSymbol == chip.rawSymbol ||
+                    chipLabel(selected.rawSymbol) == chipLabel(chip.rawSymbol),
                 onTap: () {
                   ref.read(selectedSymbolProvider.notifier).state = chip;
                 },
@@ -75,6 +77,7 @@ class SymbolChipRow extends ConsumerWidget {
 
 class _SymbolChip extends StatelessWidget {
   const _SymbolChip({
+    super.key,
     required this.label,
     required this.isSelected,
     required this.onTap,

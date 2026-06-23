@@ -104,6 +104,7 @@ class ScaffoldWithNavBar extends ConsumerWidget {
                 selected: i == navigationShell.currentIndex,
                 activeColor: activeColor,
                 inactiveColor: inactiveColor,
+                accentGlow: appColors!.accentGlow,
                 data: items[i],
                 onTap: () => _goBranch(i),
               ),
@@ -132,6 +133,7 @@ class _NavItem extends StatelessWidget {
     required this.selected,
     required this.activeColor,
     required this.inactiveColor,
+    required this.accentGlow,
     required this.data,
     required this.onTap,
     super.key,
@@ -141,6 +143,7 @@ class _NavItem extends StatelessWidget {
   final bool selected;
   final Color activeColor;
   final Color inactiveColor;
+  final Color accentGlow;
   final _NavItemData data;
   final VoidCallback onTap;
 
@@ -178,6 +181,15 @@ class _NavItem extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: activeColor,
                   shape: BoxShape.circle,
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: accentGlow,
+                            blurRadius: 6,
+                            spreadRadius: 1,
+                          ),
+                        ]
+                      : null,
                 ),
               ),
             ),

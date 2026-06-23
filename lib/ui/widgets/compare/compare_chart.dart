@@ -46,7 +46,7 @@ class CompareChart extends StatelessWidget {
                 if (value == 0) {
                   return FlLine(color: appColors.subtleText, strokeWidth: 1);
                 }
-                return FlLine(color: appColors.line, strokeWidth: 1);
+                return FlLine(color: appColors.grid, strokeWidth: 1);
               },
             ),
             borderData: FlBorderData(show: false),

@@ -142,6 +142,10 @@ final class DeterministicMarketDataStore implements MarketDataStore {
   };
 
   /// Static position data matching the mockup Portfolio screen.
+  ///
+  /// AAPL is tinted with the current directional [accent] via
+  /// [portfolioPositionsFor]; this const fallback preserves the Flux dark
+  /// turquoise for tests and callers that do not supply an accent.
   static const List<Position> portfolioPositions = [
     Position(
       symbol: 'BTCUSDT',
@@ -188,6 +192,25 @@ final class DeterministicMarketDataStore implements MarketDataStore {
       iconColor: Color(0xFFFFC457),
     ),
   ];
+
+  /// Returns [portfolioPositions] with AAPL tinted using the directional
+  /// [accent] color instead of the hard-coded Flux turquoise.
+  static List<Position> portfolioPositionsFor({required Color accent}) {
+    return portfolioPositions.map((position) {
+      if (position.symbol != 'AAPL') return position;
+      return Position(
+        symbol: position.symbol,
+        sym0: position.sym0,
+        side: position.side,
+        venue: position.venue,
+        qty: position.qty,
+        value: position.value,
+        pnl: position.pnl,
+        tint: accent.withValues(alpha: 0.16),
+        iconColor: accent,
+      );
+    }).toList();
+  }
 
   /// Static open orders matching the mockup Orders & History screen.
   static const List<Order> openOrders = [

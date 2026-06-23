@@ -17,6 +17,7 @@ import 'package:youtrade/presentation/auth/auth_guard_provider.dart';
 import 'package:youtrade/presentation/providers/repository_provider.dart';
 import 'package:youtrade/presentation/routing/app_router.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
+import 'package:youtrade/presentation/theme/theme_extensions.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/presentation/theme/theme_provider.dart';
 import 'package:youtrade/ui/widgets/common/scaffold_with_nav_bar.dart';
@@ -251,6 +252,21 @@ void main() {
         );
         expect(opacity.opacity, i == 0 ? 1.0 : 0.0);
       }
+
+      // Prevents regression where the active dot loses the accent glow shadow.
+      final activeDotContainer = tester.widget<Container>(
+        find.descendant(
+          of: find.byKey(const Key('bottom-nav-dot-0')),
+          matching: find.byType(Container),
+        ),
+      );
+      final decoration = activeDotContainer.decoration! as BoxDecoration;
+      final appColors = Theme.of(
+        tester.element(find.byType(ScaffoldWithNavBar)),
+      ).extension<AppColorTheme>()!;
+      expect(decoration.boxShadow, isNotNull);
+      expect(decoration.boxShadow, hasLength(1));
+      expect(decoration.boxShadow!.single.color, appColors.accentGlow);
     });
 
     testWidgets('updates active dot when tab changes', (tester) async {

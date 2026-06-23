@@ -28,7 +28,7 @@ void main() {
       expect(find.text('BTC'), findsWidgets);
       expect(find.text('ETH'), findsWidgets);
       expect(find.text('SOL'), findsWidgets);
-      expect(find.text('30-period stats'), findsOneWidget);
+      expect(find.text('60-period stats'), findsOneWidget);
       await binding.takeScreenshot('compare_screen');
     });
   });
