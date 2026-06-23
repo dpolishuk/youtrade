@@ -45,7 +45,7 @@ const compareSymbols = [
   CompareSymbol(symbol: 'GOLD', color: Color(0xFFC9A6FF), rawSymbol: 'GC=F'),
 ];
 
-/// Generates deterministic 60-period mock series for the selected symbols.
+/// Generates deterministic mock series for the selected symbols.
 List<CompareSeries> generateCompareSeries(
   List<CompareSymbol> symbols, {
   int periods = 60,

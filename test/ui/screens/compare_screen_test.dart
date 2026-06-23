@@ -57,11 +57,11 @@ void main() {
       expect(find.text('Ratio'), findsNothing);
     });
 
-    testWidgets('uses 60-period stats eyebrow', (tester) async {
+    testWidgets('uses 30-period stats eyebrow', (tester) async {
       await tester.pumpWidget(buildScreen());
       await tester.pumpAndSettle();
 
-      expect(find.text('60-period stats'), findsOneWidget);
+      expect(find.text('30-period stats'), findsOneWidget);
     });
 
     testWidgets('stats header has 8px top spacing', (tester) async {

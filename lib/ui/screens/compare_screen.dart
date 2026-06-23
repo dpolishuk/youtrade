@@ -23,7 +23,8 @@ class _CompareScreenState extends State<CompareScreen> {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>()!;
 
-    final series = generateCompareSeries(_selectedSymbols);
+    final series = generateCompareSeries(_selectedSymbols, periods: 60);
+    final statsSeries = generateCompareSeries(_selectedSymbols, periods: 30);
 
     return Scaffold(
       body: SafeArea(
@@ -48,7 +49,7 @@ class _CompareScreenState extends State<CompareScreen> {
                 const SizedBox(key: Key('statsHeaderSpacing'), height: 8),
                 _buildStatsHeader(context, appColors),
                 const SizedBox(height: 9),
-                CompareStatsTable(series: series),
+                CompareStatsTable(series: statsSeries),
               ],
             ),
           ),
@@ -107,7 +108,7 @@ class _CompareScreenState extends State<CompareScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Text(
-        '60-period stats',
+        '30-period stats',
         style: AppTheme.mono(
           color: appColors.tertiaryText,
           fontSize: 9,
