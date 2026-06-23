@@ -370,10 +370,7 @@ void main() {
         await pumpFrames(tester);
 
         expect(router.state.uri.path, '/auth');
-        expect(
-          router.state.uri.queryParameters['from'],
-          '/trading?symbol=ETH',
-        );
+        expect(router.state.uri.queryParameters['from'], '/trading?symbol=ETH');
 
         await tester.enterText(find.byType(TextField), '1234');
         await tester.tap(find.text('Unlock with PIN'));

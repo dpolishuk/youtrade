@@ -438,13 +438,16 @@ final class DeterministicMarketDataStore implements MarketDataStore {
 
   /// ATM strike for options derived from the deterministic spot price.
   static double optionsAtmStrikeFor(double spot) {
-    final step = spot >= 10000 ? 2000.0 : spot >= 1000 ? 200.0 : 20.0;
+    final step = spot >= 10000
+        ? 2000.0
+        : spot >= 1000
+        ? 200.0
+        : 20.0;
     return (spot / step).round() * step;
   }
 
   /// ATM strike for BTC options derived from the deterministic spot price.
-  static double get btcOptionsAtmStrike =>
-      optionsAtmStrikeFor(btcLastPrice);
+  static double get btcOptionsAtmStrike => optionsAtmStrikeFor(btcLastPrice);
 
   /// Expiration labels shown on the options chain.
   static const List<String> btcOptionExpiries = [
@@ -455,8 +458,7 @@ final class DeterministicMarketDataStore implements MarketDataStore {
   ];
 
   /// Expiration labels for the requested symbol.
-  static List<String> optionExpiriesFor(String rawSymbol) =>
-      btcOptionExpiries;
+  static List<String> optionExpiriesFor(String rawSymbol) => btcOptionExpiries;
 
   /// Deterministic BTC options chain rows matching the mockup exactly.
   static final List<OptionChainStrike> btcOptionsChain = List.unmodifiable(
@@ -467,13 +469,19 @@ final class DeterministicMarketDataStore implements MarketDataStore {
   static List<OptionChainStrike> optionsChainFor(String rawSymbol) {
     final spot = lastPriceFor(rawSymbol);
     final base = optionsAtmStrikeFor(spot);
-    final step = spot >= 10000 ? 2000.0 : spot >= 1000 ? 200.0 : 20.0;
+    final step = spot >= 10000
+        ? 2000.0
+        : spot >= 1000
+        ? 200.0
+        : 20.0;
     final strikes = <double>[];
     for (var i = -4; i <= 4; i++) {
       strikes.add(base + i * step);
     }
 
-    final optR = _rng(rawSymbol == 'BTCUSDT' ? 7 : rawSymbol.hashCode);
+    final optR = _rng(
+      rawSymbol == 'BTCUSDT' || rawSymbol == 'BTC' ? 7 : rawSymbol.hashCode,
+    );
     return strikes.map((strike) {
       final callInTheMoney = spot > strike;
       final distance = (spot - strike) / spot;
