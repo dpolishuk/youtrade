@@ -18,6 +18,13 @@ final class ParseFailure extends Failure {
   final String message;
 }
 
+final class ConfigFailure extends Failure {
+  const ConfigFailure(this.message);
+
+  @override
+  final String message;
+}
+
 final class UnsupportedFeatureFailure extends Failure {
   const UnsupportedFeatureFailure(this.venue, this.feature);
 
