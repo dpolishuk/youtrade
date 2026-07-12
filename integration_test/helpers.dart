@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:youtrade/core/result.dart';
+import 'package:youtrade/data/datasources/remote/bybit/bybit_account_client.dart';
 import 'package:youtrade/data/datasources/remote/bybit/bybit_rest_client.dart';
 import 'package:youtrade/domain/auth/auth_failure.dart';
 import 'package:youtrade/domain/auth/local_auth_service.dart';
@@ -21,6 +22,7 @@ import 'package:youtrade/main.dart' as app;
 import 'package:youtrade/presentation/auth/auth_guard_provider.dart';
 import 'package:youtrade/presentation/providers/connectivity_provider.dart';
 import 'package:youtrade/presentation/providers/market_screener_provider.dart';
+import 'package:youtrade/presentation/providers/portfolio_data_provider.dart';
 import 'package:youtrade/presentation/providers/repository_provider.dart';
 
 import '../test/fakes/fake_pin_auth_service.dart';
@@ -69,6 +71,135 @@ BybitRestClient _mockScreenerClient() {
       );
     }),
   );
+}
+
+/// Deterministic mock Bybit account client for integration tests. Returns
+/// fixed wallet balance, positions, open orders, and order history so tests
+/// don't depend on the live demo API or configured credentials.
+BybitAccountClient _mockAccountClient() {
+  return BybitAccountClient(
+    httpClient: MockClient((request) async {
+      final path = request.url.path;
+      return http.Response(_mockAccountResponse(path), 200);
+    }),
+    apiKey: 'test-key',
+    apiSecret: 'test-secret',
+  );
+}
+
+String _mockAccountResponse(String path) {
+  if (path.contains('/v5/account/wallet-balance')) {
+    return jsonEncode({
+      'retCode': 0,
+      'retMsg': 'OK',
+      'result': {
+        'list': [
+          {
+            'accountType': 'UNIFIED',
+            'totalEquity': '50000.00',
+            'coin': [
+              {'coin': 'USDT', 'walletBalance': '48000', 'equity': '48000'},
+              {'coin': 'BTC', 'walletBalance': '0.5', 'equity': '2000'},
+            ],
+          },
+        ],
+      },
+    });
+  }
+  if (path.contains('/v5/position/list')) {
+    return jsonEncode({
+      'retCode': 0,
+      'retMsg': 'OK',
+      'result': {
+        'list': [
+          {
+            'symbol': 'BTCUSDT',
+            'side': 'Buy',
+            'size': '0.1',
+            'unrealisedPnl': '150.0',
+          },
+        ],
+      },
+    });
+  }
+  if (path.contains('/v5/order/realtime')) {
+    return jsonEncode({
+      'retCode': 0,
+      'retMsg': 'OK',
+      'result': {
+        'list': [
+          {
+            'orderId': 'ord-1',
+            'symbol': 'BTCUSDT',
+            'side': 'Buy',
+            'orderType': 'Limit',
+            'price': '64000',
+            'qty': '0.1',
+            'orderStatus': 'New',
+            'createdTime': '1718952000000',
+          },
+          {
+            'orderId': 'ord-2',
+            'symbol': 'ETHUSDT',
+            'side': 'Sell',
+            'orderType': 'Limit',
+            'price': '3100',
+            'qty': '2',
+            'orderStatus': 'New',
+            'createdTime': '1718952000000',
+          },
+          {
+            'orderId': 'ord-3',
+            'symbol': 'SOLUSDT',
+            'side': 'Buy',
+            'orderType': 'Limit',
+            'price': '140',
+            'qty': '10',
+            'orderStatus': 'New',
+            'createdTime': '1718952000000',
+          },
+          {
+            'orderId': 'ord-4',
+            'symbol': 'XRPUSDT',
+            'side': 'Sell',
+            'orderType': 'Limit',
+            'price': '0.6',
+            'qty': '500',
+            'orderStatus': 'New',
+            'createdTime': '1718952000000',
+          },
+        ],
+      },
+    });
+  }
+  return jsonEncode({
+    'retCode': 0,
+    'retMsg': 'OK',
+    'result': {
+      'list': [
+        {
+          'orderId': 'hist-1',
+          'symbol': 'BTCUSDT',
+          'side': 'Buy',
+          'orderType': 'Market',
+          'price': '60000',
+          'qty': '0.1',
+          'orderStatus': 'Filled',
+          'createdTime': '1718952000000',
+        },
+        {
+          'orderId': 'hist-2',
+          'symbol': 'ETHUSDT',
+          'side': 'Sell',
+          'orderType': 'Limit',
+          'price': '3300',
+          'qty': '2',
+          'orderStatus': 'Cancelled',
+          'createdTime': '1718952000000',
+        },
+      ],
+    },
+  });
 }
 
 class FakeMarketDataRepository implements MarketDataRepository {
@@ -208,10 +339,12 @@ Future<void> pumpLockedApp(
       marketScreenerBybitClientProvider.overrideWithValue(
         _mockScreenerClient(),
       ),
+      bybitAccountClientProvider.overrideWithValue(_mockAccountClient()),
+      bybitHasCredentialsProvider.overrideWithValue(true),
     ],
   );
 
-  await tester.pumpAndSettle(const Duration(seconds: 5));
+  await tester.pumpAndSettle(const Duration(seconds: 10));
 }
 
 Future<void> pumpAuthenticatedApp(
@@ -239,10 +372,12 @@ Future<void> pumpAuthenticatedAppWithMockStore(
       marketScreenerBybitClientProvider.overrideWithValue(
         _mockScreenerClient(),
       ),
+      bybitAccountClientProvider.overrideWithValue(_mockAccountClient()),
+      bybitHasCredentialsProvider.overrideWithValue(true),
     ],
   );
 
-  await tester.pumpAndSettle(const Duration(seconds: 5));
+  await tester.pumpAndSettle(const Duration(seconds: 10));
   await authenticateWithPin(tester);
 }
 
@@ -265,8 +400,10 @@ Future<void> pumpAppWithBiometricCancellation(WidgetTester tester) async {
       marketScreenerBybitClientProvider.overrideWithValue(
         _mockScreenerClient(),
       ),
+      bybitAccountClientProvider.overrideWithValue(_mockAccountClient()),
+      bybitHasCredentialsProvider.overrideWithValue(true),
     ],
   );
 
-  await tester.pumpAndSettle(const Duration(seconds: 5));
+  await tester.pumpAndSettle(const Duration(seconds: 10));
 }

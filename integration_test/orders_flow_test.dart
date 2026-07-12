@@ -32,17 +32,17 @@ void main() {
 
         await tester.tap(find.text('Positions'));
         await tester.pumpAndSettle(const Duration(seconds: 2));
-        expect(find.textContaining('Binance Perp'), findsOneWidget);
-        expect(find.textContaining('1.84 BTC'), findsOneWidget);
+        expect(find.textContaining('Bybit Perp'), findsOneWidget);
+        expect(find.textContaining('0.1000 BTC'), findsOneWidget);
         await binding.takeScreenshot('orders_positions_tab');
 
         await tester.tap(find.text('Open'));
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
-        expect(find.text('AAPL'), findsOneWidget);
+        expect(find.text('XRPUSDT'), findsOneWidget);
         await tester.tap(find.text('Cancel').last);
         await tester.pumpAndSettle(const Duration(seconds: 2));
-        expect(find.text('AAPL'), findsNothing);
+        expect(find.text('XRPUSDT'), findsNothing);
         expect(find.text('Cancel'), findsNWidgets(3));
         await binding.takeScreenshot('orders_after_cancel');
       },

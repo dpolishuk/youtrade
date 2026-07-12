@@ -16,7 +16,7 @@ void main() {
       await tester.tap(find.byKey(const Key('bottom-nav-item-2')));
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
-      expect(find.text('Bitcoin Perpetual · Binance'), findsOneWidget);
+      expect(find.text('Bitcoin Perpetual · Bybit'), findsOneWidget);
       expect(find.byIcon(Icons.stacked_line_chart), findsOneWidget);
       await binding.takeScreenshot('trading_terminal_compare_button');
 
