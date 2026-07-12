@@ -10,53 +10,65 @@ import '../widgets/portfolio/exchange_card.dart';
 import '../widgets/portfolio/equity_curve.dart';
 import '../widgets/portfolio/position_tile.dart';
 
-/// The Portfolio/Home screen rendered from the YouTrade mockups.
+/// The Portfolio/Home screen rendered from live Bybit demo account data.
 class PortfolioScreen extends ConsumerWidget {
   const PortfolioScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final portfolio = ref.watch(portfolioDataProvider);
+    final asyncPortfolio = ref.watch(portfolioDataProvider);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
         bottom: false,
+        child: asyncPortfolio.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => _PortfolioError(
+            message: error.toString(),
+            onRetry: () => ref.invalidate(portfolioDataProvider),
+          ),
+          data: (portfolio) {
+            if (portfolio.needsCredentials) {
+              return const _ConnectApiKey();
+            }
+            return _PortfolioContent(portfolio: portfolio);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _PortfolioContent extends StatelessWidget {
+  const _PortfolioContent({required this.portfolio});
+
+  final PortfolioData portfolio;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    top: 4,
-                    bottom: 24,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildNetWorthLabel(context, portfolio.venueCount),
-                      _buildTotalEquity(context, portfolio.netWorthFormatted),
-                      _buildDeltaRow(context, portfolio),
-                      const SizedBox(height: 14),
-                      EquityCurve(data: portfolio.equityCurve),
-                      const SizedBox(height: 18),
-                      _buildAllocationHeader(context, portfolio.assetMix),
-                      const SizedBox(height: 9),
-                      _buildAllocationBar(portfolio.allocationSegments),
-                      const SizedBox(height: 14),
-                      _buildExchangeCards(context, portfolio.exchanges),
-                      const SizedBox(height: 20),
-                      _buildPositionsHeader(context),
-                      const SizedBox(height: 9),
-                      _buildPositionsList(context, portfolio.positions),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            _buildNetWorthLabel(context, portfolio.venueCount),
+            _buildTotalEquity(context, portfolio.netWorthFormatted),
+            _buildDeltaRow(context, portfolio),
+            const SizedBox(height: 14),
+            EquityCurve(data: portfolio.equityCurve),
+            const SizedBox(height: 18),
+            _buildAllocationHeader(context, portfolio.assetMix),
+            const SizedBox(height: 9),
+            _buildAllocationBar(portfolio.allocationSegments),
+            const SizedBox(height: 14),
+            _buildExchangeCards(context, portfolio.exchanges),
+            const SizedBox(height: 20),
+            _buildPositionsHeader(context),
+            const SizedBox(height: 9),
+            _buildPositionsList(context, portfolio.positions),
           ],
         ),
       ),
@@ -116,13 +128,17 @@ class PortfolioScreen extends ConsumerWidget {
   Widget _buildDeltaRow(BuildContext context, PortfolioData portfolio) {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>();
-    final color = appColors?.bullish ?? Colors.green;
+    final isPositive = portfolio.deltaAmount >= 0;
+    final color = isPositive
+        ? (appColors?.bullish ?? Colors.green)
+        : (appColors?.bearish ?? Colors.red);
+    final icon = isPositive ? Icons.arrow_upward : Icons.arrow_downward;
 
     return Padding(
       padding: const EdgeInsets.only(top: 10),
       child: Row(
         children: [
-          Icon(Icons.arrow_upward, size: 13, color: color),
+          Icon(icon, size: 13, color: color),
           const SizedBox(width: 4),
           Text(
             portfolio.deltaAmountFormatted,
@@ -145,7 +161,7 @@ class PortfolioScreen extends ConsumerWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            '24h',
+            'PnL',
             style: theme.textTheme.labelSmall?.copyWith(
               fontFamily: 'JetBrains Mono',
               fontSize: 11,
@@ -195,7 +211,7 @@ class PortfolioScreen extends ConsumerWidget {
       segments: segments
           .map(
             (s) => AllocationSegment(
-              label: s.venue.displayName,
+              label: s.label,
               color: s.color,
               share: s.share,
             ),
@@ -215,7 +231,7 @@ class PortfolioScreen extends ConsumerWidget {
               padding: const EdgeInsets.only(bottom: 9),
               child: ExchangeCard(
                 data: ExchangeCardData(
-                  name: e.venue.displayName,
+                  name: e.name,
                   initial: e.initial,
                   kinds: e.kinds,
                   value: e.value,
@@ -273,6 +289,27 @@ class PortfolioScreen extends ConsumerWidget {
     final bullish = appColors?.bullish ?? Colors.green;
     final bearish = appColors?.bearish ?? Colors.red;
 
+    if (positions.isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(color: theme.dividerColor),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Text(
+            'No open positions',
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontFamily: 'JetBrains Mono',
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 11,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
@@ -321,5 +358,91 @@ class PortfolioScreen extends ConsumerWidget {
       }
     }
     return widgets;
+  }
+}
+
+class _ConnectApiKey extends StatelessWidget {
+  const _ConnectApiKey();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.key_off,
+              size: 48,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Connect API Key',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add your Bybit demo account API credentials to view your '
+              'portfolio balance and positions.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PortfolioError extends StatelessWidget {
+  const _PortfolioError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to load portfolio',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Unable to fetch wallet balance from Bybit.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(onPressed: onRetry, child: const Text('Retry')),
+          ],
+        ),
+      ),
+    );
   }
 }
