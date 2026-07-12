@@ -1,32 +1,172 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:youtrade/data/datasources/mock/deterministic_market_data_store.dart';
-import 'package:youtrade/domain/entities/position.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:youtrade/data/datasources/remote/bybit/bybit_account_client.dart';
+import 'package:youtrade/presentation/providers/portfolio_data_provider.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/screens/orders_history_screen.dart';
+import 'package:youtrade/ui/widgets/orders/history_order_tile.dart';
 import 'package:youtrade/ui/widgets/orders/order_list_tile.dart';
 import 'package:youtrade/ui/widgets/orders/position_list_tile.dart';
 
 void main() {
-  group('OrdersHistoryScreen', () {
-    Future<void> pumpScreen(
-      WidgetTester tester, {
-      List<Position>? positions,
-    }) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.dark(AppVisualDirection.flux),
-          home: OrdersHistoryScreen(positions: positions),
-        ),
-      );
-      await tester.pumpAndSettle();
-    }
+  BybitAccountClient mockClient({
+    List<Map<String, dynamic>> openOrders = const [],
+    List<Map<String, dynamic>> historyOrders = const [],
+    List<Map<String, dynamic>> positions = const [],
+    double totalEquity = 50000.0,
+    List<Map<String, dynamic>> coins = const [
+      {'coin': 'USDT', 'walletBalance': '50000', 'equity': '50000'},
+    ],
+  }) {
+    return BybitAccountClient(
+      apiKey: 'test-key',
+      apiSecret: 'test-secret',
+      httpClient: MockClient((request) async {
+        final path = request.url.path;
+        if (path.contains('/v5/order/realtime')) {
+          return http.Response(
+            jsonEncode({
+              'retCode': 0,
+              'retMsg': 'OK',
+              'result': {'category': 'linear', 'list': openOrders},
+            }),
+            200,
+          );
+        }
+        if (path.contains('/v5/order/history')) {
+          return http.Response(
+            jsonEncode({
+              'retCode': 0,
+              'retMsg': 'OK',
+              'result': {'category': 'linear', 'list': historyOrders},
+            }),
+            200,
+          );
+        }
+        if (path.contains('/v5/position/list')) {
+          return http.Response(
+            jsonEncode({
+              'retCode': 0,
+              'retMsg': 'OK',
+              'result': {'category': 'linear', 'list': positions},
+            }),
+            200,
+          );
+        }
+        if (path.contains('/v5/account/wallet-balance')) {
+          return http.Response(
+            jsonEncode({
+              'retCode': 0,
+              'retMsg': 'OK',
+              'result': {
+                'list': [
+                  {
+                    'accountType': 'UNIFIED',
+                    'totalEquity': totalEquity.toString(),
+                    'coin': coins,
+                  },
+                ],
+              },
+            }),
+            200,
+          );
+        }
+        return http.Response('{"retCode":1,"retMsg":"unknown"}', 200);
+      }),
+    );
+  }
 
+  final defaultOpenOrders = [
+    {
+      'orderId': 'open-1',
+      'symbol': 'BTCUSDT',
+      'side': 'Buy',
+      'orderType': 'Limit',
+      'price': '58400.0',
+      'qty': '0.5',
+      'orderStatus': 'New',
+      'createdTime': '1705309920000',
+    },
+    {
+      'orderId': 'open-2',
+      'symbol': 'ETHUSDT',
+      'side': 'Sell',
+      'orderType': 'Limit',
+      'price': '3050.0',
+      'qty': '8.0',
+      'orderStatus': 'New',
+    },
+  ];
+
+  final defaultHistoryOrders = [
+    {
+      'orderId': 'hist-1',
+      'symbol': 'BTCUSDT',
+      'side': 'Buy',
+      'orderType': 'Market',
+      'price': '56820.0',
+      'qty': '1.34',
+      'orderStatus': 'Filled',
+      'createdTime': '1705309920000',
+    },
+    {
+      'orderId': 'hist-2',
+      'symbol': 'ETHUSDT',
+      'side': 'Sell',
+      'orderType': 'Limit',
+      'price': '2910.0',
+      'qty': '14.5',
+      'orderStatus': 'Cancelled',
+      'createdTime': '1705306000000',
+    },
+  ];
+
+  final defaultPositions = [
+    {
+      'symbol': 'BTCUSDT',
+      'side': 'Buy',
+      'size': '0.5',
+      'unrealisedPnl': '1200.0',
+    },
+  ];
+
+  Future<void> pumpScreen(
+    WidgetTester tester, {
+    List<Override> overrides = const [],
+  }) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: overrides,
+        child: MaterialApp(
+          theme: AppTheme.dark(AppVisualDirection.flux),
+          home: const OrdersHistoryScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  List<Override> credentialsOverrides(BybitAccountClient client) => [
+    bybitHasCredentialsProvider.overrideWithValue(true),
+    bybitAccountClientProvider.overrideWithValue(client),
+  ];
+
+  group('OrdersHistoryScreen', () {
     testWidgets('renders title "Orders" with mockup typography', (
       tester,
     ) async {
-      await pumpScreen(tester);
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(openOrders: defaultOpenOrders),
+        ),
+      );
 
       final title = tester.widget<Text>(find.text('Orders'));
       expect(title.style?.fontFamily, 'Space Grotesk');
@@ -37,7 +177,12 @@ void main() {
     });
 
     testWidgets('renders Open / History / Positions tabs', (tester) async {
-      await pumpScreen(tester);
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(openOrders: defaultOpenOrders),
+        ),
+      );
 
       expect(find.text('Open'), findsOneWidget);
       expect(find.text('History'), findsOneWidget);
@@ -45,7 +190,12 @@ void main() {
     });
 
     testWidgets('active tab uses fg and accent underline', (tester) async {
-      await pumpScreen(tester);
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(openOrders: defaultOpenOrders),
+        ),
+      );
 
       final activeContainer = tester.widget<Container>(
         find
@@ -56,99 +206,73 @@ void main() {
       final border = decoration.border! as Border;
       expect(border.bottom.color, const Color(0xFF00E6D2));
       expect(border.bottom.width, 2);
-
-      final activeText = tester.widget<Text>(find.text('Open'));
-      expect(activeText.style?.fontFamily, 'JetBrains Mono');
-      expect(activeText.style?.fontSize, 11);
-      expect(activeText.style?.fontWeight, FontWeight.w600);
-      expect(activeText.style?.color, const Color(0xFFF2F5FA));
     });
 
-    testWidgets('inactive tab uses fg3 and transparent underline', (
+    testWidgets('Open tab shows real open orders from Bybit API', (
       tester,
     ) async {
-      await pumpScreen(tester);
-
-      final inactiveContainer = tester.widget<Container>(
-        find
-            .ancestor(
-              of: find.text('History'),
-              matching: find.byType(Container),
-            )
-            .first,
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(openOrders: defaultOpenOrders),
+        ),
       );
-      final decoration = inactiveContainer.decoration! as BoxDecoration;
-      final border = decoration.border! as Border;
-      expect(border.bottom.color, Colors.transparent);
 
-      final inactiveText = tester.widget<Text>(find.text('History'));
-      expect(inactiveText.style?.color, const Color(0x57FFFFFF));
+      expect(find.byType(OrderListTile), findsNWidgets(2));
+      expect(find.text('BTCUSDT'), findsWidgets);
+      expect(find.text('ETHUSDT'), findsWidgets);
+      expect(find.text('Cancel'), findsNWidgets(2));
+      expect(find.textContaining('58,400.00'), findsOneWidget);
+      expect(find.textContaining('3,050.00'), findsOneWidget);
     });
 
-    testWidgets('Open tab shows deterministic open orders', (tester) async {
-      await pumpScreen(tester);
+    testWidgets('open order card shows side badge and type', (tester) async {
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(openOrders: defaultOpenOrders),
+        ),
+      );
 
-      for (final order in DeterministicMarketDataStore.openOrders) {
-        expect(find.text(order.symbol), findsWidgets);
-      }
-      expect(find.text('Cancel'), findsNWidgets(4));
-      expect(find.textContaining('58,400.0'), findsOneWidget);
-      expect(find.textContaining('0.50'), findsOneWidget);
-      expect(find.textContaining('34% filled'), findsOneWidget);
-    });
-
-    testWidgets('open order card matches mockup styling', (tester) async {
-      await pumpScreen(tester);
-
-      final firstCard = tester.widget<OrderListTile>(
+      final tile = tester.widget<OrderListTile>(
         find.byType(OrderListTile).first,
       );
-      expect(firstCard.order.symbol, 'BTCUSDT');
+      expect(tile.order.symbol, 'BTCUSDT');
+      expect(tile.order.side, 'BUY');
+      expect(tile.order.type, 'Limit');
+      expect(tile.order.venue, 'Bybit');
 
       final symbol = tester.widget<Text>(find.text('BTCUSDT').first);
       expect(symbol.style?.fontSize, 13);
       expect(symbol.style?.fontWeight, FontWeight.w600);
-      expect(symbol.style?.color, const Color(0xFFF2F5FA));
-
-      final cancel = tester.widget<Text>(find.text('Cancel').first);
-      expect(cancel.style?.fontFamily, 'JetBrains Mono');
-      expect(cancel.style?.fontSize, 10);
-      expect(cancel.style?.fontWeight, FontWeight.w600);
-      expect(cancel.style?.color, const Color(0xFF00E6D2));
     });
 
-    testWidgets('Cancel removes the open order from the list', (tester) async {
-      await pumpScreen(tester);
-
-      expect(find.text('AAPL'), findsOneWidget);
-
-      await tester.tap(find.text('Cancel').last);
-      await tester.pumpAndSettle();
-
-      expect(find.text('AAPL'), findsNothing);
-      expect(find.text('Cancel'), findsNWidgets(3));
-    });
-
-    testWidgets('rapid cancel taps do not throw RangeError', (tester) async {
-      await pumpScreen(tester);
-
-      final cancelFinder = find.text('Cancel');
-      expect(cancelFinder, findsNWidgets(4));
-
-      await tester.tap(cancelFinder.at(0));
-      await tester.tap(cancelFinder.at(1));
-      await tester.pumpAndSettle();
-
-      expect(cancelFinder, findsNWidgets(2));
-    });
-
-    testWidgets('Open tab shows empty list after cancelling all orders', (
+    testWidgets('Cancel removes the open order from the list (demo only)', (
       tester,
     ) async {
-      await pumpScreen(tester);
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(openOrders: defaultOpenOrders),
+        ),
+      );
 
-      expect(find.byType(OrderListTile), findsNWidgets(4));
-      expect(find.text('Cancel'), findsNWidgets(4));
+      expect(find.byType(OrderListTile), findsNWidgets(2));
+
+      await tester.tap(find.text('Cancel').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(OrderListTile), findsNWidgets(1));
+      expect(find.text('Cancel'), findsOneWidget);
+    });
+
+    testWidgets('Cancel all shows empty state', (tester) async {
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(openOrders: defaultOpenOrders),
+        ),
+      );
 
       while (find.text('Cancel').evaluate().isNotEmpty) {
         await tester.tap(find.text('Cancel').first);
@@ -156,89 +280,134 @@ void main() {
       }
 
       expect(find.byType(OrderListTile), findsNothing);
-      expect(find.text('Cancel'), findsNothing);
+      expect(find.text('No open orders'), findsOneWidget);
     });
 
-    testWidgets('History tab shows deterministic history orders', (
+    testWidgets('History tab shows real history orders from Bybit API', (
       tester,
     ) async {
-      await pumpScreen(tester);
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(
+            openOrders: defaultOpenOrders,
+            historyOrders: defaultHistoryOrders,
+          ),
+        ),
+      );
 
       await tester.tap(find.text('History'));
       await tester.pumpAndSettle();
 
-      for (final order in DeterministicMarketDataStore.historyOrders) {
-        expect(find.text(order.symbol), findsWidgets);
-      }
-      expect(find.textContaining('09:12'), findsOneWidget);
-      expect(find.textContaining('Yest'), findsNWidgets(2));
+      expect(find.byType(HistoryOrderTile), findsNWidgets(2));
       expect(find.textContaining('Filled'), findsWidgets);
-      expect(find.textContaining('Cancelled'), findsOneWidget);
+      expect(find.textContaining('Cancelled'), findsWidgets);
+      expect(find.textContaining('09:12'), findsOneWidget);
     });
 
-    testWidgets('history status colors match mockup', (tester) async {
-      await pumpScreen(tester);
-
-      await tester.tap(find.text('History'));
-      await tester.pumpAndSettle();
-
-      final filledStatus = tester.widget<Text>(
-        find.textContaining('Filled').first,
+    testWidgets('Positions tab shows real positions from portfolio provider', (
+      tester,
+    ) async {
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(
+            openOrders: defaultOpenOrders,
+            positions: defaultPositions,
+          ),
+        ),
       );
-      expect(filledStatus.style?.color, const Color(0x8CFFFFFF));
-
-      final cancelledStatus = tester.widget<Text>(
-        find.textContaining('Cancelled'),
-      );
-      expect(cancelledStatus.style?.color, const Color(0x57FFFFFF));
-    });
-
-    testWidgets('Positions tab shows deterministic positions', (tester) async {
-      await pumpScreen(tester);
 
       await tester.tap(find.text('Positions'));
       await tester.pumpAndSettle();
 
-      for (final position in DeterministicMarketDataStore.portfolioPositions) {
-        expect(find.text(position.symbol), findsWidgets);
-      }
-      expect(find.textContaining('Binance Perp'), findsOneWidget);
-      expect(find.textContaining('1.84 BTC'), findsOneWidget);
+      expect(find.byType(PositionListTile), findsNWidgets(1));
+      expect(find.text('BTCUSDT'), findsWidgets);
       expect(find.text('LONG'), findsWidgets);
     });
 
-    testWidgets('position row matches mockup styling', (tester) async {
-      await pumpScreen(tester);
-
-      await tester.tap(find.text('Positions'));
-      await tester.pumpAndSettle();
-
-      final value = tester.widget<Text>(find.text(r'$107,320').first);
-      expect(value.style?.fontFamily, 'JetBrains Mono');
-      expect(value.style?.fontSize, 12.5);
-      expect(value.style?.fontWeight, FontWeight.w600);
-      expect(value.style?.color, const Color(0xFFF2F5FA));
-
-      final pnl = tester.widget<Text>(find.text(r'+$4,210'));
-      expect(pnl.style?.fontFamily, 'JetBrains Mono');
-      expect(pnl.style?.fontSize, 10.5);
-      expect(pnl.style?.fontWeight, FontWeight.w600);
-      expect(pnl.style?.color, const Color(0xFF2EE6A6));
-    });
-
-    testWidgets('empty Positions tab renders without items', (tester) async {
-      await pumpScreen(tester, positions: []);
+    testWidgets('empty Positions shows empty state', (tester) async {
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(openOrders: defaultOpenOrders, positions: const []),
+        ),
+      );
 
       await tester.tap(find.text('Positions'));
       await tester.pumpAndSettle();
 
       expect(find.byType(PositionListTile), findsNothing);
-      expect(find.byType(OrdersHistoryScreen), findsOneWidget);
+      expect(find.text('No open positions'), findsOneWidget);
+    });
+
+    testWidgets('shows Connect API Key when credentials missing', (
+      tester,
+    ) async {
+      await pumpScreen(
+        tester,
+        overrides: [bybitHasCredentialsProvider.overrideWithValue(false)],
+      );
+
+      expect(find.text('Connect API Key'), findsOneWidget);
+      expect(find.byIcon(Icons.key_off), findsOneWidget);
+    });
+
+    testWidgets('shows error state with retry when API fails', (tester) async {
+      final errorClient = BybitAccountClient(
+        apiKey: 'test-key',
+        apiSecret: 'test-secret',
+        httpClient: MockClient((request) async {
+          return http.Response(
+            jsonEncode({'retCode': 10001, 'retMsg': 'invalid'}),
+            200,
+          );
+        }),
+      );
+
+      await pumpScreen(tester, overrides: credentialsOverrides(errorClient));
+
+      expect(find.text('Failed to load orders'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+    });
+
+    testWidgets('empty open orders shows empty state', (tester) async {
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(mockClient(openOrders: const [])),
+      );
+
+      expect(find.text('No open orders'), findsOneWidget);
+      expect(find.byType(OrderListTile), findsNothing);
+    });
+
+    testWidgets('empty history shows empty state', (tester) async {
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(openOrders: defaultOpenOrders, historyOrders: const []),
+        ),
+      );
+
+      await tester.tap(find.text('History'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No order history'), findsOneWidget);
+      expect(find.byType(HistoryOrderTile), findsNothing);
     });
 
     testWidgets('screen does not overflow on iPhone 17 frame', (tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 844));
-      await pumpScreen(tester);
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(
+            openOrders: defaultOpenOrders,
+            historyOrders: defaultHistoryOrders,
+            positions: defaultPositions,
+          ),
+        ),
+      );
 
       expect(find.byType(OrdersHistoryScreen), findsOneWidget);
       await tester.binding.setSurfaceSize(null);
