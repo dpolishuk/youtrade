@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:youtrade/core/result.dart';
+import 'package:youtrade/data/datasources/remote/bybit/bybit_rest_client.dart';
 import 'package:youtrade/domain/auth/auth_failure.dart';
 import 'package:youtrade/domain/auth/local_auth_service.dart';
 
@@ -15,11 +20,56 @@ import 'package:youtrade/domain/repositories/market_data_repository.dart';
 import 'package:youtrade/main.dart' as app;
 import 'package:youtrade/presentation/auth/auth_guard_provider.dart';
 import 'package:youtrade/presentation/providers/connectivity_provider.dart';
+import 'package:youtrade/presentation/providers/market_screener_provider.dart';
 import 'package:youtrade/presentation/providers/repository_provider.dart';
 
 import '../test/fakes/fake_pin_auth_service.dart';
 
 class MockLocalAuthService extends Mock implements LocalAuthService {}
+
+/// Deterministic mock Bybit screener client for integration tests. Returns
+/// a small set of tickers (including BTCUSDT) so tests don't depend on the
+/// live demo API.
+BybitRestClient _mockScreenerClient() {
+  return BybitRestClient(
+    httpClient: MockClient((request) async {
+      final category = request.url.queryParameters['category'] ?? '';
+      return http.Response(
+        jsonEncode({
+          'retCode': 0,
+          'retMsg': 'OK',
+          'result': {
+            'category': category,
+            'list': category == 'linear'
+                ? [
+                    {
+                      'symbol': 'BTCUSDT',
+                      'lastPrice': '65000.0',
+                      'price24hPcnt': '0.0523',
+                      'volume24h': '1000000.0',
+                    },
+                    {
+                      'symbol': 'ETHUSDT',
+                      'lastPrice': '3200.0',
+                      'price24hPcnt': '-0.0234',
+                      'volume24h': '500000.0',
+                    },
+                  ]
+                : [
+                    {
+                      'symbol': 'SOLUSDT',
+                      'lastPrice': '150.0',
+                      'price24hPcnt': '0.0312',
+                      'volume24h': '200000.0',
+                    },
+                  ],
+          },
+        }),
+        200,
+      );
+    }),
+  );
+}
 
 class FakeMarketDataRepository implements MarketDataRepository {
   DateTime get _now => DateTime.now().toUtc();
@@ -155,6 +205,9 @@ Future<void> pumpLockedApp(
         FakeMarketDataRepository(),
       ),
       connectivityProvider.overrideWith((ref) => Stream.value(online)),
+      marketScreenerBybitClientProvider.overrideWithValue(
+        _mockScreenerClient(),
+      ),
     ],
   );
 
@@ -183,6 +236,9 @@ Future<void> pumpAuthenticatedAppWithMockStore(
         FakePinAuthService(initialPin: '1234'),
       ),
       connectivityProvider.overrideWith((ref) => Stream.value(online)),
+      marketScreenerBybitClientProvider.overrideWithValue(
+        _mockScreenerClient(),
+      ),
     ],
   );
 
@@ -205,6 +261,9 @@ Future<void> pumpAppWithBiometricCancellation(WidgetTester tester) async {
       ),
       marketDataRepositoryProvider.overrideWithValue(
         FakeMarketDataRepository(),
+      ),
+      marketScreenerBybitClientProvider.overrideWithValue(
+        _mockScreenerClient(),
       ),
     ],
   );

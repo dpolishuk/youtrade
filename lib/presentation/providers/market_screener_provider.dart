@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/datasources/mock/deterministic_market_data_store.dart';
+import '../../../core/bybit_config.dart';
+import '../../data/datasources/remote/bybit/bybit_rest_client.dart';
 import '../../domain/entities/venue.dart';
 
 enum MarketCategory {
@@ -36,6 +37,7 @@ final class MarketScreenerItem {
     required this.price,
     required this.change24hPercent,
     required this.priceDecimals,
+    this.volume24h = 0.0,
     this.sparkline = const [],
   });
 
@@ -47,7 +49,53 @@ final class MarketScreenerItem {
   final double price;
   final double change24hPercent;
   final int priceDecimals;
+  final double volume24h;
   final List<double> sparkline;
+}
+
+/// Strips the trailing `USDT` quote suffix from a raw symbol for compact
+/// display (e.g. `BTCUSDT` -> `BTC`).
+String displaySymbol(String rawSymbol) {
+  if (rawSymbol.endsWith('USDT')) {
+    return rawSymbol.substring(0, rawSymbol.length - 4);
+  }
+  return rawSymbol;
+}
+
+/// Picks a sensible number of decimal places based on price magnitude.
+int priceDecimals(double price) {
+  if (price >= 10000) return 1;
+  if (price >= 1) return 2;
+  if (price >= 0.01) return 4;
+  return 6;
+}
+
+/// Maps a raw Bybit ticker JSON map to a [MarketScreenerItem].
+///
+/// [assetClass] is determined by the API category the ticker came from:
+/// `linear` -> [AssetClass.perp], `spot` -> [AssetClass.spot].
+MarketScreenerItem tickerToScreenerItem(
+  Map<String, dynamic> ticker,
+  AssetClass assetClass,
+) {
+  final rawSymbol = ticker['symbol'] as String? ?? '';
+  final lastPrice =
+      double.tryParse(ticker['lastPrice'] as String? ?? '') ?? 0.0;
+  final price24hPcnt =
+      double.tryParse(ticker['price24hPcnt'] as String? ?? '') ?? 0.0;
+  final volume24h =
+      double.tryParse(ticker['volume24h'] as String? ?? '') ?? 0.0;
+  return MarketScreenerItem(
+    symbol: displaySymbol(rawSymbol),
+    rawSymbol: rawSymbol,
+    name: rawSymbol,
+    venue: Venue.bybit,
+    assetClass: assetClass,
+    price: lastPrice,
+    change24hPercent: price24hPcnt * 100,
+    volume24h: volume24h,
+    priceDecimals: priceDecimals(lastPrice),
+  );
 }
 
 final marketScreenerSearchProvider = StateProvider<String>((ref) => '');
@@ -56,148 +104,73 @@ final marketScreenerFilterProvider = StateProvider<MarketCategory?>(
   (ref) => null,
 );
 
-final marketScreenerItemsProvider = Provider<List<MarketScreenerItem>>((ref) {
-  return _mockMarkets;
+/// Provides the [BybitRestClient] used by the screener. Override in tests to
+/// inject a mock client.
+final marketScreenerBybitClientProvider = Provider<BybitRestClient>((ref) {
+  final client = BybitRestClient(baseUrl: BybitConfig.baseUrl);
+  ref.onDispose(client.close);
+  return client;
 });
 
-final filteredMarketScreenerItemsProvider = Provider<List<MarketScreenerItem>>((
+/// Fetches ALL available linear (perpetual) and spot tickers from the Bybit
+/// demo API and maps them to [MarketScreenerItem]s.
+///
+/// If one category fails the other is still returned; only when *both*
+/// categories fail does the provider throw.
+final marketScreenerItemsProvider = FutureProvider<List<MarketScreenerItem>>((
   ref,
-) {
-  final query = ref.watch(marketScreenerSearchProvider).trim().toLowerCase();
-  final filter = ref.watch(marketScreenerFilterProvider);
-  final markets = ref.watch(marketScreenerItemsProvider);
+) async {
+  final client = ref.watch(marketScreenerBybitClientProvider);
 
-  return markets.where((market) {
-    final matchesFilter =
-        filter == null || market.assetClass.category == filter;
-    final matchesSearch =
-        query.isEmpty ||
-        market.symbol.toLowerCase().contains(query) ||
-        market.rawSymbol.toLowerCase().contains(query) ||
-        market.name.toLowerCase().contains(query) ||
-        market.venue.displayName.toLowerCase().contains(query) ||
-        market.venue.shortCode.toLowerCase().contains(query);
-    return matchesFilter && matchesSearch;
-  }).toList();
+  final results = await Future.wait([
+    client.fetchAllTickers('linear'),
+    client.fetchAllTickers('spot'),
+  ]);
+
+  final items = <MarketScreenerItem>[];
+  var hadSuccess = false;
+
+  for (var i = 0; i < results.length; i++) {
+    final assetClass = i == 0 ? AssetClass.perp : AssetClass.spot;
+    results[i].when(
+      success: (tickers) {
+        items.addAll(tickers.map((t) => tickerToScreenerItem(t, assetClass)));
+        hadSuccess = true;
+      },
+      failure: (_) {},
+    );
+  }
+
+  if (!hadSuccess) {
+    throw Exception('Failed to fetch market data from Bybit');
+  }
+
+  return items;
 });
 
-String _displaySymbol(String rawSymbol) {
-  return rawSymbol.replaceAll('USDT', '').replaceAll('=F', '');
-}
-
-List<double> _sparkline(String rawSymbol) {
-  return DeterministicMarketDataStore.screenerSparkline(rawSymbol);
-}
-
-MarketScreenerItem row({
-  required String rawSymbol,
-  required String name,
-  required Venue venue,
-  required AssetClass assetClass,
-  required int decimals,
-  double? price,
-  double? change24hPercent,
-}) {
-  final ticker = price == null || change24hPercent == null
-      ? DeterministicMarketDataStore.screenerTicker(rawSymbol)
-      : null;
-  return MarketScreenerItem(
-    symbol: _displaySymbol(rawSymbol),
-    rawSymbol: rawSymbol,
-    name: name,
-    venue: venue,
-    assetClass: assetClass,
-    price: price ?? ticker!.last,
-    change24hPercent: change24hPercent ?? ticker!.change24hPercent,
-    priceDecimals: decimals,
-    sparkline: _sparkline(rawSymbol),
-  );
-}
-
-final _mockMarkets = <MarketScreenerItem>[
-  row(
-    rawSymbol: 'BTCUSDT',
-    name: 'Bitcoin Perp',
-    venue: Venue.binance,
-    assetClass: AssetClass.perp,
-    decimals: 1,
-  ),
-  row(
-    rawSymbol: 'ETHUSDT',
-    name: 'Ethereum Perp',
-    venue: Venue.bybit,
-    assetClass: AssetClass.perp,
-    decimals: 2,
-  ),
-  row(
-    rawSymbol: 'SOLUSDT',
-    name: 'Solana',
-    venue: Venue.okx,
-    assetClass: AssetClass.spot,
-    decimals: 2,
-  ),
-  row(
-    rawSymbol: 'AAPL',
-    name: 'Apple Inc.',
-    venue: Venue.coinbase,
-    assetClass: AssetClass.stock,
-    decimals: 2,
-  ),
-  row(
-    rawSymbol: 'GC=F',
-    name: 'Gold Futures',
-    venue: Venue.okx,
-    assetClass: AssetClass.fut,
-    decimals: 1,
-  ),
-  MarketScreenerItem(
-    symbol: 'NVDA',
-    rawSymbol: 'NVDA',
-    name: 'NVIDIA Corp',
-    venue: Venue.coinbase,
-    assetClass: AssetClass.stock,
-    price: 118.42,
-    change24hPercent: 3.21,
-    priceDecimals: 2,
-  ),
-  MarketScreenerItem(
-    symbol: 'XRP',
-    rawSymbol: 'XRPUSDT',
-    name: 'XRP',
-    venue: Venue.binance,
-    assetClass: AssetClass.spot,
-    price: 0.6284,
-    change24hPercent: -1.42,
-    priceDecimals: 4,
-  ),
-  MarketScreenerItem(
-    symbol: 'CL',
-    rawSymbol: 'CL=F',
-    name: 'Crude Oil WTI',
-    venue: Venue.okx,
-    assetClass: AssetClass.fut,
-    price: 71.84,
-    change24hPercent: -0.86,
-    priceDecimals: 2,
-  ),
-  MarketScreenerItem(
-    symbol: 'TSLA',
-    rawSymbol: 'TSLA',
-    name: 'Tesla Inc.',
-    venue: Venue.coinbase,
-    assetClass: AssetClass.stock,
-    price: 248.91,
-    change24hPercent: 1.94,
-    priceDecimals: 2,
-  ),
-  MarketScreenerItem(
-    symbol: 'BTC-28K-C',
-    rawSymbol: 'BTC-28K-C',
-    name: 'BTC Call 70k',
-    venue: Venue.bybit,
-    assetClass: AssetClass.opt,
-    price: 0.0421,
-    change24hPercent: 8.12,
-    priceDecimals: 4,
-  ),
-];
+/// Filters the screener items by the current search query and category filter.
+///
+/// Returns an [AsyncValue] that mirrors the loading/error state of
+/// [marketScreenerItemsProvider] and applies filtering only to resolved data.
+final filteredMarketScreenerItemsProvider =
+    Provider<AsyncValue<List<MarketScreenerItem>>>((ref) {
+      final query = ref
+          .watch(marketScreenerSearchProvider)
+          .trim()
+          .toLowerCase();
+      final filter = ref.watch(marketScreenerFilterProvider);
+      return ref.watch(marketScreenerItemsProvider).whenData((markets) {
+        return markets.where((market) {
+          final matchesFilter =
+              filter == null || market.assetClass.category == filter;
+          final matchesSearch =
+              query.isEmpty ||
+              market.symbol.toLowerCase().contains(query) ||
+              market.rawSymbol.toLowerCase().contains(query) ||
+              market.name.toLowerCase().contains(query) ||
+              market.venue.displayName.toLowerCase().contains(query) ||
+              market.venue.shortCode.toLowerCase().contains(query);
+          return matchesFilter && matchesSearch;
+        }).toList();
+      });
+    });
