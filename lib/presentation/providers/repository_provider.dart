@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/bybit_config.dart';
 import '../../data/datasources/local/app_database.dart';
 import '../../data/datasources/local/market_cache_data_source.dart';
 import '../../data/datasources/mock/deterministic_market_data_store.dart';
@@ -90,7 +91,7 @@ final _binanceRestClientProvider = Provider<BinanceRestClient>((ref) {
 });
 
 final _bybitRestClientProvider = Provider<BybitRestClient>((ref) {
-  final client = BybitRestClient();
+  final client = BybitRestClient(baseUrl: BybitConfig.baseUrl);
   ref.onDispose(client.close);
   return client;
 });

@@ -23,6 +23,21 @@ void main() {
       rawSymbol: 'BTCUSDT',
     );
 
+    test('default base URL is demo endpoint', () async {
+      String? capturedHost;
+      final client = BybitRestClient(
+        httpClient: MockClient((request) async {
+          capturedHost = request.url.host;
+          return http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[{"symbol":"BTCUSDT","lastPrice":"100.0","bid1Price":"99.5","ask1Price":"100.5","price24hPcnt":"0.01","turnover24h":"1000.0","volume24h":"1000.0"}]}}',
+            200,
+          );
+        }),
+      );
+      await client.fetchTicker(symbol);
+      expect(capturedHost, 'api-demo.bybit.com');
+    });
+
     test('fetchTicker returns Success on valid response', () async {
       final client = BybitRestClient(
         httpClient: MockClient((request) async {
