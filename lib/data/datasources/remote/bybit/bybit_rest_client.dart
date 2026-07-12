@@ -37,6 +37,41 @@ final class BybitRestClient
     return 'Bybit $context API error: $retCode $retMsg';
   }
 
+  /// Fetches ALL tickers for the given [category] (e.g. "linear" or "spot")
+  /// without passing a symbol parameter, returning every available pair.
+  Future<Result<List<Map<String, dynamic>>>> fetchAllTickers(
+    String category,
+  ) async {
+    try {
+      final response = await _httpClient
+          .get(_uri('/v5/market/tickers', {'category': category}))
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        return Err(NetworkFailure('Bybit tickers ${response.statusCode}'));
+      }
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final apiError = _apiErrorMessage(json, 'tickers');
+      if (apiError.isNotEmpty) {
+        return Err(NetworkFailure(apiError));
+      }
+      final result = json['result'] as Map<String, dynamic>;
+      final list = result['list'] as List<dynamic>;
+      return Success(list.cast<Map<String, dynamic>>());
+    } on TimeoutException {
+      return const Err(NetworkFailure('Bybit tickers request timed out'));
+    } on FormatException catch (e) {
+      return Err(ParseFailure('Bybit tickers parse failed: $e'));
+    } on TypeError catch (e) {
+      return Err(ParseFailure('Bybit tickers parse failed: $e'));
+    } on StateError catch (e) {
+      return Err(ParseFailure('Bybit tickers parse failed: $e'));
+    } on RangeError catch (e) {
+      return Err(ParseFailure('Bybit tickers parse failed: $e'));
+    } on Exception catch (e) {
+      return Err(NetworkFailure('Bybit tickers request failed: $e'));
+    }
+  }
+
   @override
   Future<Result<Ticker>> fetchTicker(TradingSymbol symbol) async {
     try {

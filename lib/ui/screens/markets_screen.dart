@@ -26,7 +26,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>()!;
-    final markets = ref.watch(filteredMarketScreenerItemsProvider);
+    final asyncMarkets = ref.watch(filteredMarketScreenerItemsProvider);
     final mutedColor = theme.colorScheme.onSurface.withValues(alpha: 0.34);
 
     return Scaffold(
@@ -118,24 +118,58 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                     borderRadius: BorderRadius.circular(11),
                     border: Border.all(color: appColors.borderSubtle),
                   ),
-                  child: markets.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No markets found',
+                  child: asyncMarkets.when(
+                    data: (markets) => markets.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No markets found',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: appColors.subtleText,
+                              ),
+                            ),
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(11),
+                            child: ListView.builder(
+                              itemCount: markets.length,
+                              itemBuilder: (context, index) {
+                                return MarketListTile(market: markets[index]);
+                              },
+                            ),
+                          ),
+                    loading: () => Center(
+                      child: CircularProgressIndicator(
+                        color: theme.colorScheme.onSurface,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                    error: (error, stack) => Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: appColors.bearish,
+                            size: 32,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Failed to load markets',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: appColors.subtleText,
                             ),
                           ),
-                        )
-                      : ClipRRect(
-                          borderRadius: BorderRadius.circular(11),
-                          child: ListView.builder(
-                            itemCount: markets.length,
-                            itemBuilder: (context, index) {
-                              return MarketListTile(market: markets[index]);
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: () {
+                              ref.invalidate(marketScreenerItemsProvider);
                             },
+                            child: const Text('Retry'),
                           ),
-                        ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
