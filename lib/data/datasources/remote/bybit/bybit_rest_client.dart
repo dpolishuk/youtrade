@@ -20,7 +20,7 @@ final class BybitRestClient
     implements TickerSource, CandleSource, OrderBookSource, TradeSource {
   BybitRestClient({http.Client? httpClient, String? baseUrl})
     : _httpClient = httpClient ?? http.Client(),
-      _baseUrl = baseUrl ?? 'https://api.bybit.com';
+      _baseUrl = baseUrl ?? 'https://api-demo.bybit.com';
 
   final http.Client _httpClient;
   final String _baseUrl;

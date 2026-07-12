@@ -41,6 +41,9 @@ dependencies:
   # Routing
   go_router: ^14.8.1
 
+  # Environment / secrets
+  flutter_dotenv: ^5.2.1
+
   # iOS-style icons
   cupertino_icons: ^1.0.8
   connectivity_plus: ^7.1.1
@@ -63,6 +66,7 @@ flutter:
 
   assets:
     - assets/fonts/
+    - .env
 
   fonts:
     - family: Geist
