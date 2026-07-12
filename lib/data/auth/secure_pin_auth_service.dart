@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pointycastle/export.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/failures.dart';
 import '../../core/result.dart';
@@ -11,24 +11,24 @@ import '../../domain/auth/auth_failure.dart';
 import '../../domain/auth/pin_auth_service.dart';
 
 class SecurePinAuthService implements PinAuthService {
-  SecurePinAuthService({FlutterSecureStorage? storage})
-    : _storage = storage ?? const FlutterSecureStorage();
+  SecurePinAuthService({SharedPreferencesAsync? prefs})
+    : _prefs = prefs ?? SharedPreferencesAsync();
 
-  final FlutterSecureStorage _storage;
+  final SharedPreferencesAsync _prefs;
 
   static const String _pinHashKey = 'pin_hash';
   static const String _pinSaltKey = 'pin_salt';
   static const String _failedPinAttemptsKey = 'failed_pin_attempts';
   static const String _pinLockoutEndKey = 'pin_lockout_end';
   static const int _pinLength = 4;
-  static const int pbkdf2Iterations = 600000;
+  static const int pbkdf2Iterations = 10000;
   static const int _derivedKeyLength = 32;
   static final RegExp _pinRegex = RegExp(r'^\d{4}$');
 
   @override
   Future<bool> isPinSet() async {
     try {
-      final hash = await _storage.read(key: _pinHashKey);
+      final hash = await _prefs.getString(_pinHashKey);
       return hash != null && hash.isNotEmpty;
     } on Object {
       return false;
@@ -40,13 +40,13 @@ class SecurePinAuthService implements PinAuthService {
     if (pin.length != _pinLength || !_pinRegex.hasMatch(pin)) return false;
 
     try {
-      final storedHash = await _storage.read(key: _pinHashKey);
+      final storedHash = await _prefs.getString(_pinHashKey);
       if (storedHash == null) {
         final result = await setPin(pin);
         return result is Success<void>;
       }
 
-      final salt = await _storage.read(key: _pinSaltKey) ?? '';
+      final salt = await _prefs.getString(_pinSaltKey) ?? '';
       final hash = _hashPin(pin, salt);
       return hash == storedHash;
     } on Object {
@@ -85,26 +85,26 @@ class SecurePinAuthService implements PinAuthService {
 
   Future<Result<void>> _setPinInternal(String pin) async {
     try {
-      var salt = await _storage.read(key: _pinSaltKey);
+      var salt = await _prefs.getString(_pinSaltKey);
       if (salt == null || salt.isEmpty) {
         salt = _generateSalt();
-        await _storage.write(key: _pinSaltKey, value: salt);
+        await _prefs.setString(_pinSaltKey, salt);
       }
 
       final hash = _hashPin(pin, salt);
-      await _storage.write(key: _pinHashKey, value: hash);
-      await _storage.write(key: _failedPinAttemptsKey, value: '0');
-      await _storage.delete(key: _pinLockoutEndKey);
+      await _prefs.setString(_pinHashKey, hash);
+      await _prefs.setString(_failedPinAttemptsKey, '0');
+      await _prefs.remove(_pinLockoutEndKey);
       return const Success<void>(null);
     } on Object catch (e) {
-      return Err<void>(UnknownFailure('Failed to store PIN.', error: e));
+      return Err<void>(UnknownFailure('Failed to store PIN: $e', error: e));
     }
   }
 
   @override
   Future<int> getFailedPinAttempts() async {
     try {
-      final value = await _storage.read(key: _failedPinAttemptsKey);
+      final value = await _prefs.getString(_failedPinAttemptsKey);
       if (value == null || value.isEmpty) return 0;
       return int.tryParse(value) ?? 0;
     } on Object {
@@ -115,10 +115,7 @@ class SecurePinAuthService implements PinAuthService {
   @override
   Future<void> setFailedPinAttempts(int attempts) async {
     try {
-      await _storage.write(
-        key: _failedPinAttemptsKey,
-        value: attempts.toString(),
-      );
+      await _prefs.setString(_failedPinAttemptsKey, attempts.toString());
     } on Object {
       // Ignore storage write failures for lockout metadata.
     }
@@ -127,7 +124,7 @@ class SecurePinAuthService implements PinAuthService {
   @override
   Future<DateTime?> getPinLockoutEnd() async {
     try {
-      final value = await _storage.read(key: _pinLockoutEndKey);
+      final value = await _prefs.getString(_pinLockoutEndKey);
       if (value == null || value.isEmpty) return null;
       return DateTime.tryParse(value)?.toUtc();
     } on Object {
@@ -139,11 +136,11 @@ class SecurePinAuthService implements PinAuthService {
   Future<void> setPinLockoutEnd(DateTime? end) async {
     try {
       if (end == null) {
-        await _storage.delete(key: _pinLockoutEndKey);
+        await _prefs.remove(_pinLockoutEndKey);
       } else {
-        await _storage.write(
-          key: _pinLockoutEndKey,
-          value: end.toUtc().toIso8601String(),
+        await _prefs.setString(
+          _pinLockoutEndKey,
+          end.toUtc().toIso8601String(),
         );
       }
     } on Object {
