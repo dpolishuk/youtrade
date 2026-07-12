@@ -99,14 +99,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // GOLD chip is unselected by default because the selected symbol is BTC.
-      final goldMaterial = tester.firstWidget<Material>(
-        find.ancestor(of: find.text('GOLD'), matching: find.byType(Material)),
+      // XRP chip is unselected by default because the selected symbol is BTC.
+      final xrpMaterial = tester.firstWidget<Material>(
+        find.ancestor(of: find.text('XRP'), matching: find.byType(Material)),
       );
-      expect(goldMaterial.color, appColors.chip);
+      expect(xrpMaterial.color, appColors.chip);
 
-      final goldText = tester.widget<Text>(find.text('GOLD'));
-      expect(goldText.style?.color, appColors.subtleText);
+      final xrpText = tester.widget<Text>(find.text('XRP'));
+      expect(xrpText.style?.color, appColors.subtleText);
     });
 
     testWidgets('LowerTabs uses borderSubtle and foreground/tertiaryText', (

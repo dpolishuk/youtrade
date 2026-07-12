@@ -20,6 +20,49 @@ void main() {
       expect(meta.venue, Venue.binance);
     });
 
+    test('matches known BTCUSDT on Bybit', () {
+      final meta = resolveSymbolMetadata(
+        TradingSymbol(
+          base: 'BTC',
+          quote: 'USDT',
+          venue: Venue.bybit,
+          rawSymbol: 'BTCUSDT',
+        ),
+      );
+
+      expect(meta.name, 'Bitcoin Perpetual');
+      expect(meta.symbolClass, SymbolClass.perp);
+      expect(meta.venue, Venue.bybit);
+    });
+
+    test('matches known SOLUSDT on Bybit', () {
+      final meta = resolveSymbolMetadata(
+        TradingSymbol(
+          base: 'SOL',
+          quote: 'USDT',
+          venue: Venue.bybit,
+          rawSymbol: 'SOLUSDT',
+        ),
+      );
+
+      expect(meta.name, 'Solana');
+      expect(meta.venue, Venue.bybit);
+    });
+
+    test('matches known XRPUSDT on Bybit', () {
+      final meta = resolveSymbolMetadata(
+        TradingSymbol(
+          base: 'XRP',
+          quote: 'USDT',
+          venue: Venue.bybit,
+          rawSymbol: 'XRPUSDT',
+        ),
+      );
+
+      expect(meta.name, 'XRP');
+      expect(meta.venue, Venue.bybit);
+    });
+
     test('matches known ETHUSDT on Bybit', () {
       final meta = resolveSymbolMetadata(
         TradingSymbol(

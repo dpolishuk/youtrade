@@ -12,7 +12,7 @@ final _chipSymbols = [
   TradingSymbol(
     base: 'BTC',
     quote: 'USDT',
-    venue: Venue.binance,
+    venue: Venue.bybit,
     rawSymbol: 'BTCUSDT',
   ),
   TradingSymbol(
@@ -24,20 +24,20 @@ final _chipSymbols = [
   TradingSymbol(
     base: 'SOL',
     quote: 'USDT',
-    venue: Venue.okx,
+    venue: Venue.bybit,
     rawSymbol: 'SOLUSDT',
+  ),
+  TradingSymbol(
+    base: 'XRP',
+    quote: 'USDT',
+    venue: Venue.bybit,
+    rawSymbol: 'XRPUSDT',
   ),
   TradingSymbol(
     base: 'AAPL',
     quote: 'USD',
     venue: Venue.coinbase,
     rawSymbol: 'AAPL',
-  ),
-  TradingSymbol(
-    base: 'GOLD',
-    quote: 'USD',
-    venue: Venue.okx,
-    rawSymbol: 'GC=F',
   ),
 ];
 

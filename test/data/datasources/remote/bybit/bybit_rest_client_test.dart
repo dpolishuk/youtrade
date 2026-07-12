@@ -38,11 +38,86 @@ void main() {
       expect(capturedHost, 'api-demo.bybit.com');
     });
 
+    test('default category is linear for USDT perpetuals', () async {
+      String? capturedCategory;
+      final client = BybitRestClient(
+        httpClient: MockClient((request) async {
+          capturedCategory = request.url.queryParameters['category'];
+          return http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"linear","list":[{"symbol":"BTCUSDT","lastPrice":"100.0","bid1Price":"99.5","ask1Price":"100.5","price24hPcnt":"0.01","turnover24h":"1000.0","volume24h":"1000.0"}]}}',
+            200,
+          );
+        }),
+      );
+      await client.fetchTicker(symbol);
+      expect(capturedCategory, 'linear');
+    });
+
+    test('custom category override propagates to all requests', () async {
+      final capturedCategories = <String>[];
+      final client = BybitRestClient(
+        httpClient: MockClient((request) async {
+          capturedCategories.add(request.url.queryParameters['category']!);
+          if (request.url.path == '/v5/market/tickers') {
+            return http.Response(
+              '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[{"symbol":"BTCUSDT","lastPrice":"100.0","bid1Price":"99.5","ask1Price":"100.5","price24hPcnt":"0.01","turnover24h":"1000.0","volume24h":"1000.0"}]}}',
+              200,
+            );
+          }
+          if (request.url.path == '/v5/market/kline') {
+            return http.Response(
+              '{"retCode":0,"retMsg":"OK","result":{"category":"spot","symbol":"BTCUSDT","list":[["1718952000000","1.0","2.0","0.5","1.5","100.0","0"]]}}',
+              200,
+            );
+          }
+          if (request.url.path == '/v5/market/orderbook') {
+            return http.Response(
+              '{"retCode":0,"retMsg":"OK","result":{"s":"BTCUSDT","b":[["99.0","1.0"]],"a":[["101.0","1.0"]]}}',
+              200,
+            );
+          }
+          return http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[{"execId":"1","symbol":"BTCUSDT","price":"100.0","size":"1.0","side":"Buy","time":"1718952000000"}]}}',
+            200,
+          );
+        }),
+        category: 'spot',
+      );
+      await client.fetchTicker(symbol);
+      await client.fetchCandles(symbol, Timeframe.h1);
+      await client.fetchOrderBook(symbol);
+      await client.fetchTrades(symbol);
+      expect(capturedCategories, everyElement('spot'));
+    });
+
+    test('fetchTicker uses linear category for BTCUSDT', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((request) async {
+          expect(request.url.path, '/v5/market/tickers');
+          expect(request.url.queryParameters['category'], 'linear');
+          expect(request.url.queryParameters['symbol'], 'BTCUSDT');
+          return http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"linear","list":[{"symbol":"BTCUSDT","lastPrice":"100.0","bid1Price":"99.5","ask1Price":"100.5","price24hPcnt":"0.01","turnover24h":"1000.0","volume24h":"1000.0"}]}}',
+            200,
+          );
+        }),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Success>());
+      result.when(
+        success: (ticker) {
+          expect(ticker.lastPrice, 100.0);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
     test('fetchTicker returns Success on valid response', () async {
       final client = BybitRestClient(
         httpClient: MockClient((request) async {
           expect(request.url.path, '/v5/market/tickers');
-          expect(request.url.queryParameters['category'], 'spot');
+          expect(request.url.queryParameters['category'], 'linear');
           expect(request.url.queryParameters['symbol'], 'BTCUSDT');
           return http.Response(
             '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[{"symbol":"BTCUSDT","lastPrice":"100.0","bid1Price":"99.5","ask1Price":"100.5","price24hPcnt":"0.01","turnover24h":"1000.0","volume24h":"1000.0"}]}}',

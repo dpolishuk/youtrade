@@ -18,12 +18,16 @@ import '../../../../domain/sources/trade_source.dart';
 
 final class BybitRestClient
     implements TickerSource, CandleSource, OrderBookSource, TradeSource {
-  BybitRestClient({http.Client? httpClient, String? baseUrl})
-    : _httpClient = httpClient ?? http.Client(),
-      _baseUrl = baseUrl ?? 'https://api-demo.bybit.com';
+  BybitRestClient({
+    http.Client? httpClient,
+    String? baseUrl,
+    this._category = 'linear',
+  }) : _httpClient = httpClient ?? http.Client(),
+       _baseUrl = baseUrl ?? 'https://api-demo.bybit.com';
 
   final http.Client _httpClient;
   final String _baseUrl;
+  final String _category;
 
   void close() => _httpClient.close();
 
@@ -78,7 +82,7 @@ final class BybitRestClient
       final response = await _httpClient
           .get(
             _uri('/v5/market/tickers', {
-              'category': 'spot',
+              'category': _category,
               'symbol': symbol.rawSymbol,
             }),
           )
@@ -120,7 +124,7 @@ final class BybitRestClient
       final response = await _httpClient
           .get(
             _uri('/v5/market/kline', {
-              'category': 'spot',
+              'category': _category,
               'symbol': symbol.rawSymbol,
               'interval': _timeframeCode(timeframe),
               if (limit != null) 'limit': limit.toString(),
@@ -164,7 +168,7 @@ final class BybitRestClient
       final response = await _httpClient
           .get(
             _uri('/v5/market/orderbook', {
-              'category': 'spot',
+              'category': _category,
               'symbol': symbol.rawSymbol,
               if (depth != null) 'limit': depth.toString(),
             }),
@@ -204,7 +208,7 @@ final class BybitRestClient
       final response = await _httpClient
           .get(
             _uri('/v5/market/recent-trade', {
-              'category': 'spot',
+              'category': _category,
               'symbol': symbol.rawSymbol,
               if (limit != null) 'limit': limit.toString(),
             }),

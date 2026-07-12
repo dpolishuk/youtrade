@@ -79,7 +79,7 @@ class _TradingTerminalScreenState extends ConsumerState<TradingTerminalScreen> {
       'BTC' || 'BTCUSDT' => TradingSymbol(
         base: 'BTC',
         quote: 'USDT',
-        venue: Venue.binance,
+        venue: Venue.bybit,
         rawSymbol: 'BTCUSDT',
       ),
       'ETH' || 'ETHUSDT' => TradingSymbol(
@@ -91,13 +91,13 @@ class _TradingTerminalScreenState extends ConsumerState<TradingTerminalScreen> {
       'SOL' || 'SOLUSDT' => TradingSymbol(
         base: 'SOL',
         quote: 'USDT',
-        venue: Venue.okx,
+        venue: Venue.bybit,
         rawSymbol: 'SOLUSDT',
       ),
       'XRP' || 'XRPUSDT' => TradingSymbol(
         base: 'XRP',
         quote: 'USDT',
-        venue: Venue.binance,
+        venue: Venue.bybit,
         rawSymbol: 'XRPUSDT',
       ),
       'AAPL' => TradingSymbol(
@@ -139,7 +139,7 @@ class _TradingTerminalScreenState extends ConsumerState<TradingTerminalScreen> {
       _ => TradingSymbol(
         base: raw,
         quote: 'USDT',
-        venue: Venue.binance,
+        venue: Venue.bybit,
         rawSymbol: upper,
       ),
     };
