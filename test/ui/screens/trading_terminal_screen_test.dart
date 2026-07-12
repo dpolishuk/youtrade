@@ -243,12 +243,12 @@ void main() {
       expect(find.text('BTCUSDT'), findsOneWidget);
       expect(find.text('ETH'), findsOneWidget);
       expect(find.text('SOL'), findsOneWidget);
+      expect(find.text('XRP'), findsOneWidget);
       expect(find.text('AAPL'), findsOneWidget);
-      expect(find.text('GOLD'), findsOneWidget);
 
       // Class tag and header metadata.
       expect(find.text('PERP'), findsOneWidget);
-      expect(find.text('Bitcoin Perpetual · Binance'), findsOneWidget);
+      expect(find.text('Bitcoin Perpetual · Bybit'), findsOneWidget);
 
       // Last price uses one decimal for BTC.
       expect(find.text('105,154.0'), findsWidgets);
@@ -284,7 +284,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('BTCUSDT'), findsOneWidget);
-      expect(find.text('Bitcoin Perpetual · Binance'), findsOneWidget);
+      expect(find.text('Bitcoin Perpetual · Bybit'), findsOneWidget);
     });
 
     testWidgets('parses GC=F futures symbol parameter', (tester) async {
@@ -292,7 +292,6 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('GOLD'), findsOneWidget);
       expect(find.text('GC=F'), findsOneWidget);
       expect(find.text('Gold Futures · Dec · OKX'), findsOneWidget);
       expect(find.text('FUTURE'), findsOneWidget);
