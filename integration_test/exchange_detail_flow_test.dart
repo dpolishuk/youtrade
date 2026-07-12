@@ -13,30 +13,31 @@ void main() {
       (tester) async {
         await pumpAuthenticatedApp(tester);
 
-        expect(find.text('AGGREGATED NET WORTH · 4 VENUES'), findsOneWidget);
+        expect(find.text('AGGREGATED NET WORTH · 2 VENUES'), findsOneWidget);
 
-        await tester.tap(find.text(r'$312,480'));
+        await tester.tap(find.text(r'$48,000'));
         await tester.pumpAndSettle(const Duration(seconds: 5));
 
         expect(find.text('All portfolios'), findsOneWidget);
+        expect(find.text('Bybit'), findsWidgets);
+        expect(find.text('Perp · Spot'), findsOneWidget);
+        expect(find.text(r'$198,320'), findsOneWidget);
+        expect(find.text(r'-$1,710'), findsOneWidget);
+        await binding.takeScreenshot('exchange_detail_bybit');
+
+        await tester.tap(find.text('Binance'));
+        await tester.pumpAndSettle(const Duration(seconds: 3));
+
         expect(find.text('Binance'), findsWidgets);
         expect(find.text('Spot · Perp · Options'), findsOneWidget);
         expect(find.text(r'$312,480'), findsOneWidget);
         expect(find.text(r'+$6,620'), findsOneWidget);
         await binding.takeScreenshot('exchange_detail_binance');
 
-        await tester.tap(find.text('OKX'));
-        await tester.pumpAndSettle(const Duration(seconds: 3));
-
-        expect(find.text('OKX'), findsWidgets);
-        expect(find.text(r'$146,900'), findsOneWidget);
-        expect(find.text(r'+$2,080'), findsOneWidget);
-        await binding.takeScreenshot('exchange_detail_okx');
-
         await tester.tap(find.text('All portfolios'));
         await tester.pumpAndSettle(const Duration(seconds: 3));
 
-        expect(find.text('AGGREGATED NET WORTH · 4 VENUES'), findsOneWidget);
+        expect(find.text('AGGREGATED NET WORTH · 2 VENUES'), findsOneWidget);
       },
     );
   });

@@ -13,8 +13,8 @@ void main() {
         await pumpAuthenticatedApp(tester, online: false);
 
         expect(find.text('Demo / Offline mode'), findsOneWidget);
-        expect(find.text('AGGREGATED NET WORTH · 4 VENUES'), findsOneWidget);
-        expect(find.textContaining(r'$746,240'), findsOneWidget);
+        expect(find.text('AGGREGATED NET WORTH · 2 VENUES'), findsOneWidget);
+        expect(find.textContaining(r'$50,000'), findsOneWidget);
         await binding.takeScreenshot('offline_portfolio_tab');
       },
     );
