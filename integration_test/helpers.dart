@@ -202,6 +202,90 @@ String _mockAccountResponse(String path) {
   });
 }
 
+/// Mock Bybit account client that returns an empty wallet (zero equity, no
+/// coins, no positions). Used to test the portfolio's zero-balance state.
+BybitAccountClient emptyWalletAccountClient() {
+  return BybitAccountClient(
+    httpClient: MockClient((request) async {
+      final path = request.url.path;
+      return http.Response(_emptyWalletResponse(path), 200);
+    }),
+    apiKey: 'test-key',
+    apiSecret: 'test-secret',
+  );
+}
+
+String _emptyWalletResponse(String path) {
+  if (path.contains('/v5/account/wallet-balance')) {
+    return jsonEncode({
+      'retCode': 0,
+      'retMsg': 'OK',
+      'result': {
+        'list': [
+          {'accountType': 'UNIFIED', 'totalEquity': '0', 'coin': []},
+        ],
+      },
+    });
+  }
+  return jsonEncode({
+    'retCode': 0,
+    'retMsg': 'OK',
+    'result': {'list': []},
+  });
+}
+
+/// Mock Bybit account client that throws on every request. Used to test the
+/// portfolio's error/retry state.
+BybitAccountClient errorAccountClient() {
+  return BybitAccountClient(
+    httpClient: MockClient((request) async {
+      throw Exception('Network error');
+    }),
+    apiKey: 'test-key',
+    apiSecret: 'test-secret',
+  );
+}
+
+/// Mock Bybit account client that returns a wallet with three coins (USDT,
+/// BTC, ETH). Used to test multi-coin portfolio rendering.
+BybitAccountClient multiCoinAccountClient() {
+  return BybitAccountClient(
+    httpClient: MockClient((request) async {
+      final path = request.url.path;
+      return http.Response(_multiCoinResponse(path), 200);
+    }),
+    apiKey: 'test-key',
+    apiSecret: 'test-secret',
+  );
+}
+
+String _multiCoinResponse(String path) {
+  if (path.contains('/v5/account/wallet-balance')) {
+    return jsonEncode({
+      'retCode': 0,
+      'retMsg': 'OK',
+      'result': {
+        'list': [
+          {
+            'accountType': 'UNIFIED',
+            'totalEquity': '50300.00',
+            'coin': [
+              {'coin': 'USDT', 'walletBalance': '48000', 'equity': '48000'},
+              {'coin': 'BTC', 'walletBalance': '0.5', 'equity': '2000'},
+              {'coin': 'ETH', 'walletBalance': '3.0', 'equity': '300'},
+            ],
+          },
+        ],
+      },
+    });
+  }
+  return jsonEncode({
+    'retCode': 0,
+    'retMsg': 'OK',
+    'result': {'list': []},
+  });
+}
+
 class FakeMarketDataRepository implements MarketDataRepository {
   DateTime get _now => DateTime.now().toUtc();
 
@@ -318,10 +402,27 @@ Future<void> enterPin(WidgetTester tester, String pin) async {
   await tester.pumpAndSettle(const Duration(seconds: 5));
 }
 
+/// Enters a PIN and taps the submit button by type (works for both
+/// "Unlock with PIN" and "Set PIN" button labels).
+Future<void> submitPinForm(WidgetTester tester, String pin) async {
+  await tester.enterText(find.byType(TextField), pin);
+  await tester.tap(find.byType(ElevatedButton));
+  await tester.pumpAndSettle(const Duration(seconds: 5));
+}
+
+/// Sets the PIN text directly on the controller, bypassing the TextField's
+/// maxLength formatter. Used to test validation of pins that exceed 4 digits.
+Future<void> enterPinBypassingFormatter(WidgetTester tester, String pin) async {
+  final textField = tester.widget<TextField>(find.byType(TextField));
+  textField.controller?.text = pin;
+  await tester.tap(find.byType(ElevatedButton));
+  await tester.pumpAndSettle(const Duration(seconds: 5));
+}
+
 Future<void> pumpLockedApp(
   WidgetTester tester, {
   bool online = true,
-  String initialPin = '1234',
+  String? initialPin = '1234',
 }) async {
   final mockAuth = MockLocalAuthService();
   when(() => mockAuth.canCheckBiometrics()).thenAnswer((_) async => false);
@@ -353,6 +454,41 @@ Future<void> pumpAuthenticatedApp(
 }) async {
   await pumpLockedApp(tester, online: online);
   await authenticateWithPin(tester);
+}
+
+/// Pumps the app with a custom [BybitAccountClient] and credentials flag,
+/// then authenticates with the default PIN. Used for portfolio edge-case
+/// tests that need to override the account data source.
+Future<void> pumpAuthenticatedAppWithAccountClient(
+  WidgetTester tester, {
+  required BybitAccountClient accountClient,
+  bool hasCredentials = true,
+  bool online = true,
+}) async {
+  final mockAuth = MockLocalAuthService();
+  when(() => mockAuth.canCheckBiometrics()).thenAnswer((_) async => false);
+
+  app.main(
+    overrides: [
+      localAuthServiceProvider.overrideWithValue(mockAuth),
+      pinAuthServiceProvider.overrideWithValue(
+        FakePinAuthService(initialPin: '1234'),
+      ),
+      marketDataRepositoryProvider.overrideWithValue(
+        FakeMarketDataRepository(),
+      ),
+      connectivityProvider.overrideWith((ref) => Stream.value(online)),
+      marketScreenerBybitClientProvider.overrideWithValue(
+        _mockScreenerClient(),
+      ),
+      bybitAccountClientProvider.overrideWithValue(accountClient),
+      bybitHasCredentialsProvider.overrideWithValue(hasCredentials),
+    ],
+  );
+
+  await tester.pumpAndSettle(const Duration(seconds: 10));
+  await authenticateWithPin(tester);
+  await tester.pumpAndSettle(const Duration(seconds: 5));
 }
 
 Future<void> pumpAuthenticatedAppWithMockStore(
