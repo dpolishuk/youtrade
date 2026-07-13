@@ -34,7 +34,7 @@ void main() {
     rawSymbol: 'BTC-28K-C',
     name: 'BTC Call 70k',
     venue: Venue.bybit,
-    assetClass: AssetClass.opt,
+    assetClass: AssetClass.spot,
     price: 0.0421,
     change24hPercent: 8.12,
     priceDecimals: 4,
@@ -110,9 +110,7 @@ void main() {
       expect(router.state.uri.queryParameters['symbol'], 'BTCUSDT');
     });
 
-    testWidgets('navigates to /markets/options/BTC-28K-C for options market', (
-      tester,
-    ) async {
+    testWidgets('all markets navigate to trading terminal', (tester) async {
       final router = GoRouter(
         initialLocation: '/',
         routes: [
@@ -125,10 +123,6 @@ void main() {
             path: '/trading',
             builder: (_, _) => const Scaffold(body: Text('Trading')),
           ),
-          GoRoute(
-            path: '/markets/options/:symbol',
-            builder: (_, _) => const Scaffold(body: Text('Options')),
-          ),
         ],
       );
 
@@ -138,8 +132,8 @@ void main() {
       await tester.tap(find.byType(MarketListTile));
       await tester.pumpAndSettle();
 
-      expect(router.state.uri.path, '/markets/options/BTC-28K-C');
-      expect(router.state.pathParameters['symbol'], 'BTC-28K-C');
+      expect(router.state.uri.path, '/trading');
+      expect(router.state.uri.queryParameters['symbol'], 'BTC-28K-C');
     });
   });
 }

@@ -137,12 +137,6 @@ class MarketListTile extends StatelessWidget {
         return appColors.accent;
       case AssetClass.spot:
         return appColors.bullish;
-      case AssetClass.stock:
-        return const Color(0xFF8B9CF0);
-      case AssetClass.fut:
-        return const Color(0xFFFFC457);
-      case AssetClass.opt:
-        return const Color(0xFFC9A6FF);
     }
   }
 
@@ -167,10 +161,6 @@ class MarketListTile extends StatelessWidget {
   }
 
   void _onTap(BuildContext context) {
-    if (market.assetClass == AssetClass.opt) {
-      context.go('/markets/options/${market.rawSymbol}');
-    } else {
-      context.go('/trading?symbol=${market.rawSymbol}');
-    }
+    context.go('/trading?symbol=${market.rawSymbol}');
   }
 }

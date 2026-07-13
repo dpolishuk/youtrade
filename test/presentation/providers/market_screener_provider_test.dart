@@ -280,14 +280,14 @@ void main() {
 
       await container.read(marketScreenerItemsProvider.future);
       container.read(marketScreenerFilterProvider.notifier).state =
-          MarketCategory.crypto;
+          MarketCategory.perp;
 
       final asyncValue = container.read(filteredMarketScreenerItemsProvider);
       final markets = asyncValue.valueOrNull!;
 
-      expect(markets.length, 2);
+      expect(markets.length, 1);
       expect(
-        markets.every((m) => m.assetClass.category == MarketCategory.crypto),
+        markets.every((m) => m.assetClass.category == MarketCategory.perp),
         isTrue,
       );
     });
