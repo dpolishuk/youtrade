@@ -14,8 +14,8 @@ import '../widgets/trading_terminal/fundamentals_card.dart';
 import '../widgets/trading_terminal/lower_tabs.dart';
 import '../widgets/trading_terminal/order_book_panel.dart';
 import '../widgets/trading_terminal/signal_gauge.dart';
-import '../widgets/trading_terminal/symbol_chip_row.dart';
 import '../widgets/trading_terminal/symbol_header.dart';
+import '../widgets/trading_terminal/symbol_search_bar.dart';
 import '../widgets/trading_terminal/time_frame_selector.dart';
 import '../widgets/trading_terminal/trade_ticket.dart';
 
@@ -173,7 +173,7 @@ class _TradingTerminalScreenState extends ConsumerState<TradingTerminalScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 8),
-              const SymbolChipRow(),
+              const SymbolSearchBar(),
               const SizedBox(height: 12),
               SymbolHeader(
                 symbol: selectedSymbol,

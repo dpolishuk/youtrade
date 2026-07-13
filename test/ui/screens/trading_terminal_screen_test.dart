@@ -15,6 +15,7 @@ import 'package:youtrade/domain/entities/trade.dart';
 import 'package:youtrade/domain/entities/venue.dart';
 import 'package:youtrade/domain/registry/exchange_capability.dart';
 import 'package:youtrade/domain/repositories/market_data_repository.dart';
+import 'package:youtrade/presentation/providers/market_screener_provider.dart';
 import 'package:youtrade/presentation/providers/repository_provider.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
@@ -133,10 +134,36 @@ final class _ErrorRepository implements MarketDataRepository {
       Stream.value(const Err<List<Trade>>(UnknownFailure('Repository error')));
 }
 
+final _testScreenerItems = [
+  MarketScreenerItem(
+    symbol: displaySymbol('BTCUSDT'),
+    rawSymbol: 'BTCUSDT',
+    name: 'BTCUSDT',
+    venue: Venue.bybit,
+    assetClass: AssetClass.perp,
+    price: 65000.0,
+    change24hPercent: 5.23,
+    priceDecimals: 1,
+  ),
+  MarketScreenerItem(
+    symbol: displaySymbol('ETHUSDT'),
+    rawSymbol: 'ETHUSDT',
+    name: 'ETHUSDT',
+    venue: Venue.bybit,
+    assetClass: AssetClass.perp,
+    price: 3200.0,
+    change24hPercent: -2.34,
+    priceDecimals: 2,
+  ),
+];
+
 Widget _buildApp({String? symbol}) {
   return ProviderScope(
     overrides: [
       marketDataRepositoryProvider.overrideWithValue(_deterministicRepository),
+      marketScreenerItemsProvider.overrideWith(
+        (ref) async => _testScreenerItems,
+      ),
     ],
     child: MaterialApp.router(
       theme: AppTheme.dark(AppVisualDirection.flux),
@@ -238,13 +265,9 @@ void main() {
       expect(find.text('Info'), findsOneWidget);
       expect(find.text('Signals'), findsOneWidget);
 
-      // Symbol chips from the mockup.
+      // Search bar shows the currently selected symbol as hint text.
       expect(find.text('BTC'), findsWidgets);
       expect(find.text('BTCUSDT'), findsOneWidget);
-      expect(find.text('ETH'), findsOneWidget);
-      expect(find.text('SOL'), findsOneWidget);
-      expect(find.text('XRP'), findsOneWidget);
-      expect(find.text('AAPL'), findsOneWidget);
 
       // Class tag and header metadata.
       expect(find.text('PERP'), findsOneWidget);
@@ -270,22 +293,27 @@ void main() {
       expect(find.text('Ethereum Perpetual · Bybit'), findsOneWidget);
     });
 
-    testWidgets('tapping a chip overrides the deep-linked symbol parameter', (
-      tester,
-    ) async {
-      await tester.pumpWidget(_buildApp(symbol: 'ETH'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+    testWidgets(
+      'selecting from search overrides the deep-linked symbol parameter',
+      (tester) async {
+        await tester.pumpWidget(_buildApp(symbol: 'ETH'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('ETHUSDT'), findsOneWidget);
+        expect(find.text('ETHUSDT'), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey('symbol_chip_BTC')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+        await tester.enterText(
+          find.byKey(const ValueKey('symbol_search_field')),
+          'BTC',
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('BTCUSDT'), findsOneWidget);
-      expect(find.text('Bitcoin Perpetual · Bybit'), findsOneWidget);
-    });
+        await tester.tap(find.byKey(const ValueKey('search_result_BTCUSDT')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Bitcoin Perpetual · Bybit'), findsOneWidget);
+      },
+    );
 
     testWidgets('parses GC=F futures symbol parameter', (tester) async {
       await tester.pumpWidget(_buildApp(symbol: 'GC=F'));
@@ -302,7 +330,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('BTC-28K-C'), findsOneWidget);
+      expect(find.text('BTC-28K-C'), findsWidgets);
     });
 
     testWidgets(
