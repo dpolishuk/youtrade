@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -286,6 +287,180 @@ String _multiCoinResponse(String path) {
   });
 }
 
+/// Mock account client that returns empty open orders but some order history.
+/// Used to test the orders screen's "No open orders" empty state.
+BybitAccountClient emptyOpenOrdersAccountClient() {
+  return BybitAccountClient(
+    httpClient: MockClient((request) async {
+      final path = request.url.path;
+      return http.Response(_emptyOpenOrdersResponse(path), 200);
+    }),
+    apiKey: 'test-key',
+    apiSecret: 'test-secret',
+  );
+}
+
+String _emptyOpenOrdersResponse(String path) {
+  if (path.contains('/v5/account/wallet-balance')) {
+    return jsonEncode({
+      'retCode': 0,
+      'retMsg': 'OK',
+      'result': {
+        'list': [
+          {
+            'accountType': 'UNIFIED',
+            'totalEquity': '50000.00',
+            'coin': [
+              {'coin': 'USDT', 'walletBalance': '48000', 'equity': '48000'},
+            ],
+          },
+        ],
+      },
+    });
+  }
+  if (path.contains('/v5/position/list')) {
+    return jsonEncode({
+      'retCode': 0,
+      'retMsg': 'OK',
+      'result': {'list': []},
+    });
+  }
+  if (path.contains('/v5/order/realtime')) {
+    return jsonEncode({
+      'retCode': 0,
+      'retMsg': 'OK',
+      'result': {'list': []},
+    });
+  }
+  return jsonEncode({
+    'retCode': 0,
+    'retMsg': 'OK',
+    'result': {
+      'list': [
+        {
+          'orderId': 'hist-1',
+          'symbol': 'BTCUSDT',
+          'side': 'Buy',
+          'orderType': 'Market',
+          'price': '60000',
+          'qty': '0.1',
+          'orderStatus': 'Filled',
+          'createdTime': '1718952000000',
+        },
+      ],
+    },
+  });
+}
+
+/// Mock account client that returns some open orders but empty order history.
+/// Used to test the orders screen's "No order history" empty state.
+BybitAccountClient emptyHistoryOrdersAccountClient() {
+  return BybitAccountClient(
+    httpClient: MockClient((request) async {
+      final path = request.url.path;
+      return http.Response(_emptyHistoryOrdersResponse(path), 200);
+    }),
+    apiKey: 'test-key',
+    apiSecret: 'test-secret',
+  );
+}
+
+String _emptyHistoryOrdersResponse(String path) {
+  if (path.contains('/v5/account/wallet-balance')) {
+    return jsonEncode({
+      'retCode': 0,
+      'retMsg': 'OK',
+      'result': {
+        'list': [
+          {
+            'accountType': 'UNIFIED',
+            'totalEquity': '50000.00',
+            'coin': [
+              {'coin': 'USDT', 'walletBalance': '48000', 'equity': '48000'},
+            ],
+          },
+        ],
+      },
+    });
+  }
+  if (path.contains('/v5/position/list')) {
+    return jsonEncode({
+      'retCode': 0,
+      'retMsg': 'OK',
+      'result': {'list': []},
+    });
+  }
+  if (path.contains('/v5/order/realtime')) {
+    return jsonEncode({
+      'retCode': 0,
+      'retMsg': 'OK',
+      'result': {
+        'list': [
+          {
+            'orderId': 'ord-1',
+            'symbol': 'BTCUSDT',
+            'side': 'Buy',
+            'orderType': 'Limit',
+            'price': '64000',
+            'qty': '0.1',
+            'orderStatus': 'New',
+            'createdTime': '1718952000000',
+          },
+        ],
+      },
+    });
+  }
+  return jsonEncode({
+    'retCode': 0,
+    'retMsg': 'OK',
+    'result': {'list': []},
+  });
+}
+
+/// Mock account client that returns HTTP 429 (rate limited) on every request.
+/// Used to test the app's rate-limit error handling.
+BybitAccountClient rateLimitAccountClient() {
+  return BybitAccountClient(
+    httpClient: MockClient(
+      (request) async =>
+          http.Response('{"retCode":429,"retMsg":"Rate limit"}', 429),
+    ),
+    apiKey: 'test-key',
+    apiSecret: 'test-secret',
+  );
+}
+
+/// Mock account client that throws a TimeoutException on every request.
+/// Used to test the app's timeout error handling.
+BybitAccountClient timeoutAccountClient() {
+  return BybitAccountClient(
+    httpClient: MockClient(
+      (request) async => throw TimeoutException('Request timed out'),
+    ),
+    apiKey: 'test-key',
+    apiSecret: 'test-secret',
+  );
+}
+
+/// Mock screener client that returns HTTP 429 on every request.
+BybitRestClient rateLimitScreenerClient() {
+  return BybitRestClient(
+    httpClient: MockClient(
+      (request) async =>
+          http.Response('{"retCode":429,"retMsg":"Rate limit"}', 429),
+    ),
+  );
+}
+
+/// Mock screener client that throws a TimeoutException on every request.
+BybitRestClient timeoutScreenerClient() {
+  return BybitRestClient(
+    httpClient: MockClient(
+      (request) async => throw TimeoutException('Request timed out'),
+    ),
+  );
+}
+
 class FakeMarketDataRepository implements MarketDataRepository {
   DateTime get _now => DateTime.now().toUtc();
 
@@ -542,4 +717,71 @@ Future<void> pumpAppWithBiometricCancellation(WidgetTester tester) async {
   );
 
   await tester.pumpAndSettle(const Duration(seconds: 10));
+}
+
+/// Pumps the app with a controllable [StreamController] for connectivity,
+/// allowing tests to emit online/offline transitions after the app is running.
+/// Returns the controller so callers can emit new connectivity values.
+Future<StreamController<bool>> pumpAuthenticatedAppWithConnectivityController(
+  WidgetTester tester, {
+  bool initialOnline = true,
+}) async {
+  final controller = StreamController<bool>.broadcast();
+  controller.add(initialOnline);
+
+  final mockAuth = MockLocalAuthService();
+  when(() => mockAuth.canCheckBiometrics()).thenAnswer((_) async => false);
+
+  app.main(
+    overrides: [
+      localAuthServiceProvider.overrideWithValue(mockAuth),
+      pinAuthServiceProvider.overrideWithValue(
+        FakePinAuthService(initialPin: '1234'),
+      ),
+      marketDataRepositoryProvider.overrideWithValue(
+        FakeMarketDataRepository(),
+      ),
+      connectivityProvider.overrideWith((ref) => controller.stream),
+      marketScreenerBybitClientProvider.overrideWithValue(
+        _mockScreenerClient(),
+      ),
+      bybitAccountClientProvider.overrideWithValue(_mockAccountClient()),
+      bybitHasCredentialsProvider.overrideWithValue(true),
+    ],
+  );
+
+  await tester.pumpAndSettle(const Duration(seconds: 10));
+  await authenticateWithPin(tester);
+  await tester.pumpAndSettle(const Duration(seconds: 3));
+  return controller;
+}
+
+/// Pumps the app with a custom screener [BybitRestClient] for testing API
+/// error states on the markets screen.
+Future<void> pumpAuthenticatedAppWithScreenerClient(
+  WidgetTester tester, {
+  required BybitRestClient screenerClient,
+  bool online = true,
+}) async {
+  final mockAuth = MockLocalAuthService();
+  when(() => mockAuth.canCheckBiometrics()).thenAnswer((_) async => false);
+
+  app.main(
+    overrides: [
+      localAuthServiceProvider.overrideWithValue(mockAuth),
+      pinAuthServiceProvider.overrideWithValue(
+        FakePinAuthService(initialPin: '1234'),
+      ),
+      marketDataRepositoryProvider.overrideWithValue(
+        FakeMarketDataRepository(),
+      ),
+      connectivityProvider.overrideWith((ref) => Stream.value(online)),
+      marketScreenerBybitClientProvider.overrideWithValue(screenerClient),
+      bybitAccountClientProvider.overrideWithValue(_mockAccountClient()),
+      bybitHasCredentialsProvider.overrideWithValue(true),
+    ],
+  );
+
+  await tester.pumpAndSettle(const Duration(seconds: 10));
+  await authenticateWithPin(tester);
 }
