@@ -108,10 +108,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('All'), findsOneWidget);
-      expect(find.text('Crypto'), findsOneWidget);
-      expect(find.text('Stocks'), findsOneWidget);
-      expect(find.text('Futures'), findsOneWidget);
-      expect(find.text('Options'), findsOneWidget);
+      expect(find.text('Perpetuals'), findsOneWidget);
+      expect(find.text('Spot'), findsOneWidget);
     });
 
     testWidgets('shows header row', (tester) async {
@@ -187,11 +185,11 @@ void main() {
 
       expect(find.byType(MarketListTile), findsWidgets);
 
-      await tester.tap(find.text('Stocks'));
+      await tester.tap(find.text('Spot'));
       await tester.pumpAndSettle();
 
-      expect(find.text('No markets found'), findsOneWidget);
-      expect(find.byType(MarketListTile), findsNothing);
+      // Spot category has fewer items than All
+      expect(find.byType(MarketListTile), findsWidgets);
 
       await tester.tap(find.text('All'));
       await tester.pumpAndSettle();

@@ -5,21 +5,16 @@ import '../../data/datasources/remote/bybit/bybit_rest_client.dart';
 import '../../domain/entities/venue.dart';
 
 enum MarketCategory {
-  crypto('Crypto'),
-  stocks('Stocks'),
-  futures('Futures'),
-  options('Options');
+  perp('Perpetuals'),
+  spot('Spot');
 
   const MarketCategory(this.label);
   final String label;
 }
 
 enum AssetClass {
-  perp('PERP', MarketCategory.crypto),
-  spot('SPOT', MarketCategory.crypto),
-  stock('STOCK', MarketCategory.stocks),
-  fut('FUT', MarketCategory.futures),
-  opt('OPT', MarketCategory.options);
+  perp('PERP', MarketCategory.perp),
+  spot('SPOT', MarketCategory.spot);
 
   const AssetClass(this.badge, this.category);
 

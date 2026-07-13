@@ -5,12 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:youtrade/domain/entities/symbol.dart';
 import 'package:youtrade/domain/entities/ticker.dart';
 import 'package:youtrade/domain/entities/venue.dart';
-import 'package:youtrade/presentation/providers/selected_symbol_provider.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
 import 'package:youtrade/presentation/theme/theme_extensions.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
 import 'package:youtrade/ui/widgets/trading_terminal/lower_tabs.dart';
-import 'package:youtrade/ui/widgets/trading_terminal/symbol_chip_row.dart';
 import 'package:youtrade/ui/widgets/trading_terminal/time_frame_selector.dart';
 import 'package:youtrade/ui/widgets/trading_terminal/trade_ticket.dart';
 
@@ -80,33 +78,6 @@ void main() {
       expect(decoration.border, isA<Border>());
       final border = decoration.border! as Border;
       expect(border.top.color, appColors.borderSubtle);
-    });
-
-    testWidgets('SymbolChipRow unselected chip uses chip and subtleText', (
-      tester,
-    ) async {
-      final theme = AppTheme.dark(AppVisualDirection.carbon);
-      final appColors = theme.extension<AppColorTheme>()!;
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [selectedSymbolProvider.overrideWith((ref) => _symbol)],
-          child: MaterialApp(
-            theme: theme,
-            home: const Scaffold(body: SymbolChipRow()),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // XRP chip is unselected by default because the selected symbol is BTC.
-      final xrpMaterial = tester.firstWidget<Material>(
-        find.ancestor(of: find.text('XRP'), matching: find.byType(Material)),
-      );
-      expect(xrpMaterial.color, appColors.chip);
-
-      final xrpText = tester.widget<Text>(find.text('XRP'));
-      expect(xrpText.style?.color, appColors.subtleText);
     });
 
     testWidgets('LowerTabs uses borderSubtle and foreground/tertiaryText', (

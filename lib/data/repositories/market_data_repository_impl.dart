@@ -346,8 +346,20 @@ final class MarketDataRepositoryImpl implements MarketDataRepository {
 
     final sources = _venueSources[symbol.venue];
     if (sources != null && registry.isSymbolSupported(symbol)) {
-      yield* watchSource(sources);
-      return;
+      var sourceFailed = false;
+      try {
+        await for (final result in watchSource(sources)) {
+          if (result is Success<T>) {
+            yield result;
+          } else if (result is Err<T>) {
+            sourceFailed = true;
+            break;
+          }
+        }
+      } on Object {
+        sourceFailed = true;
+      }
+      if (!sourceFailed) return;
     }
 
     await for (final value in watchMock()) {
