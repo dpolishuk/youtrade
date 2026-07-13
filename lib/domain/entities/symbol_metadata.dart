@@ -135,7 +135,7 @@ SymbolMetadata resolveSymbolMetadata(TradingSymbol symbol) {
     ),
     _ => SymbolMetadata(
       name: symbol.base,
-      symbolClass: SymbolClass.spot,
+      symbolClass: SymbolClass.perp,
       base: symbol.base,
       decimals: 2,
       venue: symbol.venue,
