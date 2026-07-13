@@ -315,22 +315,25 @@ void main() {
       },
     );
 
-    testWidgets('parses GC=F futures symbol parameter', (tester) async {
-      await tester.pumpWidget(_buildApp(symbol: 'GC=F'));
+    testWidgets('parses arbitrary USDT pair to correct base', (tester) async {
+      await tester.pumpWidget(_buildApp(symbol: 'DOGEUSDT'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('GC=F'), findsOneWidget);
-      expect(find.text('Gold Futures · Dec · OKX'), findsOneWidget);
-      expect(find.text('FUTURE'), findsOneWidget);
+      // Header shows the raw pair and metadata derived from base 'DOGE'.
+      expect(find.text('DOGEUSDT'), findsOneWidget);
+      expect(find.text('DOGE · Bybit'), findsOneWidget);
+      expect(find.text('Buy / Long DOGE'), findsOneWidget);
     });
 
-    testWidgets('parses BTC-28K-C options symbol parameter', (tester) async {
-      await tester.pumpWidget(_buildApp(symbol: 'BTC-28K-C'));
+    testWidgets('parses bare base symbol as USDT pair', (tester) async {
+      await tester.pumpWidget(_buildApp(symbol: 'ADA'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('BTC-28K-C'), findsWidgets);
+      // ADA is treated as base with USDT quote; rawSymbol becomes ADAUSDT.
+      expect(find.text('ADAUSDT'), findsOneWidget);
+      expect(find.text('ADA · Bybit'), findsOneWidget);
     });
 
     testWidgets(

@@ -104,5 +104,45 @@ void main() {
       expect(meta.name, 'UNKNOWN');
       expect(meta.venue, Venue.okx);
     });
+
+    test('test_unknown_usdt_symbol_gets_correct_base', () {
+      final meta = resolveSymbolMetadata(
+        TradingSymbol(
+          base: 'DOGE',
+          quote: 'USDT',
+          venue: Venue.bybit,
+          rawSymbol: 'DOGEUSDT',
+        ),
+      );
+
+      expect(meta.base, 'DOGE');
+      expect(meta.venue, Venue.bybit);
+    });
+
+    test('test_unknown_symbol_gets_perp_class', () {
+      final meta = resolveSymbolMetadata(
+        TradingSymbol(
+          base: 'PEPE',
+          quote: 'USDT',
+          venue: Venue.bybit,
+          rawSymbol: 'PEPEUSDT',
+        ),
+      );
+
+      expect(meta.symbolClass, SymbolClass.perp);
+    });
+
+    test('test_unknown_symbol_decimals_default_to_two', () {
+      final meta = resolveSymbolMetadata(
+        TradingSymbol(
+          base: 'AVAX',
+          quote: 'USDT',
+          venue: Venue.bybit,
+          rawSymbol: 'AVAXUSDT',
+        ),
+      );
+
+      expect(meta.decimals, 2);
+    });
   });
 }
