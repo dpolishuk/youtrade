@@ -88,5 +88,34 @@ void main() {
       expect(tester.takeException(), isNull);
       await binding.takeScreenshot('navigation_theme_toggle');
     });
+
+    testWidgets('visual direction toggle changes accent direction', (
+      tester,
+    ) async {
+      await pumpAuthenticatedApp(tester);
+
+      await tester.tap(find.byKey(const Key('bottom-nav-item-4')));
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      // Find the visual direction toggle (Flux / Carbon).
+      expect(
+        find.byKey(const ValueKey('visual-direction-toggle')),
+        findsOneWidget,
+      );
+      expect(find.text('FLUX'), findsWidgets);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey('visual-direction-toggle')),
+          matching: find.byType(TextButton),
+        ),
+      );
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
+      // After toggling, the label should switch to CARBON.
+      expect(find.text('CARBON'), findsWidgets);
+      expect(tester.takeException(), isNull);
+      await binding.takeScreenshot('navigation_visual_direction_toggle');
+    });
   });
 }
