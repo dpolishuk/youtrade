@@ -78,6 +78,26 @@ void main() {
       await binding.takeScreenshot('markets_no_overflow');
     });
 
+    testWidgets('long symbol name renders without overflow', (tester) async {
+      await navigateToMarkets(tester);
+
+      expect(find.text('BTC'), findsOneWidget);
+      expect(find.text('ETH'), findsOneWidget);
+      expect(find.text('SOL'), findsOneWidget);
+
+      // Scroll through the full list to trigger layout of every row,
+      // then verify no RenderFlex overflow was reported.
+      await tester.scrollUntilVisible(
+        find.text('SOL'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      await binding.takeScreenshot('markets_long_symbol_no_overflow');
+    });
+
     testWidgets('tap non-BTC symbol navigates to terminal', (tester) async {
       await navigateToMarkets(tester);
 

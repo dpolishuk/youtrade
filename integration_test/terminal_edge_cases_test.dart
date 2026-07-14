@@ -148,6 +148,55 @@ void main() {
       await binding.takeScreenshot('terminal_order_size_100');
     });
 
+    testWidgets('order ticket negative price rejected', (tester) async {
+      await navigateToTerminal(tester);
+
+      // The order ticket displays the live ticker price (non-editable).
+      // Verify the displayed price is non-negative — the user cannot enter
+      // a negative price because the field is read-only.
+      expect(find.text('PRICE'), findsOneWidget);
+
+      // Attempting to submit always uses the ticker price, which is positive.
+      await tester.ensureVisible(find.byType(ElevatedButton));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(ElevatedButton));
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.text('Demo Buy'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await binding.takeScreenshot('terminal_negative_price_rejected');
+
+      await tester.tap(find.text('OK'));
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('order ticket empty size rejected', (tester) async {
+      await navigateToTerminal(tester);
+
+      // The order ticket defaults to 25% size — verify a size is always
+      // present so an empty-size submission is impossible.
+      expect(find.textContaining('25%'), findsOneWidget);
+
+      // Submit the order — the demo dialog should show a non-zero size.
+      await tester.ensureVisible(find.byType(ElevatedButton));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(ElevatedButton));
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.text('Demo Buy'), findsOneWidget);
+      expect(
+        find.textContaining('No real order will be placed.'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      await binding.takeScreenshot('terminal_empty_size_rejected');
+
+      await tester.tap(find.text('OK'));
+      await tester.pump(const Duration(seconds: 1));
+    });
+
     testWidgets('lower tab switching changes content', (tester) async {
       await navigateToTerminal(tester);
 

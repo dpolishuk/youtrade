@@ -417,31 +417,6 @@ String _emptyHistoryOrdersResponse(String path) {
   });
 }
 
-/// Mock account client that returns HTTP 429 (rate limited) on every request.
-/// Used to test the app's rate-limit error handling.
-BybitAccountClient rateLimitAccountClient() {
-  return BybitAccountClient(
-    httpClient: MockClient(
-      (request) async =>
-          http.Response('{"retCode":429,"retMsg":"Rate limit"}', 429),
-    ),
-    apiKey: 'test-key',
-    apiSecret: 'test-secret',
-  );
-}
-
-/// Mock account client that throws a TimeoutException on every request.
-/// Used to test the app's timeout error handling.
-BybitAccountClient timeoutAccountClient() {
-  return BybitAccountClient(
-    httpClient: MockClient(
-      (request) async => throw TimeoutException('Request timed out'),
-    ),
-    apiKey: 'test-key',
-    apiSecret: 'test-secret',
-  );
-}
-
 /// Mock screener client that returns HTTP 429 on every request.
 BybitRestClient rateLimitScreenerClient() {
   return BybitRestClient(
