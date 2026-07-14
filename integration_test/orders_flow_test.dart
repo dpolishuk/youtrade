@@ -42,8 +42,13 @@ void main() {
         expect(find.text('XRPUSDT'), findsOneWidget);
         await tester.tap(find.text('Cancel').last);
         await tester.pumpAndSettle(const Duration(seconds: 2));
+
+        expect(find.text('Cancel this order?'), findsOneWidget);
+        await tester.tap(find.text('Cancel Order'));
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+
         expect(find.text('XRPUSDT'), findsNothing);
-        expect(find.text('Cancel'), findsNWidgets(3));
+        expect(find.text('Order cancelled'), findsOneWidget);
         await binding.takeScreenshot('orders_after_cancel');
       },
       timeout: const Timeout(Duration(minutes: 5)),
