@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/result.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/entities/position.dart';
 import '../../presentation/providers/orders_provider.dart';
@@ -24,8 +25,9 @@ class _OrdersHistoryScreenState extends ConsumerState<OrdersHistoryScreen> {
   int _selectedIndex = 0;
   final _tabs = const ['Open', 'History', 'Positions'];
 
-  /// Order IDs removed via the demo Cancel button (no real trade execution).
-  final Set<String?> _cancelledOrderIds = {};
+  /// Order IDs successfully cancelled via the real cancelOrder API. These are
+  /// filtered from the visible list until the next refresh confirms it.
+  final Set<String> _cancelledOrderIds = {};
 
   @override
   Widget build(BuildContext context) {
@@ -143,8 +145,100 @@ class _OrdersHistoryScreenState extends ConsumerState<OrdersHistoryScreen> {
         final order = visible[index];
         return OrderListTile(
           order: order,
-          onCancel: (_) =>
-              setState(() => _cancelledOrderIds.add(order.orderId)),
+          onCancel: (_) => _showCancelConfirmation(order),
+        );
+      },
+    );
+  }
+
+  /// Shows a confirmation dialog before calling the real cancelOrder API.
+  Future<void> _showCancelConfirmation(Order order) async {
+    final orderId = order.orderId;
+    if (orderId == null) return;
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        var isCancelling = false;
+        String? errorMessage;
+        return StatefulBuilder(
+          builder: (_, setDialogState) {
+            return AlertDialog(
+              title: const Text('Cancel this order?'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${order.side} ${order.qty} ${order.symbol} '
+                    '@ ${order.price}',
+                  ),
+                  if (errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        errorMessage!,
+                        style: TextStyle(
+                          color: Theme.of(dialogContext).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isCancelling
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Keep Order'),
+                ),
+                TextButton(
+                  onPressed: isCancelling
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            isCancelling = true;
+                            errorMessage = null;
+                          });
+                          final result = await ref
+                              .read(bybitAccountClientProvider)
+                              .cancelOrder(
+                                category: 'linear',
+                                symbol: order.symbol,
+                                orderId: orderId,
+                              );
+                          if (!dialogContext.mounted) return;
+                          switch (result) {
+                            case Success():
+                              Navigator.of(dialogContext).pop();
+                              if (!mounted) return;
+                              setState(() => _cancelledOrderIds.add(orderId));
+                              ref.invalidate(ordersProvider);
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Order cancelled'),
+                                ),
+                              );
+                            case Err(failure: final f):
+                              setDialogState(() {
+                                isCancelling = false;
+                                errorMessage = f.message;
+                              });
+                          }
+                        },
+                  child: isCancelling
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Cancel Order'),
+                ),
+              ],
+            );
+          },
         );
       },
     );

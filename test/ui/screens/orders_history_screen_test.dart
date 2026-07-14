@@ -23,12 +23,35 @@ void main() {
     List<Map<String, dynamic>> coins = const [
       {'coin': 'USDT', 'walletBalance': '50000', 'equity': '50000'},
     ],
+    bool cancelSucceeds = true,
+    void Function(String body)? onCancelRequest,
   }) {
     return BybitAccountClient(
       apiKey: 'test-key',
       apiSecret: 'test-secret',
       httpClient: MockClient((request) async {
         final path = request.url.path;
+        if (path.contains('/v5/order/cancel')) {
+          if (onCancelRequest != null) onCancelRequest(request.body);
+          if (!cancelSucceeds) {
+            return http.Response(
+              jsonEncode({
+                'retCode': 10001,
+                'retMsg': 'order not found',
+                'result': {},
+              }),
+              200,
+            );
+          }
+          return http.Response(
+            jsonEncode({
+              'retCode': 0,
+              'retMsg': 'OK',
+              'result': {'orderId': 'cancelled'},
+            }),
+            200,
+          );
+        }
         if (path.contains('/v5/order/realtime')) {
           return http.Response(
             jsonEncode({
@@ -247,7 +270,51 @@ void main() {
       expect(symbol.style?.fontWeight, FontWeight.w600);
     });
 
-    testWidgets('Cancel removes the open order from the list (demo only)', (
+    testWidgets('cancel shows confirmation dialog', (tester) async {
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(openOrders: defaultOpenOrders),
+        ),
+      );
+
+      await tester.tap(find.text('Cancel').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cancel this order?'), findsOneWidget);
+      expect(find.text('Cancel Order'), findsOneWidget);
+      expect(find.text('Keep Order'), findsOneWidget);
+      expect(find.textContaining('BTCUSDT'), findsWidgets);
+    });
+
+    testWidgets('cancel confirm calls cancelOrder with correct parameters', (
+      tester,
+    ) async {
+      String? capturedBody;
+      await pumpScreen(
+        tester,
+        overrides: credentialsOverrides(
+          mockClient(
+            openOrders: defaultOpenOrders,
+            onCancelRequest: (body) => capturedBody = body,
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Cancel').first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cancel Order'));
+      await tester.pumpAndSettle();
+
+      expect(capturedBody, isNotNull);
+      final decoded = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      expect(decoded['category'], 'linear');
+      expect(decoded['symbol'], 'BTCUSDT');
+      expect(decoded['orderId'], 'open-1');
+    });
+
+    testWidgets('cancel success removes order and shows snackbar', (
       tester,
     ) async {
       await pumpScreen(
@@ -262,25 +329,34 @@ void main() {
       await tester.tap(find.text('Cancel').first);
       await tester.pumpAndSettle();
 
+      await tester.tap(find.text('Cancel Order'));
+      await tester.pumpAndSettle();
+
       expect(find.byType(OrderListTile), findsNWidgets(1));
-      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('Order cancelled'), findsOneWidget);
     });
 
-    testWidgets('Cancel all shows empty state', (tester) async {
+    testWidgets('cancel error keeps order and shows error message', (
+      tester,
+    ) async {
       await pumpScreen(
         tester,
         overrides: credentialsOverrides(
-          mockClient(openOrders: defaultOpenOrders),
+          mockClient(openOrders: defaultOpenOrders, cancelSucceeds: false),
         ),
       );
 
-      while (find.text('Cancel').evaluate().isNotEmpty) {
-        await tester.tap(find.text('Cancel').first);
-        await tester.pumpAndSettle();
-      }
+      expect(find.byType(OrderListTile), findsNWidgets(2));
 
-      expect(find.byType(OrderListTile), findsNothing);
-      expect(find.text('No open orders'), findsOneWidget);
+      await tester.tap(find.text('Cancel').first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cancel Order'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(OrderListTile), findsNWidgets(2));
+      expect(find.textContaining('order not found'), findsOneWidget);
+      expect(find.text('Cancel Order'), findsOneWidget);
     });
 
     testWidgets('History tab shows real history orders from Bybit API', (

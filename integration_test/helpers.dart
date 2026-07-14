@@ -89,6 +89,13 @@ BybitAccountClient _mockAccountClient() {
 }
 
 String _mockAccountResponse(String path) {
+  if (path.contains('/v5/order/cancel')) {
+    return jsonEncode({
+      'retCode': 0,
+      'retMsg': 'OK',
+      'result': {'orderId': 'cancelled'},
+    });
+  }
   if (path.contains('/v5/account/wallet-balance')) {
     return jsonEncode({
       'retCode': 0,
@@ -415,6 +422,29 @@ String _emptyHistoryOrdersResponse(String path) {
     'retMsg': 'OK',
     'result': {'list': []},
   });
+}
+
+/// Mock account client that returns success for normal requests but an error
+/// for cancel-order requests. Used to test the cancel error flow.
+BybitAccountClient cancelErrorAccountClient() {
+  return BybitAccountClient(
+    httpClient: MockClient((request) async {
+      final path = request.url.path;
+      if (path.contains('/v5/order/cancel')) {
+        return http.Response(
+          jsonEncode({
+            'retCode': 10001,
+            'retMsg': 'order not found',
+            'result': {},
+          }),
+          200,
+        );
+      }
+      return http.Response(_mockAccountResponse(path), 200);
+    }),
+    apiKey: 'test-key',
+    apiSecret: 'test-secret',
+  );
 }
 
 /// Mock screener client that returns HTTP 429 on every request.
