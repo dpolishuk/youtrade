@@ -35,14 +35,21 @@ class MarketListTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    market.symbol,
-                    style: TextStyle(
-                      fontFamily: 'Space Grotesk',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface,
-                      letterSpacing: -0.01 * 13,
+                  SizedBox(
+                    height: 16,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        market.symbol,
+                        style: TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                          letterSpacing: -0.01 * 13,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -59,6 +66,7 @@ class MarketListTile extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(width: 11),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,13 +97,14 @@ class MarketListTile extends StatelessWidget {
               ),
             ),
             if (market.sparkline.isNotEmpty) ...[
+              const SizedBox(width: 11),
               SizedBox(
                 width: 46,
                 height: 24,
                 child: SparklineChart(data: market.sparkline),
               ),
-              const SizedBox(width: 11),
             ],
+            const SizedBox(width: 11),
             SizedBox(
               width: 78,
               child: Column(

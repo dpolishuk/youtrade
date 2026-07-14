@@ -41,6 +41,18 @@ void main() {
     sparkline: [],
   );
 
+  const longSymbolMarket = MarketScreenerItem(
+    symbol: '10000PEPE',
+    rawSymbol: '10000PEPEUSDT',
+    name: '10000 Pepe',
+    venue: Venue.bybit,
+    assetClass: AssetClass.perp,
+    price: 0.012345,
+    change24hPercent: -3.21,
+    priceDecimals: 5,
+    sparkline: [],
+  );
+
   Widget buildTile(MarketScreenerItem market, GoRouter router) {
     return MaterialApp.router(
       theme: AppTheme.dark(AppVisualDirection.carbon),
@@ -134,6 +146,25 @@ void main() {
 
       expect(router.state.uri.path, '/trading');
       expect(router.state.uri.queryParameters['symbol'], 'BTC-28K-C');
+    });
+
+    testWidgets('long symbol renders without overflow', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) =>
+                Scaffold(body: MarketListTile(market: longSymbolMarket)),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(buildTile(longSymbolMarket, router));
+      await tester.pumpAndSettle();
+
+      expect(find.text('10000PEPE'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }
