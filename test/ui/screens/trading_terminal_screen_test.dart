@@ -477,7 +477,7 @@ void main() {
       expect(find.text('Compare'), findsOneWidget);
     });
 
-    testWidgets('submit CTA shows demo confirmation dialog', (tester) async {
+    testWidgets('submit CTA shows confirmation dialog', (tester) async {
       await tester.pumpWidget(_buildApp());
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
@@ -487,11 +487,9 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('Demo Buy'), findsOneWidget);
-      expect(
-        find.textContaining('No real order will be placed.'),
-        findsOneWidget,
-      );
+      expect(find.text('Confirm Buy'), findsOneWidget);
+      expect(find.text('Confirm'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
     });
   });
 }

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/result.dart';
+import '../../../domain/entities/placed_order.dart';
 import '../../../domain/entities/symbol.dart';
 import '../../../domain/entities/symbol_metadata.dart';
 import '../../../domain/entities/ticker.dart';
+import '../../../presentation/providers/orders_provider.dart';
+import '../../../presentation/providers/portfolio_data_provider.dart';
 import '../../../presentation/providers/trading_terminal_provider.dart';
 import '../../../presentation/theme/app_theme.dart';
 import '../../../presentation/theme/theme_extensions.dart';
 import 'formatting.dart';
 
-class TradeTicket extends ConsumerWidget {
+class TradeTicket extends ConsumerStatefulWidget {
   const TradeTicket({
     required this.symbol,
     required this.tickerAsync,
@@ -22,16 +26,21 @@ class TradeTicket extends ConsumerWidget {
   static const _maxBaseSize = 4.2;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TradeTicket> createState() => _TradeTicketState();
+}
+
+class _TradeTicketState extends ConsumerState<TradeTicket> {
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(tradingTerminalProvider);
     final notifier = ref.read(tradingTerminalProvider.notifier);
     final appColors = Theme.of(context).extension<AppColorTheme>()!;
-    final meta = resolveSymbolMetadata(symbol);
+    final meta = resolveSymbolMetadata(widget.symbol);
 
-    final price = tickerAsync.valueOrNull?.lastPrice ?? 0.0;
+    final price = widget.tickerAsync.valueOrNull?.lastPrice ?? 0.0;
     final isBuy = state.orderSide == OrderSide.buy;
     final sideColor = isBuy ? appColors.bullish : appColors.bearish;
-    final sizeQty = _maxBaseSize * state.selectedSizePercent / 100;
+    final sizeQty = TradeTicket._maxBaseSize * state.selectedSizePercent / 100;
     final orderCost = sizeQty * price;
 
     return Column(
@@ -202,8 +211,13 @@ class TradeTicket extends ConsumerWidget {
             ],
           ),
           child: ElevatedButton(
-            onPressed: () =>
-                _showDemoConfirmation(context, meta, isBuy, price, sizeQty),
+            onPressed: () => _showOrderConfirmation(
+              meta: meta,
+              isBuy: isBuy,
+              price: price,
+              sizeQty: sizeQty,
+              orderType: state.orderType,
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: sideColor,
               foregroundColor: Colors.white,
@@ -232,51 +246,180 @@ class TradeTicket extends ConsumerWidget {
     OrderType.stop => 'Stop',
   };
 
-  void _showDemoConfirmation(
-    BuildContext context,
-    SymbolMetadata meta,
-    bool isBuy,
-    double price,
-    double sizeQty,
-  ) {
+  String _categoryFor(SymbolMetadata meta) =>
+      meta.symbolClass == SymbolClass.spot ? 'spot' : 'linear';
+
+  void _showOrderConfirmation({
+    required SymbolMetadata meta,
+    required bool isBuy,
+    required double price,
+    required double sizeQty,
+    required OrderType orderType,
+  }) {
+    final sideText = isBuy ? 'Buy' : 'Sell';
+    final isMarket = orderType == OrderType.market;
+    final orderTypeText = isMarket ? 'Market' : 'Limit';
+    final displayPrice = formatFixedPrice(price, meta.decimals);
+    final dialogState = _OrderDialogState();
+
     showDialog<void>(
       context: context,
-      builder: (context) {
-        final dialogTheme = Theme.of(context);
-        final dialogColors = dialogTheme.extension<AppColorTheme>()!;
-        return AlertDialog(
-          backgroundColor: dialogTheme.cardColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(11),
-            side: BorderSide(color: dialogColors.borderSubtle),
-          ),
-          title: Text(
-            'Demo ${isBuy ? 'Buy' : 'Sell'}',
-            style: AppTheme.display(
-              color: dialogColors.foreground,
-              fontSize: 18,
-            ).copyWith(fontWeight: FontWeight.w600),
-          ),
-          content: Text(
-            '${isBuy ? 'Buy' : 'Sell'} ${sizeQty.toStringAsFixed(3)} ${meta.base} @ ${formatFixedPrice(price, meta.decimals)}\n\nNo real order will be placed.',
-            style: AppTheme.mono(color: dialogColors.subtleText, fontSize: 12),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'OK',
-                style: AppTheme.mono(
-                  color: dialogColors.accent,
-                  fontSize: 12,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (_, setDialogState) {
+            final colors = Theme.of(dialogContext).extension<AppColorTheme>()!;
+            return AlertDialog(
+              backgroundColor: Theme.of(dialogContext).cardColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(11),
+                side: BorderSide(color: colors.borderSubtle),
+              ),
+              title: Text(
+                'Confirm $sideText',
+                style: AppTheme.display(
+                  color: colors.foreground,
+                  fontSize: 18,
                 ).copyWith(fontWeight: FontWeight.w600),
               ),
-            ),
-          ],
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$sideText ${sizeQty.toStringAsFixed(3)} ${meta.base} @ $displayPrice',
+                      style: AppTheme.mono(
+                        color: colors.subtleText,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$orderTypeText order',
+                      style: AppTheme.mono(
+                        color: colors.subtleText,
+                        fontSize: 12,
+                      ),
+                    ),
+                    if (dialogState.errorMessage != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        dialogState.errorMessage!,
+                        style: AppTheme.mono(
+                          color: colors.bearish,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: dialogState.isPlacing
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: Text(
+                    'Cancel',
+                    style: AppTheme.mono(
+                      color: colors.subtleText,
+                      fontSize: 12,
+                    ).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                if (dialogState.isPlacing)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 18),
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                else
+                  ElevatedButton(
+                    onPressed: () => _submitOrder(
+                      dialogContext,
+                      setDialogState,
+                      dialogState,
+                      meta: meta,
+                      sideText: sideText,
+                      orderTypeText: orderTypeText,
+                      isMarket: isMarket,
+                      price: price,
+                      sizeQty: sizeQty,
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isBuy ? colors.bullish : colors.bearish,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Text(
+                      'Confirm',
+                      style: AppTheme.display(
+                        color: Colors.white,
+                        fontSize: 13,
+                      ).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+              ],
+            );
+          },
         );
       },
     );
   }
+
+  Future<void> _submitOrder(
+    BuildContext dialogContext,
+    void Function(void Function()) setDialogState,
+    _OrderDialogState dialogState, {
+    required SymbolMetadata meta,
+    required String sideText,
+    required String orderTypeText,
+    required bool isMarket,
+    required double price,
+    required double sizeQty,
+  }) async {
+    if (!ref.read(bybitHasCredentialsProvider)) {
+      setDialogState(() => dialogState.errorMessage = 'API keys required');
+      return;
+    }
+    setDialogState(() {
+      dialogState.isPlacing = true;
+      dialogState.errorMessage = null;
+    });
+    final result = await ref
+        .read(bybitAccountClientProvider)
+        .placeOrder(
+          category: _categoryFor(meta),
+          symbol: widget.symbol.rawSymbol,
+          side: sideText,
+          orderType: orderTypeText,
+          qty: sizeQty.toStringAsFixed(3),
+          price: isMarket ? null : price.toStringAsFixed(meta.decimals),
+        );
+    if (!dialogContext.mounted) return;
+    switch (result) {
+      case Success(value: final PlacedOrder order):
+        Navigator.of(dialogContext).pop();
+        ref.invalidate(ordersProvider);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Order placed: ${order.orderId}')),
+        );
+      case Err(failure: final f):
+        setDialogState(() {
+          dialogState.isPlacing = false;
+          dialogState.errorMessage = f.message;
+        });
+    }
+  }
+}
+
+/// Mutable state for the order confirmation dialog.
+class _OrderDialogState {
+  bool isPlacing = false;
+  String? errorMessage;
 }
 
 TextStyle? themeBodySmall(BuildContext context) =>
