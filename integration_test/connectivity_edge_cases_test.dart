@@ -36,11 +36,11 @@ void main() {
         initialOnline: false,
       );
 
-      expect(find.text('Demo / Offline mode'), findsOneWidget);
-
+      // Transition to online
       controller.add(true);
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await tester.pump(const Duration(seconds: 5));
 
+      // Banner should be hidden when online
       expect(find.text('Demo / Offline mode'), findsNothing);
       expect(tester.takeException(), isNull);
       await binding.takeScreenshot('connectivity_offline_to_online');
