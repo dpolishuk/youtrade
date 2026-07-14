@@ -10,6 +10,7 @@ import 'package:youtrade/data/datasources/remote/bybit/bybit_account_client.dart
 import 'package:youtrade/domain/entities/account_order.dart';
 import 'package:youtrade/domain/entities/account_position.dart';
 import 'package:youtrade/domain/entities/account_wallet_balance.dart';
+import 'package:youtrade/domain/entities/placed_order.dart';
 
 void main() {
   const apiKey = 'test-api-key';
@@ -36,6 +37,17 @@ void main() {
       sha256,
       utf8.encode(apiSecret),
     ).convert(utf8.encode('$timestamp${apiKey}5000$queryString')).toString();
+  }
+
+  String expectedPostSignature(
+    String timestamp,
+    String apiKey,
+    String jsonBody,
+  ) {
+    return Hmac(
+      sha256,
+      utf8.encode(apiSecret),
+    ).convert(utf8.encode('$timestamp${apiKey}5000$jsonBody')).toString();
   }
 
   group('BybitAccountClient', () {
@@ -294,6 +306,219 @@ void main() {
         },
       );
     });
+
+    test('placeOrder signs POST body and sets json Content-Type', () async {
+      Map<String, String>? capturedHeaders;
+      String? capturedBody;
+      String? capturedMethod;
+      final client = clientWith(
+        MockClient((request) async {
+          capturedHeaders = request.headers;
+          capturedBody = request.body;
+          capturedMethod = request.method;
+          return http.Response(_placeOrderBody(), 200);
+        }),
+      );
+
+      await client.placeOrder(
+        category: 'linear',
+        symbol: 'BTCUSDT',
+        side: 'Buy',
+        orderType: 'Limit',
+        qty: '0.1',
+        price: '60000',
+      );
+
+      expect(capturedMethod, 'POST');
+      expect(capturedHeaders!['Content-Type'], 'application/json');
+      expect(capturedHeaders!['X-BAPI-API-KEY'], apiKey);
+      expect(capturedHeaders!['X-BAPI-RECV-WINDOW'], '5000');
+      final timestamp = capturedHeaders!['X-BAPI-TIMESTAMP']!;
+      expect(int.tryParse(timestamp), isNotNull);
+
+      // Body must contain the limit price and be valid JSON.
+      final decoded = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      expect(decoded['symbol'], 'BTCUSDT');
+      expect(decoded['price'], '60000');
+
+      // Signature is computed over the RAW json body string (not a query string).
+      expect(
+        capturedHeaders!['X-BAPI-SIGN'],
+        expectedPostSignature(timestamp, apiKey, capturedBody!),
+      );
+    });
+
+    test('placeOrder market order omits price field', () async {
+      String? capturedBody;
+      final client = clientWith(
+        MockClient((request) async {
+          capturedBody = request.body;
+          return http.Response(_placeOrderBody(), 200);
+        }),
+      );
+
+      await client.placeOrder(
+        category: 'linear',
+        symbol: 'ETHUSDT',
+        side: 'Sell',
+        orderType: 'Market',
+        qty: '2.0',
+      );
+
+      final decoded = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      expect(decoded['orderType'], 'Market');
+      expect(decoded.containsKey('price'), isFalse);
+    });
+
+    test('placeOrder parses orderId from result', () async {
+      final client = clientWith(
+        MockClient((_) async => http.Response(_placeOrderBody(), 200)),
+      );
+
+      final result = await client.placeOrder(
+        category: 'linear',
+        symbol: 'BTCUSDT',
+        side: 'Buy',
+        orderType: 'Limit',
+        qty: '0.1',
+        price: '60000',
+      );
+      expect(result, isA<Success<PlacedOrder>>());
+      result.when(
+        success: (order) {
+          expect(order.orderId, '1321003749386327552');
+          expect(order.orderLinkId, 'youtrade-1');
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('placeOrder returns error on non-zero retCode', () async {
+      final client = clientWith(
+        MockClient(
+          (_) async => http.Response(
+            '{"retCode":10001,"retMsg":"order failed","result":{}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.placeOrder(
+        category: 'linear',
+        symbol: 'BTCUSDT',
+        side: 'Buy',
+        orderType: 'Limit',
+        qty: '0.1',
+        price: '60000',
+      );
+      expect(result, isA<Err<PlacedOrder>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'Bybit place order API error: 10001 order failed',
+          );
+        },
+      );
+    });
+
+    test('placeOrder returns error on missing credentials', () async {
+      final client = clientWith(
+        MockClient((_) async => http.Response(_placeOrderBody(), 200)),
+        apiKeyOverride: '',
+        apiSecretOverride: '',
+      );
+
+      final result = await client.placeOrder(
+        category: 'linear',
+        symbol: 'BTCUSDT',
+        side: 'Buy',
+        orderType: 'Limit',
+        qty: '0.1',
+        price: '60000',
+      );
+      expect(result, isA<Err<PlacedOrder>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ConfigFailure>());
+          expect(failure.message, contains('credentials'));
+        },
+      );
+    });
+
+    test('cancelOrder signs POST body', () async {
+      Map<String, String>? capturedHeaders;
+      String? capturedBody;
+      String? capturedMethod;
+      final client = clientWith(
+        MockClient((request) async {
+          capturedHeaders = request.headers;
+          capturedBody = request.body;
+          capturedMethod = request.method;
+          return http.Response(_cancelOrderBody(), 200);
+        }),
+      );
+
+      await client.cancelOrder(
+        category: 'linear',
+        symbol: 'BTCUSDT',
+        orderId: '1321003749386327552',
+      );
+
+      expect(capturedMethod, 'POST');
+      expect(capturedHeaders!['Content-Type'], 'application/json');
+      final timestamp = capturedHeaders!['X-BAPI-TIMESTAMP']!;
+      final decoded = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      expect(decoded['orderId'], '1321003749386327552');
+      expect(
+        capturedHeaders!['X-BAPI-SIGN'],
+        expectedPostSignature(timestamp, apiKey, capturedBody!),
+      );
+    });
+
+    test('cancelOrder returns success', () async {
+      final client = clientWith(
+        MockClient((_) async => http.Response(_cancelOrderBody(), 200)),
+      );
+
+      final result = await client.cancelOrder(
+        category: 'linear',
+        symbol: 'BTCUSDT',
+        orderId: '1321003749386327552',
+      );
+      expect(result, isA<Success<void>>());
+    });
+
+    test('cancelOrder returns error on invalid orderId', () async {
+      final client = clientWith(
+        MockClient(
+          (_) async => http.Response(
+            '{"retCode":110001,"retMsg":"order not exists","result":{}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.cancelOrder(
+        category: 'linear',
+        symbol: 'BTCUSDT',
+        orderId: 'invalid',
+      );
+      expect(result, isA<Err<void>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'Bybit cancel order API error: 110001 order not exists',
+          );
+        },
+      );
+    });
   });
 }
 
@@ -303,4 +528,15 @@ String _walletBalanceBody() {
       '{"coin":"USDT","walletBalance":"5000.0","equity":"5000.0"},'
       '{"coin":"BTC","walletBalance":"0.5","equity":"5000.5"}'
       ']}]}}';
+}
+
+String _placeOrderBody() {
+  return '{"retCode":0,"retMsg":"OK","result":{'
+      '"orderId":"1321003749386327552",'
+      '"orderLinkId":"youtrade-1"'
+      '}}';
+}
+
+String _cancelOrderBody() {
+  return '{"retCode":0,"retMsg":"OK","result":{}}';
 }

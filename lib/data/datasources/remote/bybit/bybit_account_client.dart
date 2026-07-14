@@ -10,6 +10,7 @@ import '../../../../core/result.dart';
 import '../../../../domain/entities/account_order.dart';
 import '../../../../domain/entities/account_position.dart';
 import '../../../../domain/entities/account_wallet_balance.dart';
+import '../../../../domain/entities/placed_order.dart';
 
 final class BybitAccountClient {
   BybitAccountClient({
@@ -69,6 +70,45 @@ final class BybitAccountClient {
     );
   }
 
+  Future<Result<PlacedOrder>> placeOrder({
+    required String category,
+    required String symbol,
+    required String side,
+    required String orderType,
+    required String qty,
+    String? price,
+  }) {
+    final body = <String, dynamic>{
+      'category': category,
+      'symbol': symbol,
+      'side': side,
+      'orderType': orderType,
+      'qty': qty,
+    };
+    if (price != null) {
+      body['price'] = price;
+    }
+    return _signedPost(
+      '/v5/order/create',
+      body,
+      'place order',
+      _parsePlacedOrder,
+    );
+  }
+
+  Future<Result<void>> cancelOrder({
+    required String category,
+    required String symbol,
+    required String orderId,
+  }) {
+    return _signedPost<void>(
+      '/v5/order/cancel',
+      {'category': category, 'symbol': symbol, 'orderId': orderId},
+      'cancel order',
+      (_) {},
+    );
+  }
+
   Future<Result<T>> _signedGet<T>(
     String path,
     Map<String, String> params,
@@ -120,6 +160,59 @@ final class BybitAccountClient {
     }
   }
 
+  Future<Result<T>> _signedPost<T>(
+    String path,
+    Map<String, dynamic> body,
+    String context,
+    T Function(Map<String, dynamic> result) parse,
+  ) async {
+    if (_apiKey.isEmpty || _apiSecret.isEmpty) {
+      return Err(ConfigFailure('Bybit $context credentials not configured'));
+    }
+    try {
+      final jsonBody = jsonEncode(body);
+      final timestamp = DateTime.now()
+          .toUtc()
+          .millisecondsSinceEpoch
+          .toString();
+      final response = await _httpClient
+          .post(
+            Uri.parse('$_baseUrl$path'),
+            headers: {
+              'Content-Type': 'application/json',
+              'X-BAPI-API-KEY': _apiKey,
+              'X-BAPI-TIMESTAMP': timestamp,
+              'X-BAPI-RECV-WINDOW': _recvWindow,
+              'X-BAPI-SIGN': _signBody(timestamp, jsonBody),
+            },
+            body: jsonBody,
+          )
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        return Err(NetworkFailure('Bybit $context ${response.statusCode}'));
+      }
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final apiError = _apiErrorMessage(json, context);
+      if (apiError.isNotEmpty) {
+        return Err(NetworkFailure(apiError));
+      }
+      final result = json['result'] as Map<String, dynamic>;
+      return Success(parse(result));
+    } on TimeoutException {
+      return Err(NetworkFailure('Bybit $context request timed out'));
+    } on FormatException catch (e) {
+      return Err(ParseFailure('Bybit $context parse failed: $e'));
+    } on TypeError catch (e) {
+      return Err(ParseFailure('Bybit $context parse failed: $e'));
+    } on StateError catch (e) {
+      return Err(ParseFailure('Bybit $context parse failed: $e'));
+    } on RangeError catch (e) {
+      return Err(ParseFailure('Bybit $context parse failed: $e'));
+    } on Exception catch (e) {
+      return Err(NetworkFailure('Bybit $context request failed: $e'));
+    }
+  }
+
   String _buildQueryString(Map<String, String> params) {
     final sortedKeys = params.keys.toList()..sort();
     return sortedKeys.map((key) => '$key=${params[key]}').join('&');
@@ -127,6 +220,14 @@ final class BybitAccountClient {
 
   String _sign(String timestamp, String queryString) {
     final payload = '$timestamp$_apiKey$_recvWindow$queryString';
+    return Hmac(
+      sha256,
+      utf8.encode(_apiSecret),
+    ).convert(utf8.encode(payload)).toString();
+  }
+
+  String _signBody(String timestamp, String jsonBody) {
+    final payload = '$timestamp$_apiKey$_recvWindow$jsonBody';
     return Hmac(
       sha256,
       utf8.encode(_apiSecret),
@@ -194,6 +295,13 @@ final class BybitAccountClient {
       qty: double.parse(json['qty'] as String),
       orderStatus: json['orderStatus'] as String,
       createdTime: json['createdTime']?.toString(),
+    );
+  }
+
+  PlacedOrder _parsePlacedOrder(Map<String, dynamic> result) {
+    return PlacedOrder(
+      orderId: result['orderId'] as String,
+      orderLinkId: result['orderLinkId'] as String?,
     );
   }
 }
