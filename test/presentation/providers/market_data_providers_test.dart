@@ -202,9 +202,9 @@ void main() {
       );
     });
 
-    // Catches the provider swallowing or misreporting the failure type when the
-    // repository fails.
-    test('emits AsyncError with exact NetworkFailure', () async {
+    // REST polling silently skips failed polls — the stream stays in a
+    // non-error state and never emits data.
+    test('silently skips failed polls without emitting AsyncError', () async {
       final container = ProviderContainer(
         overrides: [
           marketDataRepositoryProvider.overrideWithValue(_FailureRepository()),
@@ -212,19 +212,12 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await expectLater(
-        container.read(tickerStreamProvider(symbol).future),
-        throwsA(_FailureRepository._failure),
-      );
+      container.listen(tickerStreamProvider(symbol), (_, _) {});
+      await Future<void>.delayed(Duration.zero);
 
-      expect(
-        container.read(tickerStreamProvider(symbol)),
-        isA<AsyncError>().having(
-          (state) => state.error,
-          'error',
-          _FailureRepository._failure,
-        ),
-      );
+      final state = container.read(tickerStreamProvider(symbol));
+      expect(state, isNot(isA<AsyncError>()));
+      expect(state, isNot(isA<AsyncData<Ticker>>()));
     });
   });
 
@@ -324,9 +317,9 @@ void main() {
       );
     });
 
-    // Catches the provider swallowing or misreporting the failure type when the
-    // repository fails.
-    test('emits AsyncError with exact NetworkFailure', () async {
+    // REST polling silently skips failed polls — the stream stays in a
+    // non-error state and never emits data.
+    test('silently skips failed polls without emitting AsyncError', () async {
       final container = ProviderContainer(
         overrides: [
           marketDataRepositoryProvider.overrideWithValue(_FailureRepository()),
@@ -334,19 +327,12 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await expectLater(
-        container.read(orderBookStreamProvider(symbol).future),
-        throwsA(_FailureRepository._failure),
-      );
+      container.listen(orderBookStreamProvider(symbol), (_, _) {});
+      await Future<void>.delayed(Duration.zero);
 
-      expect(
-        container.read(orderBookStreamProvider(symbol)),
-        isA<AsyncError>().having(
-          (state) => state.error,
-          'error',
-          _FailureRepository._failure,
-        ),
-      );
+      final state = container.read(orderBookStreamProvider(symbol));
+      expect(state, isNot(isA<AsyncError>()));
+      expect(state, isNot(isA<AsyncData<OrderBook>>()));
     });
   });
 
@@ -371,9 +357,9 @@ void main() {
       );
     });
 
-    // Catches the provider swallowing or misreporting the failure type when the
-    // repository fails.
-    test('emits AsyncError with exact NetworkFailure', () async {
+    // REST polling silently skips failed polls — the stream stays in a
+    // non-error state and never emits data.
+    test('silently skips failed polls without emitting AsyncError', () async {
       final container = ProviderContainer(
         overrides: [
           marketDataRepositoryProvider.overrideWithValue(_FailureRepository()),
@@ -381,19 +367,12 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await expectLater(
-        container.read(tradesStreamProvider(symbol).future),
-        throwsA(_FailureRepository._failure),
-      );
+      container.listen(tradesStreamProvider(symbol), (_, _) {});
+      await Future<void>.delayed(Duration.zero);
 
-      expect(
-        container.read(tradesStreamProvider(symbol)),
-        isA<AsyncError>().having(
-          (state) => state.error,
-          'error',
-          _FailureRepository._failure,
-        ),
-      );
+      final state = container.read(tradesStreamProvider(symbol));
+      expect(state, isNot(isA<AsyncError>()));
+      expect(state, isNot(isA<AsyncData<List<Trade>>>()));
     });
   });
 }
