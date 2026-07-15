@@ -280,7 +280,7 @@ void main() {
       // Trade tab defaults.
       expect(find.text('Limit'), findsOneWidget);
       expect(find.text('Market'), findsOneWidget);
-      expect(find.text('Stop'), findsOneWidget);
+      expect(find.text('Stop'), findsNothing);
       expect(find.text('Buy / Long BTC'), findsOneWidget);
     });
 

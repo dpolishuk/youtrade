@@ -153,7 +153,9 @@ PortfolioData buildPortfolioData({
       side: isLong ? 'LONG' : 'SHORT',
       venue: 'Bybit Perp',
       qty: '${p.size.toStringAsFixed(p.size >= 1 ? 2 : 4)} $base',
-      value: formatCurrency(p.unrealisedPnl),
+      value: formatCurrency(
+        p.positionValue > 0 ? p.positionValue : p.unrealisedPnl,
+      ),
       pnl: '$pnlSign${formatCurrency(pnlAbs)}',
       tint: accent.withValues(alpha: 0.16),
       iconColor: accent,

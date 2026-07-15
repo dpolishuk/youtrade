@@ -71,18 +71,18 @@ class _TradeTicketState extends ConsumerState<TradeTicket> {
         Row(
           children: [
             for (final type in OrderType.values)
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    right: type == OrderType.values.last ? 0 : 4,
-                  ),
-                  child: _OrderTypeChip(
-                    label: _orderTypeLabel(type),
-                    isSelected: state.orderType == type,
-                    onTap: () => notifier.selectOrderType(type),
+              if (type != OrderType.stop) ...[
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: _OrderTypeChip(
+                      label: _orderTypeLabel(type),
+                      isSelected: state.orderType == type,
+                      onTap: () => notifier.selectOrderType(type),
+                    ),
                   ),
                 ),
-              ),
+              ],
           ],
         ),
         const SizedBox(height: 12),

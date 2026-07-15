@@ -4,12 +4,14 @@ final class AccountPosition {
     required this.side,
     required this.size,
     required this.unrealisedPnl,
+    this.positionValue = 0.0,
   });
 
   final String symbol;
   final String side;
   final double size;
   final double unrealisedPnl;
+  final double positionValue;
 
   bool get isLong => side == 'Buy';
 

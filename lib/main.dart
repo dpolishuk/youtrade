@@ -6,6 +6,7 @@ import 'presentation/routing/app_router.dart';
 import 'presentation/theme/theme_provider.dart';
 
 void main({List<Override> overrides = const []}) async {
+  WidgetsFlutterBinding.ensureInitialized();
   try {
     await dotenv.load(fileName: '.env');
   } on Exception catch (_) {

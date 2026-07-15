@@ -275,6 +275,8 @@ final class BybitAccountClient {
       side: json['side'] as String,
       size: double.parse(json['size'] as String),
       unrealisedPnl: double.parse(json['unrealisedPnl'] as String),
+      positionValue:
+          double.tryParse(json['positionValue'] as String? ?? '') ?? 0.0,
     );
   }
 
