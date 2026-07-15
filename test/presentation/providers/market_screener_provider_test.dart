@@ -59,6 +59,46 @@ void main() {
       expect(item.price, 0.0);
       expect(item.change24hPercent, 0.0);
       expect(item.volume24h, 0.0);
+      expect(item.compositeScore, 0.0);
+    });
+
+    test('parses all extended ticker fields', () {
+      final item = tickerToScreenerItem({
+        'symbol': 'BTCUSDT',
+        'lastPrice': '65000.0',
+        'price24hPcnt': '0.05',
+        'volume24h': '1000.0',
+        'turnover24h': '5000000.0',
+        'highPrice24h': '66000.0',
+        'lowPrice24h': '64000.0',
+        'prevPrice24h': '64500.0',
+        'openInterestValue': '50000000.0',
+        'fundingRate': '0.0001',
+        'bid1Price': '64999.0',
+        'ask1Price': '65001.0',
+        'markPrice': '65000.5',
+        'indexPrice': '65000.2',
+      }, AssetClass.perp);
+
+      expect(item.highPrice24h, 66000.0);
+      expect(item.lowPrice24h, 64000.0);
+      expect(item.prevPrice24h, 64500.0);
+      expect(item.openInterestValue, 5e7);
+      expect(item.fundingRate, closeTo(0.0001, 1e-9));
+      expect(item.bid1Price, 64999.0);
+      expect(item.ask1Price, 65001.0);
+      expect(item.markPrice, 65000.5);
+      expect(item.indexPrice, 65000.2);
+    });
+
+    test('accepts compositeScore parameter', () {
+      final item = tickerToScreenerItem(
+        {'symbol': 'BTCUSDT', 'lastPrice': '65000.0'},
+        AssetClass.perp,
+        compositeScore: 1.5,
+      );
+
+      expect(item.compositeScore, 1.5);
     });
   });
 
@@ -210,6 +250,72 @@ void main() {
         () => container.read(marketScreenerItemsProvider.future),
         throwsA(isA<Exception>()),
       );
+    });
+
+    test('sorts by composite score, not raw turnover', () async {
+      // Three perps: BTCLIKE (best liquidity/volatility), ETHLIKE (weaker),
+      // and ILLIQUID (huge turnover but no OI → fails guard rails → score 0).
+      final client = clientWithMockResponse(
+        (category) => category == 'linear'
+            ? tickersJson('linear', [
+                {
+                  'symbol': 'BTCLIKE',
+                  'lastPrice': '65000.0',
+                  'price24hPcnt': '0.05',
+                  'turnover24h': '5000000000.0',
+                  'openInterestValue': '50000000.0',
+                  'bid1Price': '64999.5',
+                  'ask1Price': '65000.5',
+                  'highPrice24h': '66000.0',
+                  'lowPrice24h': '64000.0',
+                  'prevPrice24h': '65000.0',
+                  'fundingRate': '0.0001',
+                },
+                {
+                  'symbol': 'ETHLIKE',
+                  'lastPrice': '3200.0',
+                  'price24hPcnt': '0.03',
+                  'turnover24h': '2000000000.0',
+                  'openInterestValue': '20000000.0',
+                  'bid1Price': '3199.5',
+                  'ask1Price': '3200.5',
+                  'highPrice24h': '3300.0',
+                  'lowPrice24h': '3100.0',
+                  'prevPrice24h': '3200.0',
+                  'fundingRate': '0.00005',
+                },
+                {
+                  'symbol': 'ILLIQUIDUSDT',
+                  'lastPrice': '0.01',
+                  'price24hPcnt': '0.5',
+                  'turnover24h': '99999999999.0',
+                  'openInterestValue': '0.0',
+                },
+              ])
+            : tickersJson('spot', []),
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          marketScreenerBybitClientProvider.overrideWithValue(client),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final items = await container.read(marketScreenerItemsProvider.future);
+
+      final btc = items.firstWhere((i) => i.rawSymbol == 'BTCLIKE');
+      final eth = items.firstWhere((i) => i.rawSymbol == 'ETHLIKE');
+      final illiquid = items.firstWhere((i) => i.rawSymbol == 'ILLIQUIDUSDT');
+
+      // BTCLIKE (higher liquidity, tighter spread) out-scores ETHLIKE.
+      expect(btc.compositeScore, greaterThan(eth.compositeScore));
+      // BTCLIKE has a positive composite score.
+      expect(btc.compositeScore, greaterThan(0.0));
+      // Illiquid ticker fails guard rails → score 0.
+      expect(illiquid.compositeScore, 0.0);
+      // Highest-scoring item sorts first.
+      expect(items.first.rawSymbol, 'BTCLIKE');
     });
   });
 
