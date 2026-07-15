@@ -33,6 +33,7 @@ final class MarketScreenerItem {
     required this.change24hPercent,
     required this.priceDecimals,
     this.volume24h = 0.0,
+    this.turnover24h = 0.0,
     this.sparkline = const [],
   });
 
@@ -45,6 +46,7 @@ final class MarketScreenerItem {
   final double change24hPercent;
   final int priceDecimals;
   final double volume24h;
+  final double turnover24h;
   final List<double> sparkline;
 }
 
@@ -80,6 +82,8 @@ MarketScreenerItem tickerToScreenerItem(
       double.tryParse(ticker['price24hPcnt'] as String? ?? '') ?? 0.0;
   final volume24h =
       double.tryParse(ticker['volume24h'] as String? ?? '') ?? 0.0;
+  final turnover24h =
+      double.tryParse(ticker['turnover24h'] as String? ?? '') ?? 0.0;
   return MarketScreenerItem(
     symbol: displaySymbol(rawSymbol),
     rawSymbol: rawSymbol,
@@ -89,6 +93,7 @@ MarketScreenerItem tickerToScreenerItem(
     price: lastPrice,
     change24hPercent: price24hPcnt * 100,
     volume24h: volume24h,
+    turnover24h: turnover24h,
     priceDecimals: priceDecimals(lastPrice),
   );
 }
@@ -139,6 +144,9 @@ final marketScreenerItemsProvider = FutureProvider<List<MarketScreenerItem>>((
   if (!hadSuccess) {
     throw Exception('Failed to fetch market data from Bybit');
   }
+
+  // Sort by turnover24h descending — highest USDT volume first
+  items.sort((a, b) => b.turnover24h.compareTo(a.turnover24h));
 
   return items;
 });
