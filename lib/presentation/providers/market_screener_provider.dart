@@ -253,7 +253,7 @@ final marketScreenerItemsProvider = FutureProvider<List<MarketScreenerItem>>((
     return tickerToScreenerItem(
       tickerMaps[i],
       assetClasses[i],
-      compositeScore: scores[symbol] ?? 0.0,
+      compositeScore: scores[symbol] ?? double.negativeInfinity,
     );
   });
 

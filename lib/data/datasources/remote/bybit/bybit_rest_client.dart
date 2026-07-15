@@ -248,9 +248,10 @@ final class BybitRestClient
       lastPrice: double.parse(json['lastPrice'] as String),
       bid: double.parse(json['bid1Price'] as String),
       ask: double.parse(json['ask1Price'] as String),
-      change24h: json['price24h'] == null
-          ? 0.0
-          : double.parse(json['price24h'] as String),
+      change24h: (json['prevPrice24h'] != null && json['lastPrice'] != null)
+          ? double.parse(json['lastPrice'] as String) -
+                double.parse(json['prevPrice24h'] as String)
+          : 0.0,
       change24hPercent: double.parse(json['price24hPcnt'] as String) * 100,
       volume: double.parse(json['volume24h'] as String),
       timestamp: DateTime.now().toUtc(),

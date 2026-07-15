@@ -91,7 +91,7 @@ final class MarketCacheDataSource implements MarketCache {
             c.timeframeCode.equals(timeframe.code),
       )
       ..orderBy([
-        (c) => OrderingTerm(expression: c.timestamp, mode: OrderingMode.asc),
+        (c) => OrderingTerm(expression: c.timestamp, mode: OrderingMode.desc),
       ]);
     if (limit != null) {
       query.limit(limit);
@@ -108,6 +108,8 @@ final class MarketCacheDataSource implements MarketCache {
             timestamp: r.timestamp,
           ),
         )
+        .toList()
+        .reversed
         .toList();
   }
 

@@ -162,7 +162,7 @@ void main() {
       expect(retrieved, isEmpty);
     });
 
-    test('limit parameter truncates candles oldest first', () async {
+    test('limit parameter returns newest candles', () async {
       final candles = [
         Candle(
           open: 1.0,
@@ -192,8 +192,9 @@ void main() {
       await cache.saveCandles(symbol, Timeframe.h1, candles);
       final retrieved = await cache.getCandles(symbol, Timeframe.h1, limit: 2);
       expect(retrieved.length, 2);
-      expect(retrieved.first, candles.first);
-      expect(retrieved.last, candles[1]);
+      // Should return the newest 2 in chronological order
+      expect(retrieved.first, candles[1]);
+      expect(retrieved.last, candles[2]);
     });
 
     test('duplicate save updates ticker', () async {

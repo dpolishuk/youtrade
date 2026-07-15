@@ -312,8 +312,8 @@ void main() {
       expect(btc.compositeScore, greaterThan(eth.compositeScore));
       // BTCLIKE has a positive composite score.
       expect(btc.compositeScore, greaterThan(0.0));
-      // Illiquid ticker fails guard rails → score 0.
-      expect(illiquid.compositeScore, 0.0);
+      // Illiquid ticker fails guard rails → score is negative infinity (sorted last).
+      expect(illiquid.compositeScore, double.negativeInfinity);
       // Highest-scoring item sorts first.
       expect(items.first.rawSymbol, 'BTCLIKE');
     });
