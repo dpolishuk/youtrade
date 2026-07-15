@@ -28,6 +28,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
     final theme = Theme.of(context);
     final appColors = theme.extension<AppColorTheme>()!;
     final asyncMarkets = ref.watch(filteredMarketScreenerItemsProvider);
+    final activeSort = ref.watch(marketScreenerSortProvider).option;
     final mutedColor = theme.colorScheme.onSurface.withValues(alpha: 0.34);
 
     return Scaffold(
@@ -140,7 +141,10 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                             child: ListView.builder(
                               itemCount: markets.length,
                               itemBuilder: (context, index) {
-                                return MarketListTile(market: markets[index]);
+                                return MarketListTile(
+                                  market: markets[index],
+                                  activeSort: activeSort,
+                                );
                               },
                             ),
                           ),
