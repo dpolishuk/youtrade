@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../presentation/providers/market_screener_provider.dart';
 import '../../../presentation/theme/theme_extensions.dart';
+import '../trading_terminal/formatting.dart';
 import 'sparkline_chart.dart';
 
 class MarketListTile extends StatelessWidget {
@@ -182,7 +183,7 @@ class MarketListTile extends StatelessWidget {
         final changeSign = market.change24hPercent >= 0 ? '+' : '';
         return [
           Text(
-            _formatPrice(market.price, market.priceDecimals),
+            formatPriceSmart(market.price),
             style: TextStyle(
               fontFamily: 'JetBrains Mono',
               fontSize: 12.5,
@@ -246,22 +247,6 @@ class MarketListTile extends StatelessWidget {
       case AssetClass.spot:
         return appColors.bullish;
     }
-  }
-
-  String _formatPrice(double price, int decimals) {
-    final s = price.toStringAsFixed(decimals);
-    final parts = s.split('.');
-    final whole = parts[0];
-    final fractional = parts.length > 1 ? '.${parts[1]}' : '';
-    final reversed = whole.split('').reversed.join();
-    final withCommas = <String>[];
-    for (var i = 0; i < reversed.length; i++) {
-      if (i > 0 && i % 3 == 0) {
-        withCommas.add(',');
-      }
-      withCommas.add(reversed[i]);
-    }
-    return withCommas.reversed.join() + fractional;
   }
 
   String _formatPercent(double value) {

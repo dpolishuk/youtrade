@@ -120,7 +120,7 @@ void main() {
       expect(find.text('PERP'), findsOneWidget);
       expect(find.text('Bitcoin Perp'), findsOneWidget);
       expect(find.text('BIN'), findsOneWidget);
-      expect(find.text('105,154.0'), findsOneWidget);
+      expect(find.text('105,154.05'), findsOneWidget);
       expect(find.text('+6.42%'), findsOneWidget);
 
       final theme = Theme.of(tester.element(find.byType(MarketListTile)));

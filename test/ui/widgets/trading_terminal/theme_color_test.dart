@@ -145,7 +145,7 @@ void main() {
         final border = decoration.border! as Border;
         expect(border.top.color, appColors.borderSubtle);
 
-        final priceValue = tester.widget<Text>(find.text('100,000.0'));
+        final priceValue = tester.widget<Text>(find.text('100,000.00'));
         expect(priceValue.style?.color, appColors.foreground);
       },
     );

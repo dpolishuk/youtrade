@@ -273,8 +273,8 @@ void main() {
       expect(find.text('PERP'), findsOneWidget);
       expect(find.text('Bitcoin Perpetual · Bybit'), findsOneWidget);
 
-      // Last price uses one decimal for BTC.
-      expect(find.text('105,154.0'), findsWidgets);
+      // Last price uses smart decimals for BTC.
+      expect(find.text('105,154.05'), findsWidgets);
       expect(find.textContaining('+6.42%'), findsOneWidget);
 
       // Trade tab defaults.

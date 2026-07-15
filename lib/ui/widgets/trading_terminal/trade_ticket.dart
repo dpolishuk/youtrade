@@ -106,7 +106,7 @@ class _TradeTicketState extends ConsumerState<TradeTicket> {
                 ),
               ),
               Text(
-                formatFixedPrice(price, meta.decimals),
+                formatPriceSmart(price),
                 style: AppTheme.mono(
                   color: appColors.foreground,
                   fontSize: 14,
@@ -259,7 +259,7 @@ class _TradeTicketState extends ConsumerState<TradeTicket> {
     final sideText = isBuy ? 'Buy' : 'Sell';
     final isMarket = orderType == OrderType.market;
     final orderTypeText = isMarket ? 'Market' : 'Limit';
-    final displayPrice = formatFixedPrice(price, meta.decimals);
+    final displayPrice = formatPriceSmart(price);
     final dialogState = _OrderDialogState();
 
     showDialog<void>(

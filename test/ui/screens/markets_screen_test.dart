@@ -142,7 +142,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('65,000.0'), findsOneWidget);
+      expect(find.text('65,000.00'), findsOneWidget);
       expect(find.text('+5.23%'), findsOneWidget);
     });
 

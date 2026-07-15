@@ -91,7 +91,7 @@ class SymbolHeader extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    formatFixedPrice(price, meta.decimals),
+                    formatPriceSmart(price),
                     style: AppTheme.mono(color: changeColor, fontSize: 24)
                         .copyWith(
                           fontWeight: FontWeight.w600,
@@ -101,7 +101,7 @@ class SymbolHeader extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${isUp ? '+' : ''}${formatFixedPrice(change, meta.decimals)} · ${formatPercent(changePct)}',
+                    '${isUp ? '+' : ''}${formatPriceSmart(change)} · ${formatPercent(changePct)}',
                     style: AppTheme.mono(
                       color: changeColor,
                       fontSize: 12,

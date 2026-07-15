@@ -138,8 +138,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // sizeQty = 4.2 * 25 / 100 = 1.05 → "1.050"
-      // price = 60000, decimals = 1 → "60,000.0"
-      expect(find.text('Buy 1.050 BTC @ 60,000.0'), findsOneWidget);
+      // price = 60000 → formatPriceSmart → "60,000.00"
+      expect(find.text('Buy 1.050 BTC @ 60,000.00'), findsOneWidget);
       expect(find.text('Confirm'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
     });

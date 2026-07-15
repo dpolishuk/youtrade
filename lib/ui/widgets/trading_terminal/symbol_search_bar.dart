@@ -267,7 +267,7 @@ class _SearchResultTile extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              formatFixedPrice(item.price, item.priceDecimals),
+              formatPriceSmart(item.price),
               style: AppTheme.mono(color: appColors.foreground, fontSize: 12),
             ),
             const SizedBox(width: 8),

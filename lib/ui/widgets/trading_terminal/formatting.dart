@@ -28,6 +28,31 @@ String formatFixedPrice(num value, int decimals) {
   return _formatNumber(value, decimals);
 }
 
+/// Formats a price with dynamic decimal places chosen to always reveal at
+/// least four significant digits, regardless of magnitude.
+///
+/// Examples:
+///   64708.60    -> "64,708.60"
+///   1.2345      -> "1.2345"
+///   0.0006789   -> "0.000679"
+///   0.000012345 -> "0.00001235"
+String formatPriceSmart(num value) {
+  final abs = value.abs().toDouble();
+  final decimals = _smartDecimals(abs);
+  return _formatNumber(value, decimals);
+}
+
+int _smartDecimals(double abs) {
+  if (abs == 0) return 2;
+  if (abs >= 1000) return 2;
+  if (abs >= 1) return 4;
+  if (abs >= 0.01) return 4;
+  if (abs >= 0.0001) return 6;
+  if (abs >= 0.000001) return 8;
+  if (abs >= 0.00000001) return 10;
+  return 12;
+}
+
 /// Formats a large quantity / volume compactly (e.g. 1.2K, 3.4M).
 String formatCompact(num value) {
   final abs = value.abs();
