@@ -412,4 +412,269 @@ void main() {
       expect(asyncValue.isLoading, isTrue);
     });
   });
+
+  group('SortOption', () {
+    test('has 8 options with labels', () {
+      expect(SortOption.values.length, 8);
+      expect(SortOption.score.label, 'Score');
+      expect(SortOption.turnover.label, 'Volume');
+      expect(SortOption.changePct.label, 'Change %');
+      expect(SortOption.openInterest.label, 'Open Interest');
+      expect(SortOption.fundingRate.label, 'Funding');
+      expect(SortOption.volatility.label, 'Volatility');
+      expect(SortOption.spread.label, 'Spread');
+      expect(SortOption.price.label, 'Price');
+    });
+
+    test('marketScreenerSortProvider defaults to score descending', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final sort = container.read(marketScreenerSortProvider);
+      expect(sort.option, SortOption.score);
+      expect(sort.descending, isTrue);
+    });
+  });
+
+  group('filteredMarketScreenerItemsProvider sorting', () {
+    BybitRestClient threeTickerClient() {
+      return BybitRestClient(
+        httpClient: MockClient((request) async {
+          final category = request.url.queryParameters['category'] ?? '';
+          return http.Response(
+            jsonEncode({
+              'retCode': 0,
+              'result': {
+                'category': category,
+                'list': category == 'linear'
+                    ? [
+                        {
+                          'symbol': 'BTCUSDT',
+                          'lastPrice': '65000.0',
+                          'price24hPcnt': '0.05',
+                          'turnover24h': '5000000000.0',
+                          'openInterestValue': '50000000.0',
+                          'fundingRate': '0.0001',
+                          'bid1Price': '64999.0',
+                          'ask1Price': '65001.0',
+                          'highPrice24h': '66000.0',
+                          'lowPrice24h': '64000.0',
+                          'prevPrice24h': '65000.0',
+                        },
+                        {
+                          'symbol': 'ETHUSDT',
+                          'lastPrice': '3200.0',
+                          'price24hPcnt': '0.03',
+                          'turnover24h': '2000000000.0',
+                          'openInterestValue': '20000000.0',
+                          'fundingRate': '0.00005',
+                          'bid1Price': '3199.0',
+                          'ask1Price': '3201.0',
+                          'highPrice24h': '3300.0',
+                          'lowPrice24h': '3100.0',
+                          'prevPrice24h': '3200.0',
+                        },
+                        {
+                          'symbol': 'SOLUSDT',
+                          'lastPrice': '150.0',
+                          'price24hPcnt': '0.08',
+                          'turnover24h': '1000000000.0',
+                          'openInterestValue': '10000000.0',
+                          'fundingRate': '0.0002',
+                          'bid1Price': '149.0',
+                          'ask1Price': '151.0',
+                          'highPrice24h': '160.0',
+                          'lowPrice24h': '140.0',
+                          'prevPrice24h': '150.0',
+                        },
+                      ]
+                    : [],
+              },
+            }),
+            200,
+          );
+        }),
+      );
+    }
+
+    ProviderContainer makeContainer() {
+      final container = ProviderContainer(
+        overrides: [
+          marketScreenerBybitClientProvider.overrideWithValue(
+            threeTickerClient(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    test('sorts by turnover descending', () async {
+      final container = makeContainer();
+      await container.read(marketScreenerItemsProvider.future);
+      container.read(marketScreenerSortProvider.notifier).state = (
+        option: SortOption.turnover,
+        descending: true,
+      );
+
+      final markets = container
+          .read(filteredMarketScreenerItemsProvider)
+          .valueOrNull!;
+      expect(markets.map((m) => m.rawSymbol).toList(), [
+        'BTCUSDT',
+        'ETHUSDT',
+        'SOLUSDT',
+      ]);
+    });
+
+    test('sorts by price ascending', () async {
+      final container = makeContainer();
+      await container.read(marketScreenerItemsProvider.future);
+      container.read(marketScreenerSortProvider.notifier).state = (
+        option: SortOption.price,
+        descending: false,
+      );
+
+      final markets = container
+          .read(filteredMarketScreenerItemsProvider)
+          .valueOrNull!;
+      expect(markets.map((m) => m.rawSymbol).toList(), [
+        'SOLUSDT',
+        'ETHUSDT',
+        'BTCUSDT',
+      ]);
+    });
+
+    test('sorts by changePct descending', () async {
+      final container = makeContainer();
+      await container.read(marketScreenerItemsProvider.future);
+      container.read(marketScreenerSortProvider.notifier).state = (
+        option: SortOption.changePct,
+        descending: true,
+      );
+
+      final markets = container
+          .read(filteredMarketScreenerItemsProvider)
+          .valueOrNull!;
+      // SOL 8% > BTC 5% > ETH 3%
+      expect(markets.map((m) => m.rawSymbol).toList(), [
+        'SOLUSDT',
+        'BTCUSDT',
+        'ETHUSDT',
+      ]);
+    });
+
+    test('sorts by fundingRate descending', () async {
+      final container = makeContainer();
+      await container.read(marketScreenerItemsProvider.future);
+      container.read(marketScreenerSortProvider.notifier).state = (
+        option: SortOption.fundingRate,
+        descending: true,
+      );
+
+      final markets = container
+          .read(filteredMarketScreenerItemsProvider)
+          .valueOrNull!;
+      // SOL 0.0002 > BTC 0.0001 > ETH 0.00005
+      expect(markets.map((m) => m.rawSymbol).toList(), [
+        'SOLUSDT',
+        'BTCUSDT',
+        'ETHUSDT',
+      ]);
+    });
+
+    test('sorts by openInterest descending', () async {
+      final container = makeContainer();
+      await container.read(marketScreenerItemsProvider.future);
+      container.read(marketScreenerSortProvider.notifier).state = (
+        option: SortOption.openInterest,
+        descending: true,
+      );
+
+      final markets = container
+          .read(filteredMarketScreenerItemsProvider)
+          .valueOrNull!;
+      expect(markets.map((m) => m.rawSymbol).toList(), [
+        'BTCUSDT',
+        'ETHUSDT',
+        'SOLUSDT',
+      ]);
+    });
+
+    test('sorts by volatility descending', () async {
+      final container = makeContainer();
+      await container.read(marketScreenerItemsProvider.future);
+      container.read(marketScreenerSortProvider.notifier).state = (
+        option: SortOption.volatility,
+        descending: true,
+      );
+
+      final markets = container
+          .read(filteredMarketScreenerItemsProvider)
+          .valueOrNull!;
+      // BTC: 2000/65000 ≈ 0.0308
+      // ETH: 200/3200 = 0.0625
+      // SOL: 20/150 ≈ 0.1333
+      expect(markets.map((m) => m.rawSymbol).toList(), [
+        'SOLUSDT',
+        'ETHUSDT',
+        'BTCUSDT',
+      ]);
+    });
+
+    test('sorts by spread descending', () async {
+      final container = makeContainer();
+      await container.read(marketScreenerItemsProvider.future);
+      container.read(marketScreenerSortProvider.notifier).state = (
+        option: SortOption.spread,
+        descending: true,
+      );
+
+      final markets = container
+          .read(filteredMarketScreenerItemsProvider)
+          .valueOrNull!;
+      // BTC: 2/65000 ≈ 0.00003
+      // ETH: 2/3200 ≈ 0.000625
+      // SOL: 2/150 ≈ 0.01333
+      expect(markets.map((m) => m.rawSymbol).toList(), [
+        'SOLUSDT',
+        'ETHUSDT',
+        'BTCUSDT',
+      ]);
+    });
+
+    test('default sort is score descending', () async {
+      final container = makeContainer();
+      await container.read(marketScreenerItemsProvider.future);
+
+      // Without setting sort provider, should sort by compositeScore desc.
+      final markets = container
+          .read(filteredMarketScreenerItemsProvider)
+          .valueOrNull!;
+      final scores = markets.map((m) => m.compositeScore).toList();
+      final sorted = List<double>.from(scores)..sort((a, b) => b.compareTo(a));
+      expect(scores, sorted);
+    });
+
+    test('applies sort after filtering', () async {
+      final container = makeContainer();
+      await container.read(marketScreenerItemsProvider.future);
+      container.read(marketScreenerFilterProvider.notifier).state =
+          MarketCategory.perp;
+      container.read(marketScreenerSortProvider.notifier).state = (
+        option: SortOption.price,
+        descending: false,
+      );
+
+      final markets = container
+          .read(filteredMarketScreenerItemsProvider)
+          .valueOrNull!;
+      // All 3 are perps; ascending price → SOL, ETH, BTC
+      expect(markets.map((m) => m.rawSymbol).toList(), [
+        'SOLUSDT',
+        'ETHUSDT',
+        'BTCUSDT',
+      ]);
+    });
+  });
 }

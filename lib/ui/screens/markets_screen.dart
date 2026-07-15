@@ -5,6 +5,7 @@ import '../../presentation/providers/market_screener_provider.dart';
 import '../../presentation/theme/theme_extensions.dart';
 import '../widgets/markets/filter_chips.dart';
 import '../widgets/markets/market_list_tile.dart';
+import '../widgets/markets/sort_dropdown.dart';
 
 class MarketsScreen extends ConsumerStatefulWidget {
   const MarketsScreen({super.key});
@@ -81,7 +82,13 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              const FilterChips(),
+              Row(
+                children: const [
+                  Expanded(child: FilterChips()),
+                  SizedBox(width: 8),
+                  SortDropdown(),
+                ],
+              ),
               const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),

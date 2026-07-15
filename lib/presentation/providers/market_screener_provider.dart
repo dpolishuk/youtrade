@@ -23,6 +23,50 @@ enum AssetClass {
   final MarketCategory category;
 }
 
+/// Sort options offered in the market screener dropdown.
+enum SortOption {
+  score('Score'),
+  turnover('Volume'),
+  changePct('Change %'),
+  openInterest('Open Interest'),
+  fundingRate('Funding'),
+  volatility('Volatility'),
+  spread('Spread'),
+  price('Price');
+
+  const SortOption(this.label);
+  final String label;
+}
+
+/// Extracts the numeric sort key for [item] under the given [option].
+///
+/// For [SortOption.volatility] the key is the 24h range relative to the
+/// previous price: `(high - low) / prevPrice24h`. For [SortOption.spread] the
+/// key is the bid-ask spread relative to the midpoint.
+double sortKeyValue(MarketScreenerItem item, SortOption option) {
+  switch (option) {
+    case SortOption.score:
+      return item.compositeScore;
+    case SortOption.turnover:
+      return item.turnover24h;
+    case SortOption.changePct:
+      return item.change24hPercent;
+    case SortOption.openInterest:
+      return item.openInterestValue;
+    case SortOption.fundingRate:
+      return item.fundingRate;
+    case SortOption.volatility:
+      final prev = item.prevPrice24h > 0 ? item.prevPrice24h : 1.0;
+      return (item.highPrice24h - item.lowPrice24h) / prev;
+    case SortOption.spread:
+      final mid = (item.ask1Price + item.bid1Price) / 2;
+      final denom = mid > 0 ? mid : 1.0;
+      return (item.ask1Price - item.bid1Price) / denom;
+    case SortOption.price:
+      return item.price;
+  }
+}
+
 final class MarketScreenerItem {
   const MarketScreenerItem({
     required this.symbol,
@@ -142,6 +186,12 @@ final marketScreenerFilterProvider = StateProvider<MarketCategory?>(
   (ref) => null,
 );
 
+/// Currently selected sort option and direction for the screener.
+final marketScreenerSortProvider =
+    StateProvider<({SortOption option, bool descending})>(
+      (ref) => (option: SortOption.score, descending: true),
+    );
+
 /// Provides the [BybitRestClient] used by the screener. Override in tests to
 /// inject a mock client.
 final marketScreenerBybitClientProvider = Provider<BybitRestClient>((ref) {
@@ -224,8 +274,9 @@ final filteredMarketScreenerItemsProvider =
           .trim()
           .toLowerCase();
       final filter = ref.watch(marketScreenerFilterProvider);
+      final sort = ref.watch(marketScreenerSortProvider);
       return ref.watch(marketScreenerItemsProvider).whenData((markets) {
-        return markets.where((market) {
+        final filtered = markets.where((market) {
           final matchesFilter =
               filter == null || market.assetClass.category == filter;
           final matchesSearch =
@@ -237,5 +288,15 @@ final filteredMarketScreenerItemsProvider =
               market.venue.shortCode.toLowerCase().contains(query);
           return matchesFilter && matchesSearch;
         }).toList();
+
+        filtered.sort((a, b) {
+          final cmp = sortKeyValue(
+            a,
+            sort.option,
+          ).compareTo(sortKeyValue(b, sort.option));
+          return sort.descending ? -cmp : cmp;
+        });
+
+        return filtered;
       });
     });
