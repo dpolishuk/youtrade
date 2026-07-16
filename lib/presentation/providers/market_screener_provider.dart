@@ -243,17 +243,33 @@ final marketScreenerItemsProvider = FutureProvider<List<MarketScreenerItem>>((
   }
 
   // Compute composite scores via z-score normalization + guard rails.
-  final rawTickers = tickerMaps.map(RawTicker.fromBybitTicker).toList();
+  // Key by category:symbol to avoid collision when same symbol exists in both
+  // linear and spot (e.g. BTCUSDT).
+  final rawTickers = <RawTicker>[];
+  final scoreKeys = <String>[];
+  for (var i = 0; i < tickerMaps.length; i++) {
+    final symbol = tickerMaps[i]['symbol'] as String? ?? '';
+    final category = assetClasses[i] == AssetClass.perp ? 'linear' : 'spot';
+    rawTickers.add(RawTicker.fromBybitTicker(tickerMaps[i]));
+    scoreKeys.add('$category:$symbol');
+  }
   final scores = ScreenerScore.compute(rawTickers);
+  final scoreByKey = <String, double>{};
+  final scoreList = scores.values.toList();
+  for (var i = 0; i < scoreKeys.length && i < scoreList.length; i++) {
+    scoreByKey[scoreKeys[i]] = scoreList[i];
+  }
 
   // Build items with their composite score; items failing guard rails
-  // default to 0.
+  // default to negative infinity (sort below scored items).
   final items = List<MarketScreenerItem>.generate(tickerMaps.length, (i) {
     final symbol = tickerMaps[i]['symbol'] as String? ?? '';
+    final category = assetClasses[i] == AssetClass.perp ? 'linear' : 'spot';
+    final key = '$category:$symbol';
     return tickerToScreenerItem(
       tickerMaps[i],
       assetClasses[i],
-      compositeScore: scores[symbol] ?? double.negativeInfinity,
+      compositeScore: scoreByKey[key] ?? double.negativeInfinity,
     );
   });
 

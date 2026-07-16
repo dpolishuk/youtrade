@@ -211,13 +211,15 @@ class _TradeTicketState extends ConsumerState<TradeTicket> {
             ],
           ),
           child: ElevatedButton(
-            onPressed: () => _showOrderConfirmation(
-              meta: meta,
-              isBuy: isBuy,
-              price: price,
-              sizeQty: sizeQty,
-              orderType: state.orderType,
-            ),
+            onPressed: price <= 0
+                ? null
+                : () => _showOrderConfirmation(
+                    meta: meta,
+                    isBuy: isBuy,
+                    price: price,
+                    sizeQty: sizeQty,
+                    orderType: state.orderType,
+                  ),
             style: ElevatedButton.styleFrom(
               backgroundColor: sideColor,
               foregroundColor: Colors.white,
