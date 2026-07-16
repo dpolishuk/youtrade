@@ -171,7 +171,7 @@ class _SymbolSearchBarState extends ConsumerState<SymbolSearchBar> {
   Widget _buildDropdown(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColorTheme>()!;
     final items =
-        ref.read(marketScreenerItemsProvider).valueOrNull ??
+        ref.watch(marketScreenerItemsProvider).valueOrNull ??
         const <MarketScreenerItem>[];
     final filtered = _filterItems(items);
 

@@ -38,11 +38,14 @@ String formatFixedPrice(num value, int decimals) {
 ///   0.000012345 -> "0.00001235"
 String formatPriceSmart(num value) {
   final abs = value.abs().toDouble();
-  final decimals = _smartDecimals(abs);
+  final decimals = smartDecimals(abs);
   return _formatNumber(value, decimals);
 }
 
-int _smartDecimals(double abs) {
+/// Picks a decimal count that always reveals at least four significant digits,
+/// regardless of magnitude. Used both for display ([formatPriceSmart]) and for
+/// API price parameters so low-priced pairs don't round to zero.
+int smartDecimals(double abs) {
   if (abs == 0) return 2;
   if (abs >= 1000) return 2;
   if (abs >= 1) return 4;

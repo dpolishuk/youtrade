@@ -398,7 +398,7 @@ class _TradeTicketState extends ConsumerState<TradeTicket> {
           side: sideText,
           orderType: orderTypeText,
           qty: sizeQty.toStringAsFixed(3),
-          price: isMarket ? null : price.toStringAsFixed(meta.decimals),
+          price: isMarket ? null : price.toStringAsFixed(smartDecimals(price)),
         );
     if (!dialogContext.mounted) return;
     switch (result) {
