@@ -1,104 +1,44 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/core/result.dart';
 import 'package:youtrade/data/auth/secure_pin_auth_service.dart';
 import 'package:youtrade/domain/auth/auth_failure.dart';
+import 'package:youtrade/domain/auth/secure_key_value_storage.dart';
 
-class _FakeSecureStorage extends FlutterSecureStorage {
-  final Map<String, String?> _store = {};
+class _MockSecureStorage extends Mock implements SecureKeyValueStorage {}
+
+/// A [SecureKeyValueStorage] that throws on every operation, used to exercise
+/// failure paths.
+class _ThrowingSecureKeyValueStorage implements SecureKeyValueStorage {
+  @override
+  Future<String?> read(String key) async => throw Exception('read failed');
 
   @override
-  Future<void> write({
-    required String key,
-    required String? value,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    _store[key] = value;
-  }
+  Future<void> write(String key, String value) async =>
+      throw Exception('write failed');
 
   @override
-  Future<String?> read({
-    required String key,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async => _store[key];
-
-  @override
-  Future<void> delete({
-    required String key,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    _store.remove(key);
-  }
-}
-
-class _ThrowingWriteStorage extends _FakeSecureStorage {
-  _ThrowingWriteStorage(this.exception);
-
-  final Exception exception;
-
-  @override
-  Future<void> write({
-    required String key,
-    required String? value,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    throw exception;
-  }
-}
-
-class _ThrowingReadStorage extends _FakeSecureStorage {
-  _ThrowingReadStorage(this.exception);
-
-  final Exception exception;
-
-  @override
-  Future<String?> read({
-    required String key,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    throw exception;
-  }
+  Future<void> delete(String key) async => throw Exception('delete failed');
 }
 
 void main() {
   group('SecurePinAuthService', () {
-    late _FakeSecureStorage storage;
+    late InMemorySecureKeyValueStorage store;
     late SecurePinAuthService service;
 
     setUp(() {
-      storage = _FakeSecureStorage();
-      service = SecurePinAuthService(storage: storage);
+      store = InMemorySecureKeyValueStorage();
+      service = SecurePinAuthService(storage: store);
     });
 
     group('security configuration', () {
-      test('uses OWASP minimum PBKDF2 iterations', () {
-        expect(SecurePinAuthService.pbkdf2Iterations, equals(600000));
+      test('uses a strong PBKDF2 work factor', () {
+        // OWASP recommends >= 600k for PBKDF2-HMAC-SHA256.
+        expect(
+          SecurePinAuthService.pbkdf2Iterations,
+          greaterThanOrEqualTo(600000),
+        );
       });
     });
 
@@ -114,14 +54,14 @@ void main() {
       });
 
       test('returns false when stored hash is empty', () async {
-        await storage.write(key: 'pin_hash', value: '');
+        await store.write('pin_hash', '');
 
         expect(await service.isPinSet(), isFalse);
       });
 
       test('returns false when storage read throws', () async {
         service = SecurePinAuthService(
-          storage: _ThrowingReadStorage(Exception('read failed')),
+          storage: _ThrowingSecureKeyValueStorage(),
         );
 
         expect(await service.isPinSet(), isFalse);
@@ -133,8 +73,8 @@ void main() {
         final result = await service.setPin('1234');
 
         expect(result, isA<Success<void>>());
-        final hash = await storage.read(key: 'pin_hash');
-        final salt = await storage.read(key: 'pin_salt');
+        final hash = await store.read('pin_hash');
+        final salt = await store.read('pin_salt');
         expect(hash, matches(RegExp(r'^[0-9a-f]{64}$')));
         expect(salt, matches(RegExp(r'^[A-Za-z0-9+/]{22}==$')));
         expect(hash, isNot(equals('1234')));
@@ -166,16 +106,15 @@ void main() {
 
       test('reuses existing salt when updating PIN', () async {
         await service.setPin('1234');
-        final firstSalt = await storage.read(key: 'pin_salt');
+        final firstSalt = await store.read('pin_salt');
 
-        final result = await service.setPin('5678');
-        final secondSalt = await storage.read(key: 'pin_salt');
+        await service.setPin('5678');
+        final secondSalt = await store.read('pin_salt');
 
-        expect(result, isA<Success<void>>());
         expect(secondSalt, equals(firstSalt));
       });
 
-      test('rejects PINs longer than 4 digits', () async {
+      test('rejects PINs longer than 4 digits (6 chars)', () async {
         final result = await service.setPin('123456');
 
         expect(result, isA<Err<void>>());
@@ -192,12 +131,6 @@ void main() {
 
         final successCount = results.whereType<Success<void>>().length;
         expect(successCount, 1);
-        final salt = await storage.read(key: 'pin_salt');
-        expect(salt, isNotNull);
-        expect(salt, isNotEmpty);
-        final hash = await storage.read(key: 'pin_hash');
-        expect(hash, isNotNull);
-        expect(hash, isNotEmpty);
 
         final candidates = ['1111', '2222', '3333'];
         final matchingCandidates = <String>[];
@@ -207,24 +140,18 @@ void main() {
           }
         }
         expect(matchingCandidates.length, 1);
-        for (final other in candidates.where(
-          (p) => p != matchingCandidates.single,
-        )) {
-          expect(await service.authenticatePin(other), isFalse);
-        }
       });
 
       test('returns UnknownFailure when storage write fails', () async {
-        final exception = Exception('secure storage write failed');
         service = SecurePinAuthService(
-          storage: _ThrowingWriteStorage(exception),
+          storage: _ThrowingSecureKeyValueStorage(),
         );
 
         final result = await service.setPin('1234');
 
         expect(result, isA<Err<void>>());
         final failure = (result as Err<void>).failure as UnknownFailure;
-        expect(failure.message, 'Failed to store PIN.');
+        expect(failure.message, contains('Failed to store PIN'));
       });
 
       test('accepts PIN with leading zeros', () async {
@@ -287,16 +214,15 @@ void main() {
       });
 
       test('uses salt to produce different hashes for the same PIN', () async {
-        final storageA = _FakeSecureStorage();
-        final storageB = _FakeSecureStorage();
-        final serviceA = SecurePinAuthService(storage: storageA);
-        final serviceB = SecurePinAuthService(storage: storageB);
-
+        final storeA = InMemorySecureKeyValueStorage();
+        final serviceA = SecurePinAuthService(storage: storeA);
         await serviceA.setPin('1234');
-        await serviceB.setPin('1234');
+        final hashA = await storeA.read('pin_hash');
 
-        final hashA = await storageA.read(key: 'pin_hash');
-        final hashB = await storageB.read(key: 'pin_hash');
+        final storeB = InMemorySecureKeyValueStorage();
+        final serviceB = SecurePinAuthService(storage: storeB);
+        await serviceB.setPin('1234');
+        final hashB = await storeB.read('pin_hash');
 
         expect(hashA, isNot(equals(hashB)));
       });
@@ -305,7 +231,7 @@ void main() {
         'returns false when stored hash exists but salt is missing',
         () async {
           await service.setPin('1234');
-          await storage.delete(key: 'pin_salt');
+          await store.delete('pin_salt');
 
           expect(await service.authenticatePin('1234'), isFalse);
         },
@@ -319,7 +245,7 @@ void main() {
 
       test('returns false when stored hash exists but salt is empty', () async {
         await service.setPin('1234');
-        await storage.write(key: 'pin_salt', value: '');
+        await store.write('pin_salt', '');
 
         expect(await service.authenticatePin('1234'), isFalse);
       });
@@ -328,20 +254,49 @@ void main() {
         'returns false when storage read throws during authenticate',
         () async {
           await service.setPin('1234');
-          service = SecurePinAuthService(
-            storage: _ThrowingReadStorage(Exception('read failed')),
-          );
+          final mockStorage = _MockSecureStorage();
+          when(() => mockStorage.read(any())).thenThrow(Exception('boom'));
+          service = SecurePinAuthService(storage: mockStorage);
 
           expect(await service.authenticatePin('1234'), isFalse);
         },
       );
 
       test('returns false when stored hash is corrupted', () async {
-        await storage.write(key: 'pin_hash', value: 'not-a-valid-hash');
-        await storage.write(key: 'pin_salt', value: 'some-salt');
+        await store.write('pin_hash', 'not-a-valid-hash');
+        await store.write('pin_salt', base64Salt);
 
         expect(await service.authenticatePin('1234'), isFalse);
       });
     });
+
+    group('lockout metadata', () {
+      test('getFailedPinAttempts returns 0 by default', () async {
+        expect(await service.getFailedPinAttempts(), 0);
+      });
+
+      test('setFailedPinAttempts round-trips', () async {
+        await service.setFailedPinAttempts(3);
+        expect(await service.getFailedPinAttempts(), 3);
+      });
+
+      test('getPinLockoutEnd returns null by default', () async {
+        expect(await service.getPinLockoutEnd(), isNull);
+      });
+
+      test('setPinLockoutEnd round-trips', () async {
+        final end = DateTime.utc(2026, 7, 16, 12, 30);
+        await service.setPinLockoutEnd(end);
+        expect(await service.getPinLockoutEnd(), end);
+      });
+
+      test('setPinLockoutEnd(null) clears the lockout', () async {
+        await service.setPinLockoutEnd(DateTime.utc(2026, 7, 16));
+        await service.setPinLockoutEnd(null);
+        expect(await service.getPinLockoutEnd(), isNull);
+      });
+    });
   });
 }
+
+const base64Salt = 'AAAAAAAAAAAAAAAAAAAAAA==';

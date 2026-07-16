@@ -10,6 +10,7 @@ class Order {
     required this.venue,
     required this.price,
     required this.qty,
+    this.orderId,
     this.filled,
     this.time,
     this.status,
@@ -21,6 +22,7 @@ class Order {
   final String venue;
   final String price;
   final String qty;
+  final String? orderId;
   final String? filled;
   final String? time;
   final String? status;

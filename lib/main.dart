@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'presentation/routing/app_router.dart';
 import 'presentation/theme/theme_provider.dart';
 
-void main({List<Override> overrides = const []}) {
+void main({List<Override> overrides = const []}) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await dotenv.load(fileName: '.env.example');
+  } on Exception catch (_) {
+    // .env.example missing — public endpoints still work without credentials.
+  }
   runApp(ProviderScope(overrides: overrides, child: const YouTradeApp()));
 }
 

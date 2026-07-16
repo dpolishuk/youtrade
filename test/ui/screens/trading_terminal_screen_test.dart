@@ -15,6 +15,7 @@ import 'package:youtrade/domain/entities/trade.dart';
 import 'package:youtrade/domain/entities/venue.dart';
 import 'package:youtrade/domain/registry/exchange_capability.dart';
 import 'package:youtrade/domain/repositories/market_data_repository.dart';
+import 'package:youtrade/presentation/providers/market_screener_provider.dart';
 import 'package:youtrade/presentation/providers/repository_provider.dart';
 import 'package:youtrade/presentation/theme/app_theme.dart';
 import 'package:youtrade/presentation/theme/theme_mode.dart';
@@ -133,10 +134,36 @@ final class _ErrorRepository implements MarketDataRepository {
       Stream.value(const Err<List<Trade>>(UnknownFailure('Repository error')));
 }
 
+final _testScreenerItems = [
+  MarketScreenerItem(
+    symbol: displaySymbol('BTCUSDT'),
+    rawSymbol: 'BTCUSDT',
+    name: 'BTCUSDT',
+    venue: Venue.bybit,
+    assetClass: AssetClass.perp,
+    price: 65000.0,
+    change24hPercent: 5.23,
+    priceDecimals: 1,
+  ),
+  MarketScreenerItem(
+    symbol: displaySymbol('ETHUSDT'),
+    rawSymbol: 'ETHUSDT',
+    name: 'ETHUSDT',
+    venue: Venue.bybit,
+    assetClass: AssetClass.perp,
+    price: 3200.0,
+    change24hPercent: -2.34,
+    priceDecimals: 2,
+  ),
+];
+
 Widget _buildApp({String? symbol}) {
   return ProviderScope(
     overrides: [
       marketDataRepositoryProvider.overrideWithValue(_deterministicRepository),
+      marketScreenerItemsProvider.overrideWith(
+        (ref) async => _testScreenerItems,
+      ),
     ],
     child: MaterialApp.router(
       theme: AppTheme.dark(AppVisualDirection.flux),
@@ -238,26 +265,22 @@ void main() {
       expect(find.text('Info'), findsOneWidget);
       expect(find.text('Signals'), findsOneWidget);
 
-      // Symbol chips from the mockup.
+      // Search bar shows the currently selected symbol as hint text.
       expect(find.text('BTC'), findsWidgets);
       expect(find.text('BTCUSDT'), findsOneWidget);
-      expect(find.text('ETH'), findsOneWidget);
-      expect(find.text('SOL'), findsOneWidget);
-      expect(find.text('AAPL'), findsOneWidget);
-      expect(find.text('GOLD'), findsOneWidget);
 
       // Class tag and header metadata.
       expect(find.text('PERP'), findsOneWidget);
-      expect(find.text('Bitcoin Perpetual · Binance'), findsOneWidget);
+      expect(find.text('Bitcoin Perpetual · Bybit'), findsOneWidget);
 
-      // Last price uses one decimal for BTC.
-      expect(find.text('105,154.0'), findsWidgets);
+      // Last price uses smart decimals for BTC.
+      expect(find.text('105,154.05'), findsWidgets);
       expect(find.textContaining('+6.42%'), findsOneWidget);
 
       // Trade tab defaults.
       expect(find.text('Limit'), findsOneWidget);
       expect(find.text('Market'), findsOneWidget);
-      expect(find.text('Stop'), findsOneWidget);
+      expect(find.text('Stop'), findsNothing);
       expect(find.text('Buy / Long BTC'), findsOneWidget);
     });
 
@@ -270,40 +293,47 @@ void main() {
       expect(find.text('Ethereum Perpetual · Bybit'), findsOneWidget);
     });
 
-    testWidgets('tapping a chip overrides the deep-linked symbol parameter', (
-      tester,
-    ) async {
-      await tester.pumpWidget(_buildApp(symbol: 'ETH'));
+    testWidgets(
+      'selecting from search overrides the deep-linked symbol parameter',
+      (tester) async {
+        await tester.pumpWidget(_buildApp(symbol: 'ETH'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(find.text('ETHUSDT'), findsOneWidget);
+
+        await tester.enterText(
+          find.byKey(const ValueKey('symbol_search_field')),
+          'BTC',
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const ValueKey('search_result_BTCUSDT')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Bitcoin Perpetual · Bybit'), findsOneWidget);
+      },
+    );
+
+    testWidgets('parses arbitrary USDT pair to correct base', (tester) async {
+      await tester.pumpWidget(_buildApp(symbol: 'DOGEUSDT'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('ETHUSDT'), findsOneWidget);
-
-      await tester.tap(find.byKey(const ValueKey('symbol_chip_BTC')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-
-      expect(find.text('BTCUSDT'), findsOneWidget);
-      expect(find.text('Bitcoin Perpetual · Binance'), findsOneWidget);
+      // Header shows the raw pair and metadata derived from base 'DOGE'.
+      expect(find.text('DOGEUSDT'), findsOneWidget);
+      expect(find.text('DOGE · Bybit'), findsOneWidget);
+      expect(find.text('Buy / Long DOGE'), findsOneWidget);
     });
 
-    testWidgets('parses GC=F futures symbol parameter', (tester) async {
-      await tester.pumpWidget(_buildApp(symbol: 'GC=F'));
+    testWidgets('parses bare base symbol as USDT pair', (tester) async {
+      await tester.pumpWidget(_buildApp(symbol: 'ADA'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('GOLD'), findsOneWidget);
-      expect(find.text('GC=F'), findsOneWidget);
-      expect(find.text('Gold Futures · Dec · OKX'), findsOneWidget);
-      expect(find.text('FUTURE'), findsOneWidget);
-    });
-
-    testWidgets('parses BTC-28K-C options symbol parameter', (tester) async {
-      await tester.pumpWidget(_buildApp(symbol: 'BTC-28K-C'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-
-      expect(find.text('BTC-28K-C'), findsOneWidget);
+      // ADA is treated as base with USDT quote; rawSymbol becomes ADAUSDT.
+      expect(find.text('ADAUSDT'), findsOneWidget);
+      expect(find.text('ADA · Bybit'), findsOneWidget);
     });
 
     testWidgets(
@@ -447,7 +477,7 @@ void main() {
       expect(find.text('Compare'), findsOneWidget);
     });
 
-    testWidgets('submit CTA shows demo confirmation dialog', (tester) async {
+    testWidgets('submit CTA shows confirmation dialog', (tester) async {
       await tester.pumpWidget(_buildApp());
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
@@ -457,11 +487,9 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('Demo Buy'), findsOneWidget);
-      expect(
-        find.textContaining('No real order will be placed.'),
-        findsOneWidget,
-      );
+      expect(find.text('Confirm Buy'), findsOneWidget);
+      expect(find.text('Confirm'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
     });
   });
 }

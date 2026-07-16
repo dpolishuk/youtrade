@@ -1,38 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/datasources/mock/deterministic_market_data_store.dart';
+import '../../core/result.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/entities/position.dart';
+import '../../presentation/providers/orders_provider.dart';
+import '../../presentation/providers/portfolio_data_provider.dart';
 import '../../presentation/theme/theme_extensions.dart';
 import '../widgets/orders/history_order_tile.dart';
 import '../widgets/orders/order_list_tile.dart';
 import '../widgets/orders/position_list_tile.dart';
 
-/// Orders & History screen with Open / History / Positions tabs.
-class OrdersHistoryScreen extends StatefulWidget {
-  const OrdersHistoryScreen({this.positions, super.key});
-
-  final List<Position>? positions;
+/// Orders & History screen with Open / History / Positions tabs rendered from
+/// real Bybit demo account data.
+class OrdersHistoryScreen extends ConsumerStatefulWidget {
+  const OrdersHistoryScreen({super.key});
 
   @override
-  State<OrdersHistoryScreen> createState() => _OrdersHistoryScreenState();
+  ConsumerState<OrdersHistoryScreen> createState() =>
+      _OrdersHistoryScreenState();
 }
 
-class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
+class _OrdersHistoryScreenState extends ConsumerState<OrdersHistoryScreen> {
   int _selectedIndex = 0;
   final _tabs = const ['Open', 'History', 'Positions'];
 
-  late List<Order> _openOrders;
-
-  @override
-  void initState() {
-    super.initState();
-    _openOrders = List<Order>.from(DeterministicMarketDataStore.openOrders);
-  }
+  /// Order IDs successfully cancelled via the real cancelOrder API. These are
+  /// filtered from the visible list until the next refresh confirms it.
+  final Set<String> _cancelledOrderIds = {};
 
   @override
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColorTheme>()!;
+    final asyncOrders = ref.watch(ordersProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -55,7 +55,22 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
               const SizedBox(height: 14),
               _buildTabs(appColors),
               const SizedBox(height: 14),
-              Expanded(child: _buildBody()),
+              Expanded(
+                child: asyncOrders.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, _) => _OrdersError(
+                    message: error.toString(),
+                    onRetry: () => ref.invalidate(ordersProvider),
+                  ),
+                  data: (ordersData) {
+                    if (ordersData.needsCredentials) {
+                      return const _ConnectApiKey();
+                    }
+                    return _buildBody(appColors, ordersData);
+                  },
+                ),
+              ),
             ],
           ),
         ),
@@ -105,31 +120,135 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
     );
   }
 
-  Widget _buildBody() {
-    final appColors = Theme.of(context).extension<AppColorTheme>()!;
+  Widget _buildBody(AppColorTheme appColors, OrdersData ordersData) {
     return switch (_selectedIndex) {
-      0 => _buildOpenList(),
-      1 => _buildHistoryList(appColors),
+      0 => _buildOpenList(appColors, ordersData.openOrders),
+      1 => _buildHistoryList(appColors, ordersData.historyOrders),
       2 => _buildPositionsList(appColors),
       _ => const SizedBox.shrink(),
     };
   }
 
-  Widget _buildOpenList() {
+  Widget _buildOpenList(AppColorTheme appColors, List<Order> openOrders) {
+    final visible = openOrders
+        .where((o) => !_cancelledOrderIds.contains(o.orderId))
+        .toList();
+
+    if (visible.isEmpty) {
+      return _emptyState(appColors, 'No open orders');
+    }
+
     return ListView.separated(
-      itemCount: _openOrders.length,
+      itemCount: visible.length,
       separatorBuilder: (_, _) => const SizedBox(height: 9),
       itemBuilder: (_, index) {
-        final order = _openOrders[index];
+        final order = visible[index];
         return OrderListTile(
           order: order,
-          onCancel: (_) => setState(() => _openOrders.remove(order)),
+          onCancel: (_) => _showCancelConfirmation(order),
         );
       },
     );
   }
 
-  Widget _buildHistoryList(AppColorTheme appColors) {
+  /// Shows a confirmation dialog before calling the real cancelOrder API.
+  Future<void> _showCancelConfirmation(Order order) async {
+    final orderId = order.orderId;
+    if (orderId == null) return;
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        var isCancelling = false;
+        String? errorMessage;
+        return StatefulBuilder(
+          builder: (_, setDialogState) {
+            return AlertDialog(
+              title: const Text('Cancel this order?'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${order.side} ${order.qty} ${order.symbol} '
+                    '@ ${order.price}',
+                  ),
+                  if (errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        errorMessage!,
+                        style: TextStyle(
+                          color: Theme.of(dialogContext).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isCancelling
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Keep Order'),
+                ),
+                TextButton(
+                  onPressed: isCancelling
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            isCancelling = true;
+                            errorMessage = null;
+                          });
+                          final result = await ref
+                              .read(bybitAccountClientProvider)
+                              .cancelOrder(
+                                category: 'linear',
+                                symbol: order.symbol,
+                                orderId: orderId,
+                              );
+                          if (!dialogContext.mounted) return;
+                          switch (result) {
+                            case Success():
+                              Navigator.of(dialogContext).pop();
+                              if (!mounted) return;
+                              setState(() => _cancelledOrderIds.add(orderId));
+                              ref.invalidate(ordersProvider);
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Order cancelled'),
+                                ),
+                              );
+                            case Err(failure: final f):
+                              setDialogState(() {
+                                isCancelling = false;
+                                errorMessage = f.message;
+                              });
+                          }
+                        },
+                  child: isCancelling
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Cancel Order'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildHistoryList(AppColorTheme appColors, List<Order> historyOrders) {
+    if (historyOrders.isEmpty) {
+      return _emptyState(appColors, 'No order history');
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -137,26 +256,42 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
         border: Border.all(color: appColors.borderSubtle),
       ),
       child: ListView.separated(
-        itemCount: DeterministicMarketDataStore.historyOrders.length,
+        itemCount: historyOrders.length,
         separatorBuilder: (_, _) => Divider(
           height: 1,
           color: appColors.borderSubtle,
           indent: 14,
           endIndent: 14,
         ),
-        itemBuilder: (_, index) => HistoryOrderTile(
-          order: DeterministicMarketDataStore.historyOrders[index],
-        ),
+        itemBuilder: (_, index) =>
+            HistoryOrderTile(order: historyOrders[index]),
       ),
     );
   }
 
   Widget _buildPositionsList(AppColorTheme appColors) {
-    final positions =
-        widget.positions ??
-        DeterministicMarketDataStore.portfolioPositionsFor(
-          accent: appColors.accent,
-        );
+    final asyncPortfolio = ref.watch(portfolioDataProvider);
+
+    return asyncPortfolio.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => _OrdersError(
+        message: error.toString(),
+        onRetry: () => ref.invalidate(portfolioDataProvider),
+      ),
+      data: (portfolio) {
+        final positions = portfolio.positions;
+        if (positions.isEmpty) {
+          return _emptyState(appColors, 'No open positions');
+        }
+        return _positionsContainer(appColors, positions);
+      },
+    );
+  }
+
+  Widget _positionsContainer(
+    AppColorTheme appColors,
+    List<Position> positions,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -172,6 +307,105 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
           endIndent: 14,
         ),
         itemBuilder: (_, index) => PositionListTile(position: positions[index]),
+      ),
+    );
+  }
+
+  Widget _emptyState(AppColorTheme appColors, String message) {
+    return Center(
+      child: Text(
+        message,
+        style: TextStyle(
+          fontFamily: 'JetBrains Mono',
+          fontSize: 11,
+          color: appColors.tertiaryText,
+        ),
+      ),
+    );
+  }
+}
+
+class _ConnectApiKey extends StatelessWidget {
+  const _ConnectApiKey();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.key_off,
+              size: 48,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Connect API Key',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add your Bybit demo account API credentials to view your '
+              'open orders and trade history.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OrdersError extends StatelessWidget {
+  const _OrdersError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to load orders',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Unable to fetch orders from Bybit.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(onPressed: onRetry, child: const Text('Retry')),
+          ],
+        ),
       ),
     );
   }

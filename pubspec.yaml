@@ -28,6 +28,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.34
   path: ^1.9.1
   path_provider: ^2.1.5
+  shared_preferences: ^2.3.3
 
   # Security / platform
   crypto: ^3.0.6
@@ -39,6 +40,9 @@ dependencies:
 
   # Routing
   go_router: ^14.8.1
+
+  # Environment / secrets
+  flutter_dotenv: ^5.2.1
 
   # iOS-style icons
   cupertino_icons: ^1.0.8
@@ -55,12 +59,14 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   stream_channel: ^2.1.4
   async: ^2.13.1
+  shared_preferences_platform_interface: ^2.4.0
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/fonts/
+    - .env.example
 
   fonts:
     - family: Geist

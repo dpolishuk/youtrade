@@ -378,6 +378,8 @@ void main() {
 
         expect(router.state.uri.path, '/trading');
         expect(router.state.uri.queryParameters['symbol'], 'ETH');
+
+        container.dispose();
       },
     );
 
@@ -422,6 +424,8 @@ void main() {
       await pumpFrames(tester);
       expect(router.state.uri.path, '/account');
       expect(selectedBottomNavIndex(tester), 4);
+
+      container.dispose();
     });
 
     testWidgets(
@@ -471,6 +475,8 @@ void main() {
       expect(router.state.uri.path, '/trading');
       expect(router.state.uri.queryParameters['symbol'], 'BTC');
       expect(find.byType(TradingTerminalScreen), findsOneWidget);
+
+      container.dispose();
     });
 
     testWidgets('deep link /trading?symbol=ETH! falls back to default symbol', (
@@ -494,6 +500,8 @@ void main() {
       expect(router.state.uri.path, '/trading');
       expect(find.byType(TradingTerminalScreen), findsOneWidget);
       expect(find.textContaining('BTC'), findsWidgets);
+
+      container.dispose();
     });
 
     testWidgets('deep links to /markets/options/BTC render options chain', (

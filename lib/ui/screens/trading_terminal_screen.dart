@@ -14,8 +14,8 @@ import '../widgets/trading_terminal/fundamentals_card.dart';
 import '../widgets/trading_terminal/lower_tabs.dart';
 import '../widgets/trading_terminal/order_book_panel.dart';
 import '../widgets/trading_terminal/signal_gauge.dart';
-import '../widgets/trading_terminal/symbol_chip_row.dart';
 import '../widgets/trading_terminal/symbol_header.dart';
+import '../widgets/trading_terminal/symbol_search_bar.dart';
 import '../widgets/trading_terminal/time_frame_selector.dart';
 import '../widgets/trading_terminal/trade_ticket.dart';
 
@@ -75,74 +75,11 @@ class _TradingTerminalScreenState extends ConsumerState<TradingTerminalScreen> {
 
   TradingSymbol _symbolFromRaw(String raw) {
     final upper = raw.toUpperCase();
-    return switch (upper) {
-      'BTC' || 'BTCUSDT' => TradingSymbol(
-        base: 'BTC',
-        quote: 'USDT',
-        venue: Venue.binance,
-        rawSymbol: 'BTCUSDT',
-      ),
-      'ETH' || 'ETHUSDT' => TradingSymbol(
-        base: 'ETH',
-        quote: 'USDT',
-        venue: Venue.bybit,
-        rawSymbol: 'ETHUSDT',
-      ),
-      'SOL' || 'SOLUSDT' => TradingSymbol(
-        base: 'SOL',
-        quote: 'USDT',
-        venue: Venue.okx,
-        rawSymbol: 'SOLUSDT',
-      ),
-      'XRP' || 'XRPUSDT' => TradingSymbol(
-        base: 'XRP',
-        quote: 'USDT',
-        venue: Venue.binance,
-        rawSymbol: 'XRPUSDT',
-      ),
-      'AAPL' => TradingSymbol(
-        base: 'AAPL',
-        quote: 'USD',
-        venue: Venue.coinbase,
-        rawSymbol: 'AAPL',
-      ),
-      'NVDA' => TradingSymbol(
-        base: 'NVDA',
-        quote: 'USD',
-        venue: Venue.coinbase,
-        rawSymbol: 'NVDA',
-      ),
-      'TSLA' => TradingSymbol(
-        base: 'TSLA',
-        quote: 'USD',
-        venue: Venue.coinbase,
-        rawSymbol: 'TSLA',
-      ),
-      'GC=F' => TradingSymbol(
-        base: 'XAU',
-        quote: 'USD',
-        venue: Venue.okx,
-        rawSymbol: 'GC=F',
-      ),
-      'CL=F' => TradingSymbol(
-        base: 'CL',
-        quote: 'USD',
-        venue: Venue.okx,
-        rawSymbol: 'CL=F',
-      ),
-      'BTC-28K-C' => TradingSymbol(
-        base: 'BTC-28K-C',
-        quote: 'USD',
-        venue: Venue.bybit,
-        rawSymbol: 'BTC-28K-C',
-      ),
-      _ => TradingSymbol(
-        base: raw,
-        quote: 'USDT',
-        venue: Venue.binance,
-        rawSymbol: upper,
-      ),
-    };
+    var base = upper;
+    if (upper.endsWith('USDT') && upper.length > 4) {
+      base = upper.substring(0, upper.length - 4);
+    }
+    return TradingSymbol(base: base, quote: 'USDT', venue: Venue.bybit);
   }
 
   @override
@@ -173,7 +110,7 @@ class _TradingTerminalScreenState extends ConsumerState<TradingTerminalScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 8),
-              const SymbolChipRow(),
+              const SymbolSearchBar(),
               const SizedBox(height: 12),
               SymbolHeader(
                 symbol: selectedSymbol,

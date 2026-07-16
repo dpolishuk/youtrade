@@ -23,11 +23,101 @@ void main() {
       rawSymbol: 'BTCUSDT',
     );
 
+    test('default base URL is demo endpoint', () async {
+      String? capturedHost;
+      final client = BybitRestClient(
+        httpClient: MockClient((request) async {
+          capturedHost = request.url.host;
+          return http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[{"symbol":"BTCUSDT","lastPrice":"100.0","bid1Price":"99.5","ask1Price":"100.5","price24hPcnt":"0.01","turnover24h":"1000.0","volume24h":"1000.0"}]}}',
+            200,
+          );
+        }),
+      );
+      await client.fetchTicker(symbol);
+      expect(capturedHost, 'api-demo.bybit.com');
+    });
+
+    test('default category is linear for USDT perpetuals', () async {
+      String? capturedCategory;
+      final client = BybitRestClient(
+        httpClient: MockClient((request) async {
+          capturedCategory = request.url.queryParameters['category'];
+          return http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"linear","list":[{"symbol":"BTCUSDT","lastPrice":"100.0","bid1Price":"99.5","ask1Price":"100.5","price24hPcnt":"0.01","turnover24h":"1000.0","volume24h":"1000.0"}]}}',
+            200,
+          );
+        }),
+      );
+      await client.fetchTicker(symbol);
+      expect(capturedCategory, 'linear');
+    });
+
+    test('custom category override propagates to all requests', () async {
+      final capturedCategories = <String>[];
+      final client = BybitRestClient(
+        httpClient: MockClient((request) async {
+          capturedCategories.add(request.url.queryParameters['category']!);
+          if (request.url.path == '/v5/market/tickers') {
+            return http.Response(
+              '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[{"symbol":"BTCUSDT","lastPrice":"100.0","bid1Price":"99.5","ask1Price":"100.5","price24hPcnt":"0.01","turnover24h":"1000.0","volume24h":"1000.0"}]}}',
+              200,
+            );
+          }
+          if (request.url.path == '/v5/market/kline') {
+            return http.Response(
+              '{"retCode":0,"retMsg":"OK","result":{"category":"spot","symbol":"BTCUSDT","list":[["1718952000000","1.0","2.0","0.5","1.5","100.0","0"]]}}',
+              200,
+            );
+          }
+          if (request.url.path == '/v5/market/orderbook') {
+            return http.Response(
+              '{"retCode":0,"retMsg":"OK","result":{"s":"BTCUSDT","b":[["99.0","1.0"]],"a":[["101.0","1.0"]]}}',
+              200,
+            );
+          }
+          return http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[{"execId":"1","symbol":"BTCUSDT","price":"100.0","size":"1.0","side":"Buy","time":"1718952000000"}]}}',
+            200,
+          );
+        }),
+        category: 'spot',
+      );
+      await client.fetchTicker(symbol);
+      await client.fetchCandles(symbol, Timeframe.h1);
+      await client.fetchOrderBook(symbol);
+      await client.fetchTrades(symbol);
+      expect(capturedCategories, everyElement('spot'));
+    });
+
+    test('fetchTicker uses linear category for BTCUSDT', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((request) async {
+          expect(request.url.path, '/v5/market/tickers');
+          expect(request.url.queryParameters['category'], 'linear');
+          expect(request.url.queryParameters['symbol'], 'BTCUSDT');
+          return http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"linear","list":[{"symbol":"BTCUSDT","lastPrice":"100.0","bid1Price":"99.5","ask1Price":"100.5","price24hPcnt":"0.01","turnover24h":"1000.0","volume24h":"1000.0"}]}}',
+            200,
+          );
+        }),
+      );
+
+      final result = await client.fetchTicker(symbol);
+      expect(result, isA<Success>());
+      result.when(
+        success: (ticker) {
+          expect(ticker.lastPrice, 100.0);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
     test('fetchTicker returns Success on valid response', () async {
       final client = BybitRestClient(
         httpClient: MockClient((request) async {
           expect(request.url.path, '/v5/market/tickers');
-          expect(request.url.queryParameters['category'], 'spot');
+          expect(request.url.queryParameters['category'], 'linear');
           expect(request.url.queryParameters['symbol'], 'BTCUSDT');
           return http.Response(
             '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":[{"symbol":"BTCUSDT","lastPrice":"100.0","bid1Price":"99.5","ask1Price":"100.5","price24hPcnt":"0.01","turnover24h":"1000.0","volume24h":"1000.0"}]}}',
@@ -512,6 +602,151 @@ void main() {
         failure: (failure) {
           expect(failure, isA<NetworkFailure>());
           expect(failure.message, 'Bybit trades request timed out');
+        },
+      );
+    });
+  });
+
+  group('fetchAllTickers', () {
+    test('returns Success with list of ticker maps for linear', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((request) async {
+          expect(request.url.path, '/v5/market/tickers');
+          expect(request.url.queryParameters['category'], 'linear');
+          expect(request.url.queryParameters.containsKey('symbol'), isFalse);
+          return http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"linear","list":['
+            '{"symbol":"BTCUSDT","lastPrice":"65000.0","price24hPcnt":"0.05","volume24h":"1000000.0"},'
+            '{"symbol":"ETHUSDT","lastPrice":"3200.0","price24hPcnt":"-0.02","volume24h":"500000.0"}'
+            ']}}',
+            200,
+          );
+        }),
+      );
+
+      final result = await client.fetchAllTickers('linear');
+      expect(result, isA<Success<List<Map<String, dynamic>>>>());
+      result.when(
+        success: (tickers) {
+          expect(tickers.length, 2);
+          expect(tickers[0]['symbol'], 'BTCUSDT');
+          expect(tickers[1]['symbol'], 'ETHUSDT');
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('returns Success with list of ticker maps for spot', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((request) async {
+          expect(request.url.queryParameters['category'], 'spot');
+          return http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"spot","list":['
+            '{"symbol":"SOLUSDT","lastPrice":"150.0","price24hPcnt":"0.03","volume24h":"200000.0"}'
+            ']}}',
+            200,
+          );
+        }),
+      );
+
+      final result = await client.fetchAllTickers('spot');
+      expect(result, isA<Success<List<Map<String, dynamic>>>>());
+      result.when(
+        success: (tickers) {
+          expect(tickers.length, 1);
+          expect(tickers[0]['symbol'], 'SOLUSDT');
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('returns Success with empty list when API returns empty', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"retCode":0,"retMsg":"OK","result":{"category":"linear","list":[]}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchAllTickers('linear');
+      expect(result, isA<Success<List<Map<String, dynamic>>>>());
+      result.when(
+        success: (tickers) => expect(tickers, isEmpty),
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('returns NetworkFailure on non-200', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((_) async => http.Response('bad', 400)),
+      );
+      final result = await client.fetchAllTickers('linear');
+      expect(result, isA<Err<List<Map<String, dynamic>>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Bybit tickers 400');
+        },
+      );
+    });
+
+    test('returns NetworkFailure on retCode != 0', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            '{"retCode":10001,"retMsg":"Params error","result":{}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await client.fetchAllTickers('linear');
+      expect(result, isA<Err<List<Map<String, dynamic>>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(
+            failure.message,
+            'Bybit tickers API error: 10001 Params error',
+          );
+        },
+      );
+    });
+
+    test('returns ParseFailure on malformed JSON', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((_) async => http.Response('not-json', 200)),
+      );
+
+      final result = await client.fetchAllTickers('linear');
+      expect(result, isA<Err<List<Map<String, dynamic>>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith('Bybit tickers parse failed: FormatException'),
+          );
+        },
+      );
+    });
+
+    test('returns NetworkFailure on timeout', () async {
+      final client = BybitRestClient(
+        httpClient: MockClient((_) async => throw TimeoutException('timeout')),
+      );
+      final result = await client.fetchAllTickers('linear');
+      expect(result, isA<Err<List<Map<String, dynamic>>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<NetworkFailure>());
+          expect(failure.message, 'Bybit tickers request timed out');
         },
       );
     });

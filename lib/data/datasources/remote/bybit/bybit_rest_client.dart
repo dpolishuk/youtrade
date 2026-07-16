@@ -18,12 +18,16 @@ import '../../../../domain/sources/trade_source.dart';
 
 final class BybitRestClient
     implements TickerSource, CandleSource, OrderBookSource, TradeSource {
-  BybitRestClient({http.Client? httpClient, String? baseUrl})
-    : _httpClient = httpClient ?? http.Client(),
-      _baseUrl = baseUrl ?? 'https://api.bybit.com';
+  BybitRestClient({
+    http.Client? httpClient,
+    String? baseUrl,
+    this._category = 'linear',
+  }) : _httpClient = httpClient ?? http.Client(),
+       _baseUrl = baseUrl ?? 'https://api-demo.bybit.com';
 
   final http.Client _httpClient;
   final String _baseUrl;
+  final String _category;
 
   void close() => _httpClient.close();
 
@@ -37,13 +41,48 @@ final class BybitRestClient
     return 'Bybit $context API error: $retCode $retMsg';
   }
 
+  /// Fetches ALL tickers for the given [category] (e.g. "linear" or "spot")
+  /// without passing a symbol parameter, returning every available pair.
+  Future<Result<List<Map<String, dynamic>>>> fetchAllTickers(
+    String category,
+  ) async {
+    try {
+      final response = await _httpClient
+          .get(_uri('/v5/market/tickers', {'category': category}))
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        return Err(NetworkFailure('Bybit tickers ${response.statusCode}'));
+      }
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final apiError = _apiErrorMessage(json, 'tickers');
+      if (apiError.isNotEmpty) {
+        return Err(NetworkFailure(apiError));
+      }
+      final result = json['result'] as Map<String, dynamic>;
+      final list = result['list'] as List<dynamic>;
+      return Success(list.cast<Map<String, dynamic>>());
+    } on TimeoutException {
+      return const Err(NetworkFailure('Bybit tickers request timed out'));
+    } on FormatException catch (e) {
+      return Err(ParseFailure('Bybit tickers parse failed: $e'));
+    } on TypeError catch (e) {
+      return Err(ParseFailure('Bybit tickers parse failed: $e'));
+    } on StateError catch (e) {
+      return Err(ParseFailure('Bybit tickers parse failed: $e'));
+    } on RangeError catch (e) {
+      return Err(ParseFailure('Bybit tickers parse failed: $e'));
+    } on Exception catch (e) {
+      return Err(NetworkFailure('Bybit tickers request failed: $e'));
+    }
+  }
+
   @override
   Future<Result<Ticker>> fetchTicker(TradingSymbol symbol) async {
     try {
       final response = await _httpClient
           .get(
             _uri('/v5/market/tickers', {
-              'category': 'spot',
+              'category': _category,
               'symbol': symbol.rawSymbol,
             }),
           )
@@ -85,7 +124,7 @@ final class BybitRestClient
       final response = await _httpClient
           .get(
             _uri('/v5/market/kline', {
-              'category': 'spot',
+              'category': _category,
               'symbol': symbol.rawSymbol,
               'interval': _timeframeCode(timeframe),
               if (limit != null) 'limit': limit.toString(),
@@ -129,7 +168,7 @@ final class BybitRestClient
       final response = await _httpClient
           .get(
             _uri('/v5/market/orderbook', {
-              'category': 'spot',
+              'category': _category,
               'symbol': symbol.rawSymbol,
               if (depth != null) 'limit': depth.toString(),
             }),
@@ -169,7 +208,7 @@ final class BybitRestClient
       final response = await _httpClient
           .get(
             _uri('/v5/market/recent-trade', {
-              'category': 'spot',
+              'category': _category,
               'symbol': symbol.rawSymbol,
               if (limit != null) 'limit': limit.toString(),
             }),
@@ -209,9 +248,10 @@ final class BybitRestClient
       lastPrice: double.parse(json['lastPrice'] as String),
       bid: double.parse(json['bid1Price'] as String),
       ask: double.parse(json['ask1Price'] as String),
-      change24h: json['price24h'] == null
-          ? 0.0
-          : double.parse(json['price24h'] as String),
+      change24h: (json['prevPrice24h'] != null && json['lastPrice'] != null)
+          ? double.parse(json['lastPrice'] as String) -
+                double.parse(json['prevPrice24h'] as String)
+          : 0.0,
       change24hPercent: double.parse(json['price24hPcnt'] as String) * 100,
       volume: double.parse(json['volume24h'] as String),
       timestamp: DateTime.now().toUtc(),

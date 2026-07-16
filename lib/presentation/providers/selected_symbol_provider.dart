@@ -7,7 +7,7 @@ final selectedSymbolProvider = StateProvider<TradingSymbol>(
   (ref) => TradingSymbol(
     base: 'BTC',
     quote: 'USDT',
-    venue: Venue.binance,
+    venue: Venue.bybit,
     rawSymbol: 'BTCUSDT',
   ),
 );

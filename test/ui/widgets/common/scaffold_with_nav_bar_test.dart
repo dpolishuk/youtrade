@@ -294,6 +294,8 @@ void main() {
         );
         expect(opacity.opacity, i == 2 ? 1.0 : 0.0);
       }
+
+      container.dispose();
     });
 
     testWidgets('renders global app header on portfolio branch', (

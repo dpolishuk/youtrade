@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/candle.dart';
 import '../../../domain/entities/symbol.dart';
-import '../../../domain/entities/symbol_metadata.dart';
 import '../../../domain/entities/ticker.dart';
 import '../../../presentation/theme/app_theme.dart';
 import '../../../presentation/theme/theme_extensions.dart';
@@ -25,7 +24,6 @@ class SignalGauge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appColors = Theme.of(context).extension<AppColorTheme>()!;
-    final meta = resolveSymbolMetadata(symbol);
 
     final last =
         ticker?.lastPrice ?? (candles.isNotEmpty ? candles.last.close : 0.0);
@@ -51,13 +49,8 @@ class SignalGauge extends StatelessWidget {
         : appColors.subtleText;
 
     final oscillators = _buildOscillators(chg, chgP, rsi, appColors);
-    final movingAverages = _buildMovingAverages(
-      candles,
-      last,
-      meta.decimals,
-      appColors,
-    );
-    final pivots = _buildPivots(candles, meta);
+    final movingAverages = _buildMovingAverages(candles, last, appColors);
+    final pivots = _buildPivots(candles);
 
     final buyCount =
         movingAverages.where((r) => r.signal == 'Buy').length +
@@ -189,7 +182,6 @@ class SignalGauge extends StatelessWidget {
   List<_SignalRow> _buildMovingAverages(
     List<Candle> data,
     double last,
-    int decimals,
     AppColorTheme appColors,
   ) {
     return [7, 25, 50, 99, 200].map((p) {
@@ -197,14 +189,14 @@ class SignalGauge extends StatelessWidget {
       final buy = last >= mv;
       return _SignalRow(
         'MA $p',
-        formatFixedPrice(mv, decimals),
+        formatPriceSmart(mv),
         buy ? 'Buy' : 'Sell',
         buy ? appColors.bullish : appColors.bearish,
       );
     }).toList();
   }
 
-  List<_Pivot> _buildPivots(List<Candle> candles, SymbolMetadata meta) {
+  List<_Pivot> _buildPivots(List<Candle> candles) {
     final last24 = candles.length >= 24
         ? candles.sublist(candles.length - 24)
         : candles;
@@ -213,11 +205,11 @@ class SignalGauge extends StatelessWidget {
     final lo = last24.map((c) => c.low).reduce((a, b) => a < b ? a : b);
     final last = candles.isNotEmpty ? candles.last.close : hi;
     return [
-      _Pivot('R2', hi * 1.012, meta.decimals),
-      _Pivot('R1', hi, meta.decimals),
-      _Pivot('Pivot', (hi + lo + last) / 3, meta.decimals),
-      _Pivot('S1', lo, meta.decimals),
-      _Pivot('S2', lo * 0.988, meta.decimals),
+      _Pivot('R2', hi * 1.012),
+      _Pivot('R1', hi),
+      _Pivot('Pivot', (hi + lo + last) / 3),
+      _Pivot('S1', lo),
+      _Pivot('S2', lo * 0.988),
     ];
   }
 
@@ -410,11 +402,10 @@ class _SignalTable extends StatelessWidget {
 }
 
 class _Pivot {
-  const _Pivot(this.label, this.value, this.decimals);
+  const _Pivot(this.label, this.value);
 
   final String label;
   final double value;
-  final int decimals;
 }
 
 class _PivotGrid extends StatelessWidget {
@@ -452,7 +443,7 @@ class _PivotGrid extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      formatFixedPrice(pivots[i].value, pivots[i].decimals),
+                      formatPriceSmart(pivots[i].value),
                       style: AppTheme.mono(
                         color: appColors.foreground,
                         fontSize: 10,

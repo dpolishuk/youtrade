@@ -9,10 +9,8 @@ class FilterChips extends ConsumerWidget {
 
   static const _filters = <(String label, MarketCategory? category)>[
     ('All', null),
-    ('Crypto', MarketCategory.crypto),
-    ('Stocks', MarketCategory.stocks),
-    ('Futures', MarketCategory.futures),
-    ('Options', MarketCategory.options),
+    ('Perpetuals', MarketCategory.perp),
+    ('Spot', MarketCategory.spot),
   ];
 
   @override

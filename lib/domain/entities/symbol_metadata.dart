@@ -49,11 +49,32 @@ SymbolMetadata resolveSymbolMetadata(TradingSymbol symbol) {
       decimals: 1,
       venue: Venue.binance,
     ),
+    (Venue.bybit, 'BTCUSDT') => const SymbolMetadata(
+      name: 'Bitcoin Perpetual',
+      symbolClass: SymbolClass.perp,
+      base: 'BTC',
+      decimals: 1,
+      venue: Venue.bybit,
+    ),
     (Venue.bybit, 'ETHUSDT') => const SymbolMetadata(
       name: 'Ethereum Perpetual',
       symbolClass: SymbolClass.perp,
       base: 'ETH',
       decimals: 2,
+      venue: Venue.bybit,
+    ),
+    (Venue.bybit, 'SOLUSDT') => const SymbolMetadata(
+      name: 'Solana',
+      symbolClass: SymbolClass.perp,
+      base: 'SOL',
+      decimals: 2,
+      venue: Venue.bybit,
+    ),
+    (Venue.bybit, 'XRPUSDT') => const SymbolMetadata(
+      name: 'XRP',
+      symbolClass: SymbolClass.perp,
+      base: 'XRP',
+      decimals: 4,
       venue: Venue.bybit,
     ),
     (Venue.okx, 'SOLUSDT') => const SymbolMetadata(
@@ -114,7 +135,7 @@ SymbolMetadata resolveSymbolMetadata(TradingSymbol symbol) {
     ),
     _ => SymbolMetadata(
       name: symbol.base,
-      symbolClass: SymbolClass.spot,
+      symbolClass: SymbolClass.perp,
       base: symbol.base,
       decimals: 2,
       venue: symbol.venue,

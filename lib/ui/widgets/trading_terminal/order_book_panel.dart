@@ -131,14 +131,14 @@ class _BookContent extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                formatFixedPrice(price, meta.decimals),
+                formatPriceSmart(price),
                 style: AppTheme.mono(
                   color: appColors.bullish,
                   fontSize: 15,
                 ).copyWith(fontWeight: FontWeight.w600),
               ),
               Text(
-                'spread ${formatFixedPrice(spread, meta.decimals)} · ${formatPercent(spreadPct)}',
+                'spread ${formatPriceSmart(spread)} · ${formatPercent(spreadPct)}',
                 style: AppTheme.mono(
                   color: appColors.tertiaryText,
                   fontSize: 10,
@@ -237,7 +237,7 @@ class _LevelRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                formatFixedPrice(level.price, meta.decimals),
+                formatPriceSmart(level.price),
                 style: AppTheme.mono(
                   color: color,
                   fontSize: 11,

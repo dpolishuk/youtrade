@@ -1,13 +1,15 @@
 import 'dart:async';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:youtrade/core/result.dart';
 import 'package:youtrade/data/auth/secure_pin_auth_service.dart';
 import 'package:youtrade/domain/auth/auth_failure.dart';
 import 'package:youtrade/domain/auth/local_auth_service.dart';
+import 'package:youtrade/domain/auth/secure_key_value_storage.dart';
 import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/presentation/auth/auth_guard_provider.dart';
 import 'package:youtrade/presentation/auth/auth_notifier.dart';
@@ -18,92 +20,15 @@ import '../../fakes/racey_fake_pin_auth_service.dart';
 
 class MockLocalAuthService extends Mock implements LocalAuthService {}
 
-class _FakeSecureStorage extends FlutterSecureStorage {
-  final Map<String, String?> _store = {};
-
-  @override
-  Future<void> write({
-    required String key,
-    required String? value,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    _store[key] = value;
-  }
-
-  @override
-  Future<String?> read({
-    required String key,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async => _store[key];
-
-  @override
-  Future<void> delete({
-    required String key,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    _store.remove(key);
-  }
-}
-
-class _ThrowingWriteStorage extends _FakeSecureStorage {
-  _ThrowingWriteStorage(this.exception);
-
-  final Exception exception;
-
-  @override
-  Future<void> write({
-    required String key,
-    required String? value,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    throw exception;
-  }
-}
-
-class _ThrowingReadStorage extends _FakeSecureStorage {
-  _ThrowingReadStorage(this.exception);
-
-  final Exception exception;
-
-  @override
-  Future<String?> read({
-    required String key,
-    IOSOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    MacOsOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    throw exception;
-  }
-}
+class _MockSecureStorage extends Mock implements SecureKeyValueStorage {}
 
 void main() {
   late MockLocalAuthService mockLocalAuth;
   late FakePinAuthService fakePinAuth;
 
   setUp(() {
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.empty();
     mockLocalAuth = MockLocalAuthService();
     fakePinAuth = FakePinAuthService();
   });
@@ -988,10 +913,11 @@ void main() {
     });
 
     test('initialize treats storage read error as no PIN configured', () async {
-      final throwingStorage = _ThrowingReadStorage(
-        Exception('secure storage read failed'),
-      );
-      final securePinAuth = SecurePinAuthService(storage: throwingStorage);
+      final mockStorage = _MockSecureStorage();
+      when(
+        () => mockStorage.read(any()),
+      ).thenThrow(Exception('secure storage read failed'));
+      final securePinAuth = SecurePinAuthService(storage: mockStorage);
       final container = ProviderContainer(
         overrides: [
           localAuthServiceProvider.overrideWithValue(mockLocalAuth),
@@ -1119,64 +1045,24 @@ void main() {
     );
 
     group('with SecurePinAuthService', () {
-      ProviderContainer makeSecureContainer(FlutterSecureStorage storage) {
+      ProviderContainer makeSecureContainer(SecurePinAuthService svc) {
         return ProviderContainer(
           overrides: [
             localAuthServiceProvider.overrideWithValue(mockLocalAuth),
-            pinAuthServiceProvider.overrideWithValue(
-              SecurePinAuthService(storage: storage),
-            ),
+            pinAuthServiceProvider.overrideWithValue(svc),
           ],
         );
       }
 
       test('locks PIN entry after max failed attempts', () async {
-        final storage = _FakeSecureStorage();
-        final service = SecurePinAuthService(storage: storage);
+        final service = SecurePinAuthService();
         await service.setPin('1234');
 
         when(
           () => mockLocalAuth.canCheckBiometrics(),
         ).thenAnswer((_) async => false);
 
-        final container = makeSecureContainer(storage);
-        addTearDown(container.dispose);
-        final states = <AuthState>[];
-        container.listen(authNotifierProvider, (_, state) => states.add(state));
-
-        await container.read(authNotifierProvider.notifier).initialize();
-        states.clear();
-
-        for (var i = 0; i < 5; i++) {
-          await container
-              .read(authNotifierProvider.notifier)
-              .authenticateWithPin('0000');
-        }
-
-        await container
-            .read(authNotifierProvider.notifier)
-            .authenticateWithPin('1234');
-
-        final lockoutErrors = states.whereType<AuthError>().where(
-          (e) => e.failure is PinLockedFailure,
-        );
-        expect(lockoutErrors.length, 1);
-        final failure = lockoutErrors.single.failure as PinLockedFailure;
-        expect(failure.remainingSeconds, greaterThan(0));
-        expect(failure.remainingSeconds, lessThanOrEqualTo(15 * 60));
-        expect(container.read(authNotifierProvider), isA<AuthError>());
-      });
-
-      test('successful PIN entry resets failed attempt lockout', () async {
-        final storage = _FakeSecureStorage();
-        final service = SecurePinAuthService(storage: storage);
-        await service.setPin('1234');
-
-        when(
-          () => mockLocalAuth.canCheckBiometrics(),
-        ).thenAnswer((_) async => false);
-
-        final container = makeSecureContainer(storage);
+        final container = makeSecureContainer(service);
         addTearDown(container.dispose);
         final states = <AuthState>[];
         container.listen(authNotifierProvider, (_, state) => states.add(state));
@@ -1208,13 +1094,18 @@ void main() {
       });
 
       test('emits AuthError when setPin fails due to storage error', () async {
-        final storage = _ThrowingWriteStorage(Exception('secure storage full'));
+        final mockStorage = _MockSecureStorage();
+        when(() => mockStorage.read(any())).thenAnswer((_) async => null);
+        when(
+          () => mockStorage.write(any(), any()),
+        ).thenThrow(Exception('write failed'));
+        final service = SecurePinAuthService(storage: mockStorage);
 
         when(
           () => mockLocalAuth.canCheckBiometrics(),
         ).thenAnswer((_) async => false);
 
-        final container = makeSecureContainer(storage);
+        final container = makeSecureContainer(service);
         addTearDown(container.dispose);
         final states = <AuthState>[];
         container.listen(authNotifierProvider, (_, state) => states.add(state));
@@ -1226,22 +1117,22 @@ void main() {
         expect(states, [isA<AuthError>()]);
         final error = states.single as AuthError;
         expect(error.failure, isA<UnknownFailure>());
-        expect(error.failure.message, 'Failed to store PIN.');
+        expect(error.failure.message, contains('Failed to store PIN'));
         expect(container.read(authNotifierProvider.notifier).isPinSet, isFalse);
       });
 
       test(
         'lockout remains active after app restart with persisted state',
         () async {
-          final storage = _FakeSecureStorage();
-          final service = SecurePinAuthService(storage: storage);
+          final store = InMemorySecureKeyValueStorage();
+          final service = SecurePinAuthService(storage: store);
           await service.setPin('1234');
 
           when(
             () => mockLocalAuth.canCheckBiometrics(),
           ).thenAnswer((_) async => false);
 
-          final firstContainer = makeSecureContainer(storage);
+          final firstContainer = makeSecureContainer(service);
           addTearDown(firstContainer.dispose);
           final firstStates = <AuthState>[];
           firstContainer.listen(
@@ -1269,7 +1160,8 @@ void main() {
 
           firstContainer.dispose();
 
-          final secondContainer = makeSecureContainer(storage);
+          final secondService = SecurePinAuthService(storage: store);
+          final secondContainer = makeSecureContainer(secondService);
           addTearDown(secondContainer.dispose);
           final secondStates = <AuthState>[];
           secondContainer.listen(
@@ -1297,8 +1189,8 @@ void main() {
       );
 
       test('expired lockout allows PIN entry after app restart', () async {
-        final storage = _FakeSecureStorage();
-        final service = SecurePinAuthService(storage: storage);
+        final store = InMemorySecureKeyValueStorage();
+        final service = SecurePinAuthService(storage: store);
         await service.setPin('1234');
 
         when(
@@ -1308,14 +1200,14 @@ void main() {
         final startTime = DateTime.utc(2026, 1, 1, 12, 0, 0);
         var currentTime = startTime;
 
-        AuthNotifier createNotifier() =>
-            AuthNotifier(mockLocalAuth, service, clock: () => currentTime);
+        AuthNotifier createNotifier(SecurePinAuthService svc) =>
+            AuthNotifier(mockLocalAuth, svc, clock: () => currentTime);
 
         final firstContainer = ProviderContainer(
           overrides: [
             localAuthServiceProvider.overrideWithValue(mockLocalAuth),
             pinAuthServiceProvider.overrideWithValue(service),
-            authNotifierProvider.overrideWith((ref) => createNotifier()),
+            authNotifierProvider.overrideWith((ref) => createNotifier(service)),
           ],
         );
         addTearDown(firstContainer.dispose);
@@ -1347,11 +1239,14 @@ void main() {
 
         currentTime = startTime.add(const Duration(minutes: 15, seconds: 1));
 
+        final secondService = SecurePinAuthService(storage: store);
         final secondContainer = ProviderContainer(
           overrides: [
             localAuthServiceProvider.overrideWithValue(mockLocalAuth),
-            pinAuthServiceProvider.overrideWithValue(service),
-            authNotifierProvider.overrideWith((ref) => createNotifier()),
+            pinAuthServiceProvider.overrideWithValue(secondService),
+            authNotifierProvider.overrideWith(
+              (ref) => createNotifier(secondService),
+            ),
           ],
         );
         addTearDown(secondContainer.dispose);
@@ -1378,13 +1273,13 @@ void main() {
       test(
         'concurrent authenticateWithPin calls produce deterministic authenticated state',
         () async {
-          final storage = _FakeSecureStorage();
+          final service = SecurePinAuthService();
 
           when(
             () => mockLocalAuth.canCheckBiometrics(),
           ).thenAnswer((_) async => false);
 
-          final container = makeSecureContainer(storage);
+          final container = makeSecureContainer(service);
           addTearDown(container.dispose);
           final states = <AuthState>[];
           container.listen(

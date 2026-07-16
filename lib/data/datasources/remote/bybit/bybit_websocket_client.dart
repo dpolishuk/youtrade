@@ -23,7 +23,7 @@ class BybitWebSocketClient implements MarketStreamSource {
   final List<Future<void> Function()> _sessions = [];
 
   static WebSocketChannelFactory _defaultFactory(String? baseUrl) {
-    final url = baseUrl ?? 'wss://stream.bybit.com/v5/public/spot';
+    final url = baseUrl ?? 'wss://stream-demo.bybit.com/v5/public/linear';
     return (_) => WebSocketChannel.connect(Uri.parse(url));
   }
 

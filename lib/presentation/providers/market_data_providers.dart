@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/candle.dart';
@@ -6,6 +8,7 @@ import '../../domain/entities/symbol.dart';
 import '../../domain/entities/ticker.dart';
 import '../../domain/entities/timeframe.dart';
 import '../../domain/entities/trade.dart';
+import '../../domain/repositories/market_data_repository.dart';
 import '../../domain/usecases/market_data_use_cases.dart';
 import 'repository_provider.dart';
 
@@ -19,9 +22,8 @@ final getCandlesUseCaseProvider = Provider<GetCandlesUseCase>((ref) {
   return GetCandlesUseCase(repository);
 });
 
-final watchOrderBookUseCaseProvider = Provider<WatchOrderBookUseCase>((ref) {
-  final repository = ref.watch(marketDataRepositoryProvider);
-  return WatchOrderBookUseCase(repository);
+final getOrderBookUseCaseProvider = Provider<MarketDataRepository>((ref) {
+  return ref.watch(marketDataRepositoryProvider);
 });
 
 final getTradesUseCaseProvider = Provider<GetTradesUseCase>((ref) {
@@ -29,26 +31,39 @@ final getTradesUseCaseProvider = Provider<GetTradesUseCase>((ref) {
   return GetTradesUseCase(repository);
 });
 
-final watchTickerUseCaseProvider = Provider<WatchTickerUseCase>((ref) {
-  final repository = ref.watch(marketDataRepositoryProvider);
-  return WatchTickerUseCase(repository);
-});
-
-final watchTradesUseCaseProvider = Provider<WatchTradesUseCase>((ref) {
-  final repository = ref.watch(marketDataRepositoryProvider);
-  return WatchTradesUseCase(repository);
-});
-
+/// Polls the REST ticker endpoint every 5 seconds.
+/// Falls back to mock data automatically when offline.
 final tickerStreamProvider = StreamProvider.family<Ticker, TradingSymbol>((
   ref,
   symbol,
 ) {
-  final useCase = ref.watch(watchTickerUseCaseProvider);
-  return useCase
-      .call(symbol)
-      .map(
-        (result) => result.fold((failure) => throw failure, (value) => value),
-      );
+  final useCase = ref.watch(getTickerUseCaseProvider);
+  final controller = StreamController<Ticker>();
+
+  Future<void> fetch() async {
+    final result = await useCase.call(symbol);
+    result.fold(
+      (_) {
+        // Silently skip failed polls — don't crash the stream
+      },
+      (ticker) {
+        if (!controller.isClosed) controller.add(ticker);
+      },
+    );
+  }
+
+  // Initial fetch immediately
+  fetch();
+
+  // Poll every 5 seconds
+  final timer = Timer.periodic(const Duration(seconds: 5), (_) => fetch());
+
+  ref.onDispose(() {
+    timer.cancel();
+    controller.close();
+  });
+
+  return controller.stream;
 });
 
 final candlesProvider =
@@ -62,25 +77,53 @@ final candlesProvider =
       return result.fold((failure) => throw failure, (value) => value);
     });
 
+/// Polls the REST order book endpoint every 5 seconds.
 final orderBookStreamProvider = StreamProvider.family<OrderBook, TradingSymbol>(
   (ref, symbol) {
-    final useCase = ref.watch(watchOrderBookUseCaseProvider);
-    return useCase
-        .call(symbol)
-        .map(
-          (result) => result.fold((failure) => throw failure, (value) => value),
-        );
+    final repository = ref.watch(getOrderBookUseCaseProvider);
+    final controller = StreamController<OrderBook>();
+
+    Future<void> fetch() async {
+      final result = await repository.getOrderBook(symbol);
+      result.fold((_) {}, (orderBook) {
+        if (!controller.isClosed) controller.add(orderBook);
+      });
+    }
+
+    fetch();
+    final timer = Timer.periodic(const Duration(seconds: 5), (_) => fetch());
+
+    ref.onDispose(() {
+      timer.cancel();
+      controller.close();
+    });
+
+    return controller.stream;
   },
 );
 
+/// Polls the REST recent trades endpoint every 5 seconds.
 final tradesStreamProvider = StreamProvider.family<List<Trade>, TradingSymbol>((
   ref,
   symbol,
 ) {
-  final useCase = ref.watch(watchTradesUseCaseProvider);
-  return useCase
-      .call(symbol)
-      .map(
-        (result) => result.fold((failure) => throw failure, (value) => value),
-      );
+  final useCase = ref.watch(getTradesUseCaseProvider);
+  final controller = StreamController<List<Trade>>();
+
+  Future<void> fetch() async {
+    final result = await useCase.call(symbol);
+    result.fold((_) {}, (trades) {
+      if (!controller.isClosed) controller.add(trades);
+    });
+  }
+
+  fetch();
+  final timer = Timer.periodic(const Duration(seconds: 5), (_) => fetch());
+
+  ref.onDispose(() {
+    timer.cancel();
+    controller.close();
+  });
+
+  return controller.stream;
 });
