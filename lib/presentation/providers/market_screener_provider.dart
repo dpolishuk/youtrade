@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/bybit_config.dart';
-import '../../../core/screener_score.dart';
+import '../../core/bybit_config.dart';
+import '../../core/screener_score.dart';
 import '../../data/datasources/remote/bybit/bybit_rest_client.dart';
 import '../../domain/entities/venue.dart';
 

@@ -66,7 +66,7 @@ flutter:
 
   assets:
     - assets/fonts/
-    - .env
+    - .env.example
 
   fonts:
     - family: Geist

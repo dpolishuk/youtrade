@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:youtrade/core/result.dart';
 import 'package:youtrade/data/auth/secure_pin_auth_service.dart';
 import 'package:youtrade/domain/auth/auth_failure.dart';
 import 'package:youtrade/domain/auth/local_auth_service.dart';
+import 'package:youtrade/domain/auth/secure_key_value_storage.dart';
 import 'package:youtrade/core/failures.dart';
 import 'package:youtrade/presentation/auth/auth_guard_provider.dart';
 import 'package:youtrade/presentation/auth/auth_notifier.dart';
@@ -20,7 +20,7 @@ import '../../fakes/racey_fake_pin_auth_service.dart';
 
 class MockLocalAuthService extends Mock implements LocalAuthService {}
 
-class _MockPrefs extends Mock implements SharedPreferencesAsync {}
+class _MockSecureStorage extends Mock implements SecureKeyValueStorage {}
 
 void main() {
   late MockLocalAuthService mockLocalAuth;
@@ -913,11 +913,11 @@ void main() {
     });
 
     test('initialize treats storage read error as no PIN configured', () async {
-      final mockPrefs = _MockPrefs();
+      final mockStorage = _MockSecureStorage();
       when(
-        () => mockPrefs.getString(any()),
+        () => mockStorage.read(any()),
       ).thenThrow(Exception('secure storage read failed'));
-      final securePinAuth = SecurePinAuthService(prefs: mockPrefs);
+      final securePinAuth = SecurePinAuthService(storage: mockStorage);
       final container = ProviderContainer(
         overrides: [
           localAuthServiceProvider.overrideWithValue(mockLocalAuth),
@@ -1094,12 +1094,12 @@ void main() {
       });
 
       test('emits AuthError when setPin fails due to storage error', () async {
-        final mockPrefs = _MockPrefs();
-        when(() => mockPrefs.getString(any())).thenAnswer((_) async => null);
+        final mockStorage = _MockSecureStorage();
+        when(() => mockStorage.read(any())).thenAnswer((_) async => null);
         when(
-          () => mockPrefs.setString(any(), any()),
+          () => mockStorage.write(any(), any()),
         ).thenThrow(Exception('write failed'));
-        final service = SecurePinAuthService(prefs: mockPrefs);
+        final service = SecurePinAuthService(storage: mockStorage);
 
         when(
           () => mockLocalAuth.canCheckBiometrics(),
@@ -1124,7 +1124,8 @@ void main() {
       test(
         'lockout remains active after app restart with persisted state',
         () async {
-          final service = SecurePinAuthService();
+          final store = InMemorySecureKeyValueStorage();
+          final service = SecurePinAuthService(storage: store);
           await service.setPin('1234');
 
           when(
@@ -1159,7 +1160,7 @@ void main() {
 
           firstContainer.dispose();
 
-          final secondService = SecurePinAuthService();
+          final secondService = SecurePinAuthService(storage: store);
           final secondContainer = makeSecureContainer(secondService);
           addTearDown(secondContainer.dispose);
           final secondStates = <AuthState>[];
@@ -1188,7 +1189,8 @@ void main() {
       );
 
       test('expired lockout allows PIN entry after app restart', () async {
-        final service = SecurePinAuthService();
+        final store = InMemorySecureKeyValueStorage();
+        final service = SecurePinAuthService(storage: store);
         await service.setPin('1234');
 
         when(
@@ -1237,7 +1239,7 @@ void main() {
 
         currentTime = startTime.add(const Duration(minutes: 15, seconds: 1));
 
-        final secondService = SecurePinAuthService();
+        final secondService = SecurePinAuthService(storage: store);
         final secondContainer = ProviderContainer(
           overrides: [
             localAuthServiceProvider.overrideWithValue(mockLocalAuth),

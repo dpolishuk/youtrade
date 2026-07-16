@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../presentation/theme/app_theme.dart';
-import '../../../presentation/theme/theme_extensions.dart';
+import '../../presentation/theme/app_theme.dart';
+import '../../presentation/theme/theme_extensions.dart';
 import '../widgets/compare/compare_chart.dart';
 import '../widgets/compare/compare_models.dart';
 import '../widgets/compare/compare_stats_table.dart';

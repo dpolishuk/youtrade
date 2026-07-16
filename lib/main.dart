@@ -8,9 +8,9 @@ import 'presentation/theme/theme_provider.dart';
 void main({List<Override> overrides = const []}) async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await dotenv.load(fileName: '.env');
+    await dotenv.load(fileName: '.env.example');
   } on Exception catch (_) {
-    // .env missing — public endpoints still work without credentials.
+    // .env.example missing — public endpoints still work without credentials.
   }
   runApp(ProviderScope(overrides: overrides, child: const YouTradeApp()));
 }
