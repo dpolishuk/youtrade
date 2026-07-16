@@ -8,6 +8,7 @@ final class AccountOrder {
     required this.qty,
     required this.orderStatus,
     this.createdTime,
+    this.cumExecQty = 0.0,
   });
 
   final String orderId;
@@ -18,6 +19,9 @@ final class AccountOrder {
   final double qty;
   final String orderStatus;
   final String? createdTime;
+
+  /// Cumulative executed (filled) quantity returned by Bybit.
+  final double cumExecQty;
 
   bool get isBuy => side == 'Buy';
 
@@ -31,6 +35,7 @@ final class AccountOrder {
           orderType == other.orderType &&
           price == other.price &&
           qty == other.qty &&
+          cumExecQty == other.cumExecQty &&
           orderStatus == other.orderStatus &&
           createdTime == other.createdTime;
 
@@ -42,6 +47,7 @@ final class AccountOrder {
     orderType,
     price,
     qty,
+    cumExecQty,
     orderStatus,
     createdTime,
   );

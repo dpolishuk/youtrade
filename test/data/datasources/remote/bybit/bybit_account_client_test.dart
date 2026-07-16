@@ -154,7 +154,7 @@ void main() {
           return http.Response(
             '{"retCode":0,"retMsg":"OK","result":{"category":"linear","list":['
             '{"orderId":"a1","symbol":"BTCUSDT","side":"Buy","orderType":"Limit",'
-            '"price":"50000","qty":"0.1","orderStatus":"New","createdTime":"1700000000000"}'
+            '"price":"50000","qty":"0.1","cumExecQty":"0.05","orderStatus":"New","createdTime":"1700000000000"}'
             ']}}',
             200,
           );
@@ -164,7 +164,7 @@ void main() {
       final result = await client.getOpenOrders();
       expect(result, isA<Success<List<AccountOrder>>>());
       expect(capturedUri!.path, '/v5/order/realtime');
-      expect(capturedUri!.query, 'category=linear');
+      expect(capturedUri!.query, 'category=linear&settleCoin=USDT');
       result.when(
         success: (orders) {
           expect(orders.length, 1);
@@ -174,6 +174,7 @@ void main() {
           expect(orders.first.orderType, 'Limit');
           expect(orders.first.price, 50000.0);
           expect(orders.first.qty, 0.1);
+          expect(orders.first.cumExecQty, 0.05);
           expect(orders.first.orderStatus, 'New');
           expect(orders.first.createdTime, '1700000000000');
           expect(orders.first.isBuy, isTrue);

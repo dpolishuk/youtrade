@@ -55,7 +55,7 @@ final class BybitAccountClient {
   Future<Result<List<AccountOrder>>> getOpenOrders() {
     return _signedGet(
       '/v5/order/realtime',
-      {'category': 'linear'},
+      {'category': 'linear', 'settleCoin': 'USDT'},
       _parseOrders,
       'open orders',
     );
@@ -295,6 +295,7 @@ final class BybitAccountClient {
       orderType: json['orderType'] as String,
       price: double.parse(json['price'] as String),
       qty: double.parse(json['qty'] as String),
+      cumExecQty: double.tryParse(json['cumExecQty'] as String? ?? '0') ?? 0.0,
       orderStatus: json['orderStatus'] as String,
       createdTime: json['createdTime']?.toString(),
     );

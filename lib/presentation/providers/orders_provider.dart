@@ -35,6 +35,9 @@ final class _NeedsCredentialsOrdersData extends OrdersData {
 
 /// Maps a Bybit [AccountOrder] into the UI [Order] entity.
 Order accountOrderToOrder(AccountOrder order) {
+  final fillPercent = order.qty > 0
+      ? (order.cumExecQty / order.qty * 100).clamp(0, 100).round()
+      : 0;
   return Order(
     orderId: order.orderId,
     symbol: order.symbol,
@@ -43,7 +46,7 @@ Order accountOrderToOrder(AccountOrder order) {
     venue: 'Bybit',
     price: formatNumber(order.price),
     qty: formatNumber(order.qty, decimals: order.qty >= 1 ? 2 : 4),
-    filled: '0%',
+    filled: '$fillPercent%',
     time: formatOrderTime(order.createdTime),
     status: order.orderStatus,
   );

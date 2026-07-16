@@ -108,6 +108,56 @@ void main() {
       expect(order.time, '09:12');
     });
 
+    test('computes fill percentage from cumExecQty', () {
+      final order = accountOrderToOrder(
+        const AccountOrder(
+          orderId: 'order-fill',
+          symbol: 'BTCUSDT',
+          side: 'Buy',
+          orderType: 'Limit',
+          price: 50000.0,
+          qty: 0.1,
+          cumExecQty: 0.05,
+          orderStatus: 'PartiallyFilled',
+        ),
+      );
+
+      expect(order.filled, '50%');
+    });
+
+    test('shows 100% when fully filled', () {
+      final order = accountOrderToOrder(
+        const AccountOrder(
+          orderId: 'order-full',
+          symbol: 'ETHUSDT',
+          side: 'Buy',
+          orderType: 'Limit',
+          price: 3000.0,
+          qty: 2.0,
+          cumExecQty: 2.0,
+          orderStatus: 'Filled',
+        ),
+      );
+
+      expect(order.filled, '100%');
+    });
+
+    test('defaults to 0% when cumExecQty is absent', () {
+      final order = accountOrderToOrder(
+        const AccountOrder(
+          orderId: 'order-new',
+          symbol: 'SOLUSDT',
+          side: 'Buy',
+          orderType: 'Limit',
+          price: 150.0,
+          qty: 10.0,
+          orderStatus: 'New',
+        ),
+      );
+
+      expect(order.filled, '0%');
+    });
+
     test('leaves time null when createdTime absent', () {
       final order = accountOrderToOrder(
         const AccountOrder(
