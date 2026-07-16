@@ -1,0 +1,609 @@
+import 'dart:convert';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:youtrade/core/failures.dart';
+import 'package:youtrade/core/result.dart';
+import 'package:youtrade/data/datasources/remote/okx/okx_websocket_client.dart';
+import 'package:youtrade/domain/entities/order_book.dart';
+import 'package:youtrade/domain/entities/symbol.dart';
+import 'package:youtrade/domain/entities/ticker.dart';
+import 'package:youtrade/domain/entities/trade.dart';
+import 'package:youtrade/domain/entities/venue.dart';
+
+import '../../../../fakes/fake_websocket_channel.dart';
+
+void main() {
+  group('OKXWebSocketClient', () {
+    final symbol = TradingSymbol(
+      base: 'BTC',
+      quote: 'USDT',
+      venue: Venue.okx,
+      rawSymbol: 'BTCUSDT',
+    );
+
+    test('watchTicker sends subscribe and parses ticker message', () async {
+      late FakeWebSocketChannel channel;
+      final outgoing = <dynamic>[];
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          channel.outgoingStream.listen(outgoing.add);
+          return channel;
+        },
+      );
+
+      final values = client.watchTicker(symbol);
+      final future = values.first;
+      await Future.delayed(Duration.zero);
+
+      expect(outgoing.length, 1);
+      expect(outgoing.first, contains('"op":"subscribe"'));
+      expect(outgoing.first, contains('"channel":"tickers"'));
+      expect(outgoing.first, contains('"instId":"BTC-USDT"'));
+
+      channel.add(
+        '{"arg":{"channel":"tickers","instId":"BTC-USDT"},"data":[{"instId":"BTC-USDT","last":"100.0","bidPx":"99.5","askPx":"100.5","open24h":"99.0","vol24h":"1000.0","ts":"1718952000000"}]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<Ticker>>());
+      result.when(
+        success: (ticker) {
+          expect(ticker.lastPrice, 100.0);
+          expect(ticker.bid, 99.5);
+          expect(ticker.ask, 100.5);
+          expect(ticker.change24h, 1.0);
+          expect(ticker.volume, 1000.0);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchOrderBook sends subscribe and parses snapshot message', () async {
+      late FakeWebSocketChannel channel;
+      final outgoing = <dynamic>[];
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          channel.outgoingStream.listen(outgoing.add);
+          return channel;
+        },
+      );
+
+      final values = client.watchOrderBook(symbol);
+      final future = values.first;
+      await Future.delayed(Duration.zero);
+
+      expect(outgoing.length, 1);
+      expect(outgoing.first, contains('"channel":"books"'));
+
+      channel.add(
+        '{"arg":{"channel":"books","instId":"BTC-USDT"},"action":"snapshot","data":[{"bids":[["99.0","1.0","0","1"]],"asks":[["101.0","1.0","0","1"]],"ts":"1718952000000"}]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<OrderBook>>());
+      result.when(
+        success: (orderBook) {
+          expect(orderBook.bids.first.price, 99.0);
+          expect(orderBook.asks.first.price, 101.0);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchTrades sends subscribe and parses trade message', () async {
+      late FakeWebSocketChannel channel;
+      final outgoing = <dynamic>[];
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          channel.outgoingStream.listen(outgoing.add);
+          return channel;
+        },
+      );
+
+      final values = client.watchTrades(symbol);
+      final future = values.first;
+      await Future.delayed(Duration.zero);
+
+      expect(outgoing.length, 1);
+      expect(outgoing.first, contains('"channel":"trades"'));
+
+      channel.add(
+        '{"arg":{"channel":"trades","instId":"BTC-USDT"},"data":[{"instId":"BTC-USDT","tradeId":"1","px":"100.0","sz":"1.0","side":"buy","ts":"1718952000000"}]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<List<Trade>>>());
+      result.when(
+        success: (trades) {
+          expect(trades.length, 1);
+          expect(trades.first.price, 100.0);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchTicker closes sink when subscription is cancelled', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final subscription = client.watchTicker(symbol).listen(null);
+      await Future.delayed(Duration.zero);
+
+      expect(channel.sink.closed, isFalse);
+
+      await subscription.cancel();
+
+      expect(channel.sink.closed, isTrue);
+    });
+
+    test('watchOrderBook closes sink when subscription is cancelled', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final subscription = client.watchOrderBook(symbol).listen(null);
+      await Future.delayed(Duration.zero);
+
+      expect(channel.sink.closed, isFalse);
+
+      await subscription.cancel();
+
+      expect(channel.sink.closed, isTrue);
+    });
+
+    test('watchTrades closes sink when subscription is cancelled', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final subscription = client.watchTrades(symbol).listen(null);
+      await Future.delayed(Duration.zero);
+
+      expect(channel.sink.closed, isFalse);
+
+      await subscription.cancel();
+
+      expect(channel.sink.closed, isTrue);
+    });
+
+    test('watchTicker emits ParseFailure on malformed message', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add('not-json');
+
+      final result = await future;
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(
+            failure.message,
+            startsWith('OKX WS ticker parse failed: FormatException'),
+          );
+        },
+      );
+    });
+
+    test('watchTicker emits ParseFailure on empty data list', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add(
+        '{"arg":{"channel":"tickers","instId":"BTC-USDT"},"data":[]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<ParseFailure>());
+          expect(failure.message, startsWith('OKX WS ticker parse failed:'));
+          expect(failure.message, contains('Bad state'));
+        },
+      );
+    });
+
+    test('watchTicker emits UnknownFailure on stream error', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final error = Exception('ws error');
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.addError(error);
+
+      final result = await future;
+      expect(result, isA<Err<Ticker>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'OKX WS ticker error');
+          expect((failure as UnknownFailure).error, error);
+        },
+      );
+    });
+
+    test('watchTicker ignores subscription ack without data list', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+
+      channel.add(
+        '{"event":"subscribe","arg":{"channel":"tickers","instId":"BTC-USDT"}}',
+      );
+      channel.add(
+        '{"arg":{"channel":"tickers","instId":"BTC-USDT"},"data":[{"instId":"BTC-USDT","last":"100.0","bidPx":"99.5","askPx":"100.5","open24h":"99.0","vol24h":"1000.0","ts":"1718952000000"}]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<Ticker>>());
+      result.when(
+        success: (ticker) {
+          expect(ticker.lastPrice, 100.0);
+          expect(ticker.bid, 99.5);
+          expect(ticker.ask, 100.5);
+          expect(ticker.change24h, 1.0);
+          expect(ticker.volume, 1000.0);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchOrderBook emits UnknownFailure on stream error', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final error = Exception('ws error');
+      final future = client.watchOrderBook(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.addError(error);
+
+      final result = await future;
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'OKX WS order book error');
+          expect((failure as UnknownFailure).error, error);
+        },
+      );
+    });
+
+    test('watchTrades emits UnknownFailure on stream error', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final error = Exception('ws error');
+      final future = client.watchTrades(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.addError(error);
+
+      final result = await future;
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'OKX WS trades error');
+          expect((failure as UnknownFailure).error, error);
+        },
+      );
+    });
+
+    test('watchTicker emits UnknownFailure on connection failure', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel(
+            ready: Future.error(Exception('connect failed')),
+          );
+          return channel;
+        },
+      );
+
+      final error = await client.watchTicker(symbol).first;
+      expect(error, isA<Err<Ticker>>());
+      error.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'OKX WS ticker error');
+          expect((failure as UnknownFailure).error, isA<Exception>());
+        },
+      );
+    });
+
+    test('watchOrderBook emits UnknownFailure on connection failure', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel(
+            ready: Future.error(Exception('connect failed')),
+          );
+          return channel;
+        },
+      );
+
+      final result = await client.watchOrderBook(symbol).first;
+      expect(result, isA<Err<OrderBook>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'OKX WS order book error');
+          expect((failure as UnknownFailure).error, isA<Exception>());
+        },
+      );
+    });
+
+    test('watchTrades emits UnknownFailure on connection failure', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel(
+            ready: Future.error(Exception('connect failed')),
+          );
+          return channel;
+        },
+      );
+
+      final result = await client.watchTrades(symbol).first;
+      expect(result, isA<Err<List<Trade>>>());
+      result.when(
+        success: (_) => fail('expected failure'),
+        failure: (failure) {
+          expect(failure, isA<UnknownFailure>());
+          expect(failure.message, 'OKX WS trades error');
+          expect((failure as UnknownFailure).error, isA<Exception>());
+        },
+      );
+    });
+
+    test('watchOrderBook parses delta message', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchOrderBook(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add(
+        '{"arg":{"channel":"books","instId":"BTC-USDT"},"action":"update","data":[{"bids":[["99.0","1.0","0","1"]],"asks":[["101.0","1.0","0","1"]],"ts":"1718952000000"}]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<OrderBook>>());
+      result.when(
+        success: (orderBook) {
+          expect(orderBook.bids.first.price, 99.0);
+          expect(orderBook.asks.first.price, 101.0);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchTicker ignores message for wrong instId', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).first;
+      await Future.delayed(Duration.zero);
+
+      channel.add(
+        '{"arg":{"channel":"tickers","instId":"ETH-USDT"},"data":[{"instId":"ETH-USDT","last":"200.0","bidPx":"199.5","askPx":"200.5","open24h":"199.0","vol24h":"1000.0","ts":"1718952000000"}]}',
+      );
+      channel.add(
+        '{"arg":{"channel":"tickers","instId":"BTC-USDT"},"data":[{"instId":"BTC-USDT","last":"100.0","bidPx":"99.5","askPx":"100.5","open24h":"99.0","vol24h":"1000.0","ts":"1718952000000"}]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<Ticker>>());
+      result.when(
+        success: (ticker) => expect(ticker.lastPrice, 100.0),
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchOrderBook handles empty bids/asks in update', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchOrderBook(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add(
+        '{"arg":{"channel":"books","instId":"BTC-USDT"},"action":"update","data":[{"bids":[],"asks":[],"ts":"1718952000000"}]}',
+      );
+
+      final result = await future;
+      expect(result, isA<Success<OrderBook>>());
+      result.when(
+        success: (orderBook) {
+          expect(orderBook.bids, isEmpty);
+          expect(orderBook.asks, isEmpty);
+        },
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchTrades handles empty trades list', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTrades(symbol).first;
+      await Future.delayed(Duration.zero);
+      channel.add('{"arg":{"channel":"trades","instId":"BTC-USDT"},"data":[]}');
+
+      final result = await future;
+      expect(result, isA<Success<List<Trade>>>());
+      result.when(
+        success: (trades) => expect(trades, isEmpty),
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test('watchTicker emits error then recovery', () async {
+      late FakeWebSocketChannel channel;
+      final client = OKXWebSocketClient(
+        channelFactory: (url) {
+          channel = FakeWebSocketChannel();
+          return channel;
+        },
+      );
+
+      final future = client.watchTicker(symbol).take(2).toList();
+      await Future.delayed(Duration.zero);
+      channel.add('not-json');
+      channel.add(
+        '{"arg":{"channel":"tickers","instId":"BTC-USDT"},"data":[{"instId":"BTC-USDT","last":"100.0","bidPx":"99.5","askPx":"100.5","open24h":"99.0","vol24h":"1000.0","ts":"1718952000000"}]}',
+      );
+
+      final events = await future;
+      expect(events.length, 2);
+      expect(events.first, isA<Err<Ticker>>());
+      expect(events.last, isA<Success<Ticker>>());
+      events.last.when(
+        success: (ticker) => expect(ticker.lastPrice, 100.0),
+        failure: (_) => fail('expected success'),
+      );
+    });
+
+    test(
+      'Multiple subscriptions do not interleave outgoing messages',
+      () async {
+        final outgoing = <dynamic>[];
+        final shared = FakeWebSocketChannel();
+        shared.outgoingStream.listen(outgoing.add);
+        final client = OKXWebSocketClient(channelFactory: (_) => shared);
+
+        client.watchTicker(symbol).listen(null);
+        client.watchOrderBook(symbol).listen(null);
+        client.watchTrades(symbol).listen(null);
+        await Future.delayed(Duration.zero);
+
+        expect(outgoing.length, 3);
+        for (final message in outgoing) {
+          final json = jsonDecode(message as String) as Map<String, dynamic>;
+          expect(json['op'], 'subscribe');
+          final args = json['args'] as List<dynamic>;
+          expect(args.length, 1);
+          expect((args.first as Map<String, dynamic>)['instId'], 'BTC-USDT');
+        }
+
+        final channels = outgoing
+            .map(
+              (m) =>
+                  (((jsonDecode(m as String) as Map<String, dynamic>)['args']
+                                  as List<dynamic>)
+                              .first
+                          as Map<String, dynamic>)['channel']
+                      as String,
+            )
+            .toList();
+        expect(channels, containsAll(['tickers', 'books', 'trades']));
+      },
+    );
+
+    test('closeAll closes every active subscription sink', () async {
+      final channels = <FakeWebSocketChannel>[];
+      final client = OKXWebSocketClient(
+        channelFactory: (_) {
+          final channel = FakeWebSocketChannel();
+          channels.add(channel);
+          return channel;
+        },
+      );
+
+      client.watchTicker(symbol).listen(null);
+      client.watchOrderBook(symbol).listen(null);
+      client.watchTrades(symbol).listen(null);
+      await Future.delayed(Duration.zero);
+
+      expect(channels.length, 3);
+      for (final channel in channels) {
+        expect(channel.sink.closed, isFalse);
+      }
+
+      client.closeAll();
+      await pumpEventQueue();
+
+      for (final channel in channels) {
+        expect(channel.sink.closed, isTrue);
+      }
+    });
+  });
+}

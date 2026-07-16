@@ -1,4 +1,4 @@
-sealed class Failure {
+abstract class Failure {
   const Failure();
 
   String get message;

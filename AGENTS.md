@@ -64,7 +64,7 @@ This document governs how AI agents work on this Flutter project. We follow **Ex
 - Name files in `snake_case.dart` and classes in `PascalCase`.
 - Use trailing commas for multi-line parameters and collections.
 - Sort imports: Dart SDK, Flutter, third-party, project (relative last).
-- Run `dart format --set-exit-if-changed lib test` before claiming work complete.
+- Run `dart format --set-exit-if-changed lib test integration_test tool` before claiming work complete.
 
 ### Sustainable Pace
 
@@ -202,11 +202,22 @@ Place e2e tests in `integration_test/`:
 
 ```
 integration_test/
-  app_test.dart           # smoke test: app launches and shows Portfolio
-  portfolio_test.dart     # portfolio screen flows
-  terminal_test.dart      # trading terminal flows
-  markets_test.dart       # screener flows
-  auth_gate_test.dart     # local biometric/PIN gate
+  app_test.dart              # smoke test: app launches and shows Portfolio
+  auth_flow_test.dart        # local biometric/PIN gate flows
+  markets_flow_test.dart     # screener flows
+  offline_mode_test.dart     # offline/demo mode fallback
+  compare_flow_test.dart     # compare screen flows
+  exchange_detail_flow_test.dart # exchange detail flows
+  options_flow_test.dart     # options chain flows
+  orders_flow_test.dart      # orders & history flows
+  settings_flow_test.dart    # account/settings flows
+  helpers.dart               # shared integration-test utilities
+```integration_test/
+  app_test.dart              # smoke test: app launches and shows Portfolio
+  auth_flow_test.dart        # local biometric/PIN gate flows
+  markets_flow_test.dart     # screener flows
+  offline_mode_test.dart     # offline/demo mode fallback
+  helpers.dart               # shared integration-test utilities
 ```
 
 #### Boot and run on iOS Simulator
@@ -279,7 +290,7 @@ Run these before claiming work is complete:
 ```bash
 flutter analyze
 flutter test
-dart format --set-exit-if-changed lib test
+dart format --set-exit-if-changed lib test integration_test tool
 ```
 
 For unit/widget tests:
@@ -311,6 +322,7 @@ Use the `xpowers-verification-before-completion` skill to confirm outputs before
 | Declarative routing | `flutter-setup-declarative-routing` |
 | Localization | `flutter-setup-localization` |
 | HTTP setup | `flutter-use-http-package` |
+| iOS/macOS/Xcode work | `xcodebuildmcp-cli` |
 | TDD enforcement | `xpowers-test-driven-development` |
 | br / beads triage | `beads-triage` |
 | Refactor safely | `xpowers-refactoring-safely` |
@@ -393,7 +405,7 @@ bv --robot-next        # Single top recommendation
 
 Before ending any session:
 
-1. Run verification commands (`flutter analyze`, `flutter test`, `flutter format`).
+1. Run verification commands (`flutter analyze`, `flutter test`, `flutter format`). If `.pre-commit-config.yaml` hooks are installed, `pre-commit` will run these automatically on commit.
 2. Update `br` issue statuses (close completed work, update in-progress items).
 3. `br sync --flush-only` to export state.
 4. `git add .beads/` and commit together with code changes.
@@ -422,3 +434,100 @@ If the answer to any question is no, fix it before claiming completion.
 - [Extreme Programming — Martin Fowler](https://martinfowler.com/bliki/ExtremeProgramming.html)
 - [Effective Dart](https://dart.dev/effective-dart)
 - [beads_rust (br) Repository](https://github.com/Dicklesworthstone/beads_rust)
+
+<!-- bv-agent-instructions-v2 -->
+
+---
+
+## Beads Workflow Integration
+
+This project uses [beads_rust](https://github.com/Dicklesworthstone/beads_rust) (`br`) for issue tracking and [beads_viewer](https://github.com/Dicklesworthstone/beads_viewer) (`bv`) for graph-aware triage. Issues are stored in `.beads/` and tracked in git.
+
+### Using bv as an AI sidecar
+
+bv is a graph-aware triage engine for Beads projects (.beads/beads.jsonl). Instead of parsing JSONL or hallucinating graph traversal, use robot flags for deterministic, dependency-aware outputs with precomputed metrics (PageRank, betweenness, critical path, cycles, HITS, eigenvector, k-core).
+
+**Scope boundary:** bv handles *what to work on* (triage, priority, planning). `br` handles creating, modifying, and closing beads.
+
+**CRITICAL: Use ONLY --robot-* flags. Bare bv launches an interactive TUI that blocks your session.**
+
+#### The Workflow: Start With Triage
+
+**`bv --robot-triage` is your single entry point.** It returns everything you need in one call:
+- `quick_ref`: at-a-glance counts + top 3 picks
+- `recommendations`: ranked actionable items with scores, reasons, unblock info
+- `quick_wins`: low-effort high-impact items
+- `blockers_to_clear`: items that unblock the most downstream work
+- `project_health`: status/type/priority distributions, graph metrics
+- `commands`: copy-paste shell commands for next steps
+
+```bash
+bv --robot-triage        # THE MEGA-COMMAND: start here
+bv --robot-next          # Minimal: just the single top pick + claim command
+
+# Token-optimized output (TOON) for lower LLM context usage:
+bv --robot-triage --format toon
+```
+
+Before claiming, verify current state with `br show <id> --json` or `br ready --json`. `recommendations` can include graph-important blocked or assigned work; only `quick_ref.top_picks` and non-empty `claim_command` fields represent claimable work.
+
+#### Other bv Commands
+
+| Command | Returns |
+|---------|---------|
+| `--robot-plan` | Parallel execution tracks with unblocks lists |
+| `--robot-priority` | Priority misalignment detection with confidence |
+| `--robot-insights` | Full metrics: PageRank, betweenness, HITS, eigenvector, critical path, cycles, k-core |
+| `--robot-alerts` | Stale issues, blocking cascades, priority mismatches |
+| `--robot-suggest` | Hygiene: duplicates, missing deps, label suggestions, cycle breaks |
+| `--robot-diff --diff-since <ref>` | Changes since ref: new/closed/modified issues |
+| `--robot-graph [--graph-format=json\|dot\|mermaid]` | Dependency graph export |
+
+#### Scoping & Filtering
+
+```bash
+bv --robot-plan --label backend              # Scope to label's subgraph
+bv --robot-insights --as-of HEAD~30          # Historical point-in-time
+bv --recipe actionable --robot-plan          # Pre-filter: ready to work (no blockers)
+bv --recipe high-impact --robot-triage       # Pre-filter: top PageRank scores
+```
+
+### br Commands for Issue Management
+
+```bash
+br ready              # Show issues ready to work (no blockers)
+br list --status=open # All open issues
+br show <id>          # Full issue details with dependencies
+br create --title="..." --type=task --priority=2
+br update <id> --status=in_progress
+br close <id> --reason="Completed"
+br close <id1> <id2>  # Close multiple issues at once
+br sync --flush-only  # Export DB to JSONL
+```
+
+### Workflow Pattern
+
+1. **Triage**: Run `bv --robot-triage` to find the highest-impact actionable work
+2. **Claim**: Use `br update <id> --status=in_progress`
+3. **Work**: Implement the task
+4. **Complete**: Use `br close <id>`
+5. **Sync**: Always run `br sync --flush-only` at session end
+
+### Key Concepts
+
+- **Dependencies**: Issues can block other issues. `br ready` shows only unblocked work.
+- **Priority**: P0=critical, P1=high, P2=medium, P3=low, P4=backlog (use numbers 0-4, not words)
+- **Types**: task, bug, feature, epic, chore, docs, question
+- **Blocking**: `br dep add <issue> <depends-on>` to add dependencies
+
+### Session Protocol
+
+```bash
+git status              # Check what changed
+git add <files>         # Stage code changes
+br sync --flush-only    # Export beads changes to JSONL
+git commit -m "..."     # Commit everything
+git push                # Push to remote
+```
+
+<!-- end-bv-agent-instructions -->

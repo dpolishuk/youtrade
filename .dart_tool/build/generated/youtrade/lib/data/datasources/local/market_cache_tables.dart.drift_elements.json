@@ -1,1 +1,0 @@
-{"valid_import":true,"imports":[{"uri":"package:drift/drift.dart","transitive":false}],"elements":[{"kind":"table","name":"cached_tickers","dart_name":"CachedTickers"},{"kind":"table","name":"cached_candles","dart_name":"CachedCandles"},{"kind":"table","name":"cached_order_books","dart_name":"CachedOrderBooks"},{"kind":"table","name":"cached_trades","dart_name":"CachedTrades"}]}

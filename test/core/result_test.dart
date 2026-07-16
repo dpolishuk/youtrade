@@ -48,5 +48,33 @@ void main() {
       );
       expect(value, 'success: 42');
     });
+
+    test('when invokes success branch with the exact typed value', () {
+      const Result<int> result = Success(42);
+      final value = result.when(
+        success: (v) => 'ok:$v',
+        failure: (f) => 'err:${f.message}',
+      );
+      expect(value, 'ok:42');
+    });
+
+    test('when invokes failure branch with the exact typed failure', () {
+      const failure = NetworkFailure('offline');
+      const Result<int> result = Err(failure);
+      final value = result.when(
+        success: (v) => 'ok:$v',
+        failure: (f) => 'err:${f.message}',
+      );
+      expect(value, 'err:offline');
+    });
+
+    test('when preserves generic type through both branches', () {
+      const Result<String> result = Success('data');
+      final int value = result.when(
+        success: (s) => s.length,
+        failure: (_) => -1,
+      );
+      expect(value, 4);
+    });
   });
 }
