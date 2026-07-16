@@ -21,11 +21,26 @@ class ScreenerScore {
 
   /// Compute composite scores for a list of raw ticker data.
   ///
-  /// Returns a map of symbol -> composite score. Symbols that fail the guard
-  /// rails are excluded from the result.
-  static Map<String, double> compute(List<RawTicker> tickers) {
-    final tradeable = tickers.where(_passesGuardRails).toList();
-    if (tradeable.isEmpty) return {};
+  /// Returns a list of composite scores, one per input ticker, preserving
+  /// the input order. Tickers that fail the guard rails receive
+  /// [double.negativeInfinity] so they always sort below valid scores.
+  static List<double> compute(List<RawTicker> tickers) {
+    if (tickers.isEmpty) return [];
+
+    // Build parallel arrays: index in original list + tradeable ticker
+    final tradeableIndices = <int>[];
+    final tradeable = <RawTicker>[];
+    for (var i = 0; i < tickers.length; i++) {
+      if (_passesGuardRails(tickers[i])) {
+        tradeableIndices.add(i);
+        tradeable.add(tickers[i]);
+      }
+    }
+
+    // Initialize all scores to -infinity (guard rail failures)
+    final scores = List<double>.filled(tickers.length, double.negativeInfinity);
+
+    if (tradeable.isEmpty) return scores;
 
     final logTurnovers = tradeable.map((t) => log(t.turnover24h)).toList();
     final logOiValues = tradeable.map((t) => log(t.openInterestValue)).toList();
@@ -34,19 +49,16 @@ class ScreenerScore {
     final vwMoms = tradeable.map((t) => t.vwMomentum).toList();
     final fundingScores = tradeable.map((t) => t.fundingScore).toList();
 
-    final scores = <String, double>{};
-    for (var i = 0; i < tradeable.length; i++) {
-      final t = tradeable[i];
-      // Liquidity: higher turnover, higher OI, and tighter spread are better.
+    for (var j = 0; j < tradeable.length; j++) {
       final liquidity =
-          _zScore(logTurnovers[i], logTurnovers) +
-          _zScore(logOiValues[i], logOiValues) -
-          _zScore(spreads[i], spreads);
-      final volatility = _zScore(rangePcts[i], rangePcts);
-      final momentum = _zScore(vwMoms[i], vwMoms);
-      final funding = _zScore(fundingScores[i], fundingScores);
+          _zScore(logTurnovers[j], logTurnovers) +
+          _zScore(logOiValues[j], logOiValues) -
+          _zScore(spreads[j], spreads);
+      final volatility = _zScore(rangePcts[j], rangePcts);
+      final momentum = _zScore(vwMoms[j], vwMoms);
+      final funding = _zScore(fundingScores[j], fundingScores);
 
-      scores[t.symbol] =
+      scores[tradeableIndices[j]] =
           weightLiquidity * liquidity +
           weightVolatility * volatility +
           weightMomentum * momentum +

@@ -38,14 +38,15 @@ void main() {
         ),
       ];
 
+      // Position-aligned list: A=0, B=1, C=2.
       final scores = ScreenerScore.compute(tickers);
-      final sum = scores.values.reduce((a, b) => a + b);
+      final sum = scores.reduce((a, b) => a + b);
 
       // Z-scores are mean-centered, so the composite mean is ~0.
       expect(sum, closeTo(0.0, 1e-9));
       // Orders-of-magnitude ranking is preserved.
-      expect(scores['C']! > scores['B']!, isTrue);
-      expect(scores['B']! > scores['A']!, isTrue);
+      expect(scores[2] > scores[1], isTrue);
+      expect(scores[1] > scores[0], isTrue);
     });
 
     test('composite score ranks high-liquidity ticker first', () {
@@ -70,9 +71,10 @@ void main() {
         ),
       ];
 
+      // Position-aligned list: LOW=0, HIGH=1.
       final scores = ScreenerScore.compute(tickers);
 
-      expect(scores['HIGH']! > scores['LOW']!, isTrue);
+      expect(scores[1] > scores[0], isTrue);
     });
 
     test('guard rails filter illiquid tickers', () {
@@ -97,10 +99,12 @@ void main() {
         ),
       ];
 
+      // Position-aligned list: ILLIQUID=0, LIQUID=1.
       final scores = ScreenerScore.compute(tickers);
 
-      expect(scores.containsKey('ILLIQUID'), isFalse);
-      expect(scores.containsKey('LIQUID'), isTrue);
+      // Guard-rail failures receive -infinity instead of being excluded.
+      expect(scores[0], double.negativeInfinity);
+      expect(scores[1], isNot(double.negativeInfinity));
     });
 
     test('guard rails filter wide-spread tickers', () {
@@ -125,10 +129,11 @@ void main() {
         ),
       ];
 
+      // Position-aligned list: WIDESPREAD=0, TIGHTSPREAD=1.
       final scores = ScreenerScore.compute(tickers);
 
-      expect(scores.containsKey('WIDESPREAD'), isFalse);
-      expect(scores.containsKey('TIGHTSPREAD'), isTrue);
+      expect(scores[0], double.negativeInfinity);
+      expect(scores[1], isNot(double.negativeInfinity));
     });
 
     test('guard rails filter low open-interest tickers', () {
@@ -153,10 +158,11 @@ void main() {
         ),
       ];
 
+      // Position-aligned list: LOWOI=0, HIGHOI=1.
       final scores = ScreenerScore.compute(tickers);
 
-      expect(scores.containsKey('LOWOI'), isFalse);
-      expect(scores.containsKey('HIGHOI'), isTrue);
+      expect(scores[0], double.negativeInfinity);
+      expect(scores[1], isNot(double.negativeInfinity));
     });
 
     test('volume-weighted momentum gives higher score to higher volume', () {
@@ -182,9 +188,10 @@ void main() {
         ),
       ];
 
+      // Position-aligned list: LOWMOM=0, HIMOM=1.
       final scores = ScreenerScore.compute(tickers);
 
-      expect(scores['HIMOM']! > scores['LOWMOM']!, isTrue);
+      expect(scores[1] > scores[0], isTrue);
     });
 
     test(
@@ -211,13 +218,14 @@ void main() {
           ),
         ];
 
+        // Position-aligned list: NEG=0, POS=1.
         final scores = ScreenerScore.compute(tickers);
 
-        expect(scores['POS']! > scores['NEG']!, isTrue);
+        expect(scores[1] > scores[0], isTrue);
       },
     );
 
-    test('empty list returns empty map', () {
+    test('empty list returns empty list', () {
       expect(ScreenerScore.compute([]), isEmpty);
     });
 
@@ -234,9 +242,10 @@ void main() {
         ),
       ];
 
+      // Position-aligned list: SOLO=0.
       final scores = ScreenerScore.compute(tickers);
 
-      expect(scores['SOLO'], 0.0);
+      expect(scores[0], 0.0);
     });
   });
 
